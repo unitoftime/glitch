@@ -87,7 +87,8 @@ func run() {
 
 	sprite := glitch.NewSprite(texture, glitch.R(0, 0, 160, 200))
 
-	sprite.Draw(batch, 50, 50)
+	sprite.Draw(batch)
+	// sprite.Draw(batch, 50, 50)
 	// batch.Add(sprite)
 
 	for !win.ShouldClose() {
@@ -102,6 +103,29 @@ func run() {
 		batch.Draw()
 
 		win.Update()
+	}
+
+	// Interface draft 1:
+	// Load a program
+	// Load a bunch of uniform inputs
+	// Load a bunch of geometry inputs
+	// Execute
+	loader := glitch.NewLoader("./")
+	mesh, err := glitch.NewModel(loader.Model("model.gltf"))
+	texture := glitch.NewTexture(loader.Texture("man.png"))
+
+	for {
+		// glitch.BeginDrawing() // Why? to capture previous gpu states?
+
+		glitch.SetTarget(win)
+		win.Clear(rgba)
+		glitch.SetShader(shader) // Creates a shader context, then when you draw things you have to draw to a certain vertex specification. So then all the models/meshes/geoms that get drawn, we pull data out in that format! And puts them into vertexbuffers based on some batching rules
+		glitch.SetCamera(camera)
+		glitch.SetMaterial(material) // Sets all uniforms
+		mesh.Draw(matrix) // draw based on shader layout?
+
+		win.Update()
+		// glitch.EndDrawing()
 	}
 }
 
