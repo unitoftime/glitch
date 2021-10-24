@@ -3,6 +3,8 @@ package glitch
 import (
 	"fmt"
 
+	"github.com/ungerik/go3d/vec3"
+
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
 )
@@ -51,12 +53,13 @@ type SubBuffer struct {
 	attrSize AttribSize
 	maxVerts int
 	offset int
+	vertexCount int
 	buffer []float32
 }
 
-func (b *SubBuffer) NumVerts() uint32 {
-	return uint32(len(b.buffer) / int(b.attrSize))
-}
+// func (b *SubBuffer) NumVerts() uint32 {
+// 	return uint32(len(b.buffer) / int(b.attrSize))
+// }
 
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	format := shader.attrFmt // TODO - cleanup this variable
@@ -76,6 +79,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 			name: format[i].Name,
 			attrSize: format[i].Size,
 			maxVerts: numVerts,
+			vertexCount: 0,
 			offset: offset,
 			buffer: make([]float32, int(format[i].Size) * numVerts),
 		}
@@ -138,26 +142,41 @@ func (v *VertexBuffer) Clear() {
 	// v.vertices = v.vertices[:0]
 	for i := range v.buffers {
 		v.buffers[i].buffer = v.buffers[i].buffer[:0]
+		v.buffers[i].vertexCount = 0
 	}
 	v.indices = v.indices[:0]
 }
 
 // TODO - guarantee correct sizes?
-func (v *VertexBuffer) Add(positions, colors, texCoords []float32, indices []uint32) bool {
+func (v *VertexBuffer) Add(positions []vec3.T, colors, texCoords []float32, indices []uint32, matrix *Mat4) bool {
 	// TODO - only checking indices
 	if len(v.indices) + len(indices) > cap(v.indices) {
 		return false
 	}
 
-	currentElement := v.buffers[0].NumVerts()
+	// currentElement := v.buffers[0].NumVerts()
+	currentElement := uint32(v.buffers[0].vertexCount)
 
-	v.buffers[0].buffer = append(v.buffers[0].buffer, positions...)
+	{
+		for i := range positions {
+			// vec := matrix.MulVec3(&positions[i])
+			vec := MatMul(matrix, positions[i])
+			v.buffers[0].buffer = append(v.buffers[0].buffer, vec[0])
+			v.buffers[0].buffer = append(v.buffers[0].buffer, vec[1])
+			v.buffers[0].buffer = append(v.buffers[0].buffer, vec[2])
+		}
+	}
+	// v.buffers[0].buffer = append(v.buffers[0].buffer, positions...)
 	v.buffers[1].buffer = append(v.buffers[1].buffer, colors...)
 	v.buffers[2].buffer = append(v.buffers[2].buffer, texCoords...)
 
 	for i := range indices {
 		v.indices = append(v.indices, currentElement + indices[i])
 	}
+
+	// TODO - Note: Each vec3 element in positions slice represents a vert
+	v.buffers[0].vertexCount += len(positions)
+
 	return true
 }
 
@@ -212,10 +231,10 @@ func (b *BufferPool) Clear() {
 	b.triangleCount = 0
 }
 
-func (b *BufferPool) Add(positions, colors, texCoords []float32, indices []uint32) {
+func (b *BufferPool) Add(positions []vec3.T, colors, texCoords []float32, indices []uint32, matrix *Mat4) {
 	success := false
 	for i := range b.buffers {
-		success = b.buffers[i].Add(positions, colors, texCoords, indices)
+		success = b.buffers[i].Add(positions, colors, texCoords, indices, matrix)
 		if success {
 			break
 		}
@@ -223,7 +242,7 @@ func (b *BufferPool) Add(positions, colors, texCoords []float32, indices []uint3
 	if !success {
 		fmt.Printf("NEW BATCH: %d\n", b.triangleCount)
 		newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
-		success := newBuff.Add(positions, colors, texCoords, indices)
+		success := newBuff.Add(positions, colors, texCoords, indices, matrix)
 		if !success {
 			panic("SOMETHING WENT WRONG")
 		}

@@ -2,12 +2,17 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"embed"
 	"image"
 	"image/draw"
 	_ "image/png"
 	"time"
 	"math/rand"
+	"runtime"
+	"runtime/pprof"
+	"flag"
+	"os"
 
 	"github.com/ungerik/go3d/vec3"
 
@@ -15,6 +20,9 @@ import (
 	"github.com/jstewart7/glitch"
 	"github.com/jstewart7/glitch/shaders"
 )
+
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 //go:embed gopher.png
 var f embed.FS
@@ -34,12 +42,37 @@ func loadImage(path string) (*image.NRGBA, error) {
 }
 
 func main() {
-	glitch.Run(run2)
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+
+	glitch.Run(runGame)
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 }
 
-func run2() {
+func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
-		Vsync: true,
+		Vsync: false,
 	})
 	if err != nil { panic(err) }
 
@@ -74,7 +107,7 @@ func run2() {
 
 	mesh := glitch.NewQuadMesh()
 
-	length := 10000
+	length := 100000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -102,22 +135,20 @@ func run2() {
 			}
 		}
 
-		fmt.Println("Clear")
 		pass.Clear()
 		for i := range man {
-			mat := glitch.Mat4Ident().ScaleVec3(manSize).TranslateX(man[i].position[0]).TranslateY(man[i].position[1])
-			pass.Draw(mesh, mat)
+			mat := glitch.Mat4Ident
+			mat.ScaleVec3(manSize).Translate(&vec3.T{man[i].position[0], man[i].position[1], 0})
+			// mat := glitch.Mat4Ident().ScaleVec3(manSize).TranslateX(man[i].position[0]).TranslateY(man[i].position[1])
+			pass.Draw(mesh, &mat)
 		}
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 
-		fmt.Println("Execute")
 		pass.Execute()
 
-		fmt.Println("Update")
 		win.Update()
 
-		fmt.Println("Clock")
 		dt := time.Since(start)
 		fmt.Println(dt.Seconds() * 1000)
 	}

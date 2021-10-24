@@ -19,7 +19,7 @@ type RenderPass struct {
 }
 
 func NewRenderPass(target *Window, shader *Shader) *RenderPass {
-	defaultBatchSize := 10000
+	defaultBatchSize := 1000000
 	return &RenderPass{
 		target: target,
 		shader: shader,
@@ -41,14 +41,16 @@ func (r *RenderPass) Execute() {
 	r.texture.Bind(0) // TODO - hardcoded texture slot
 
 	for _, c := range r.commands {
-		positions := make([]float32, len(c.mesh.positions) * 3) // 3 b/c vec3
-		for i := range c.mesh.positions {
-			vec := c.matrix.MulVec3(&c.mesh.positions[i])
-			positions[(i * 3) + 0] = vec[0]
-			positions[(i * 3) + 1] = vec[1]
-			positions[(i * 3) + 2] = vec[2]
-		}
-		r.buffer.Add(positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices)
+		// positions := make([]float32, len(c.mesh.positions) * 3) // 3 b/c vec3
+		// for i := range c.mesh.positions {
+		// 	vec := c.matrix.MulVec3(&c.mesh.positions[i])
+		// 	positions[(i * 3) + 0] = vec[0]
+		// 	positions[(i * 3) + 1] = vec[1]
+		// 	positions[(i * 3) + 2] = vec[2]
+		// }
+		// r.buffer.Add(positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices)
+
+		r.buffer.Add(c.mesh.positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices, c.matrix)
 	}
 
 	r.buffer.Draw()

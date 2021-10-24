@@ -98,6 +98,7 @@ func Clear(color RGBA) {
 	})
 }
 
+/*
 func FinalizeDraw() {
 	context.vertexBuffer.Bind()
 	context.vertexBuffer.Draw()
@@ -139,7 +140,7 @@ func Draw(mesh *Mesh, mat Mat4) {
 	}
 	context.vertexBuffer.Add(positions, mesh.colors, mesh.texCoords, mesh.indices)
 }
-
+*/
 type Mesh struct {
 	positions []vec3.T
 	colors, texCoords []float32
