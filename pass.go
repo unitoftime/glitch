@@ -14,16 +14,18 @@ type RenderPass struct {
 	target *Window
 	shader *Shader
 	texture *Texture
-	buffer *VertexBuffer
+	buffer *BufferPool
 	commands []drawCommand
 }
 
 func NewRenderPass(target *Window, shader *Shader) *RenderPass {
+	defaultBatchSize := 10000
 	return &RenderPass{
 		target: target,
 		shader: shader,
 		texture: nil,
-		buffer: NewVertexBuffer(shader, 1000, 1000),
+		// buffer: NewVertexBuffer(shader, 10000, 10000),
+		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([]drawCommand, 0),
 	}
 }

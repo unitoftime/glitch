@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	// "fmt"
+	"fmt"
 
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
@@ -141,7 +141,12 @@ func (v *VertexBuffer) Clear() {
 }
 
 // TODO - guarantee correct sizes?
-func (v *VertexBuffer) Add(positions, colors, texCoords []float32, indices []uint32) {
+func (v *VertexBuffer) Add(positions, colors, texCoords []float32, indices []uint32) bool {
+	// TODO - only checking indices
+	if len(v.indices) + len(indices) > cap(v.indices) {
+		return false
+	}
+
 	currentElement := v.buffers[0].NumVerts()
 
 	v.buffers[0].buffer = append(v.buffers[0].buffer, positions...)
@@ -151,6 +156,7 @@ func (v *VertexBuffer) Add(positions, colors, texCoords []float32, indices []uin
 	for i := range indices {
 		v.indices = append(v.indices, currentElement + indices[i])
 	}
+	return true
 }
 
 // // TODO - guarantee correct sizes?
@@ -179,4 +185,54 @@ func (v *VertexBuffer) Draw() {
 
 		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
 	})
+}
+
+// BufferPool
+type BufferPool struct {
+	shader *Shader
+	triangleBatchSize int
+	triangleCount int
+	buffers []*VertexBuffer
+}
+func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
+	return &BufferPool{
+		shader: shader,
+		triangleBatchSize: triangleBatchSize,
+		triangleCount: 0,
+		buffers: make([]*VertexBuffer, 0),
+	}
+}
+
+func (b *BufferPool) Clear() {
+	for i := range b.buffers {
+		b.buffers[i].Clear()
+	}
+	b.triangleCount = 0
+}
+
+func (b *BufferPool) Add(positions, colors, texCoords []float32, indices []uint32) {
+	success := false
+	for i := range b.buffers {
+		success = b.buffers[i].Add(positions, colors, texCoords, indices)
+		if success {
+			break
+		}
+	}
+	if !success {
+		fmt.Printf("NEW BATCH: %d\n", b.triangleCount)
+		newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
+		success := newBuff.Add(positions, colors, texCoords, indices)
+		if !success {
+			panic("SOMETHING WENT WRONG")
+		}
+		b.buffers = append(b.buffers, newBuff)
+	}
+
+	b.triangleCount += len(indices) / 3
+}
+
+func (b *BufferPool) Draw() {
+	for i := range b.buffers {
+		b.buffers[i].Draw()
+	}
 }
