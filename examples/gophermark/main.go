@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/jstewart7/glitch"
+	"github.com/jstewart7/glitch/shaders"
 )
 
 //go:embed gopher.png
@@ -51,7 +52,8 @@ func run2() {
 		glitch.Attrib{"projection", glitch.AttrMat4},
 		glitch.Attrib{"transform", glitch.AttrMat4},
 	}
-	shader, err := glitch.NewShader(vertexSource, fragmentSource, attrFmt, uniformFmt)
+	shader, err := glitch.NewShader(shaders.SpriteVertexShader, shaders.SpriteFragmentShader, attrFmt, uniformFmt)
+	// shader, err := glitch.NewShader(vertexSource, fragmentSource, attrFmt, uniformFmt)
 	if err != nil { panic(err) }
 
 	shader.Bind()
@@ -72,7 +74,7 @@ func run2() {
 
 	mesh := glitch.NewQuadMesh()
 
-	length := 100000
+	length := 10000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -83,7 +85,6 @@ func run2() {
 	manSize := &vec3.T{w, h, 1}
 
 	start := time.Now()
-	// for i := 0; i < 10000; i++ {
 	for !win.ShouldClose() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
@@ -101,20 +102,22 @@ func run2() {
 			}
 		}
 
-
+		fmt.Println("Clear")
 		pass.Clear()
-
 		for i := range man {
 			mat := glitch.Mat4Ident().ScaleVec3(manSize).TranslateX(man[i].position[0]).TranslateY(man[i].position[1])
-//			mat := glitch.Mat4Ident().Scale(100).TranslateX(man[i].position[0]).TranslateY(man[i].position[1])
 			pass.Draw(mesh, mat)
 		}
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+
+		fmt.Println("Execute")
 		pass.Execute()
 
+		fmt.Println("Update")
 		win.Update()
 
+		fmt.Println("Clock")
 		dt := time.Since(start)
 		fmt.Println(dt.Seconds() * 1000)
 	}
@@ -139,6 +142,7 @@ func NewMan() Man {
 	}
 }
 
+/*
 const (
 	vertexSource = `
 #version 330 core
@@ -178,4 +182,4 @@ void main()
 //  FragColor = vec4(ourColor, 1.0);
 }
 `
-)
+)*/

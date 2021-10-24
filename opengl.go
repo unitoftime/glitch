@@ -83,6 +83,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	}
 
 	// vertices := make([]float32, 8 * sof * numVerts)
+	fakeVertices := make([]float32, 4 * numVerts * b.stride) // 4 = sof
 
 	mainthread.Call(func() {
 		b.vao = gl.GenVertexArrays()
@@ -93,7 +94,8 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 		componentSize := 4 // float32
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, nil, gl.DYNAMIC_DRAW)
+//		gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, fakeVertices, gl.DYNAMIC_DRAW)
 
 		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)

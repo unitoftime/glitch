@@ -49,14 +49,13 @@ func (r *RenderPass) Execute() {
 			positions[(i * 3) + 2] = vec[2]
 		}
 		r.buffer.Add(positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices)
-		// r.buffer.Add(c.mesh.positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices)
 	}
 
 	r.buffer.Draw()
 }
 
 func (r *RenderPass) SetTexture(slot int, texture *Texture) {
-// func (r *RenderPass) SetTexture(texture *Texture) {
+	// TODO - use correct texture slot
 	r.texture = texture
 }
 

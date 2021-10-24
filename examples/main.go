@@ -255,8 +255,8 @@ func run() {
 }
 
 const (
-	vertexSource = `
-#version 330 core
+	vertexSource = `#version 300 es
+
 layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aColor;
 layout (location = 2) in vec2 aTexCoord;
@@ -275,8 +275,12 @@ void main()
 	TexCoord = vec2(aTexCoord.x, aTexCoord.y);
 }
 `
-	fragmentSource = `
-#version 330 core
+	fragmentSource = `#version 300 es
+// Required for webgl
+#ifdef GL_ES
+precision highp float;
+#endif
+
 out vec4 FragColor;
 
 in vec3 ourColor;
