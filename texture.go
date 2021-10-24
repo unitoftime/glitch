@@ -46,8 +46,10 @@ func NewTexture(width, height int, pixels []uint8) *Texture {
 	return t
 }
 
-func (t *Texture) Bind() {
+func (t *Texture) Bind(position int) {
 	mainthread.Call(func() {
+		gl.ActiveTexture(gl.TEXTURE0);
+		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
 		gl.BindTexture(gl.TEXTURE_2D, t.texture)
 	})
 }

@@ -20,20 +20,20 @@ type AttribSize int
 const sof int = 4 // SizeOf(Float)
 const (
 	// TODO - others
-	Int AttribSize = AttribSize(1)
-	Float AttribSize = AttribSize(1)
-	Vec2 AttribSize = AttribSize(2)
-	Vec3 AttribSize = AttribSize(3)
-	Vec4 AttribSize = AttribSize(4)
-	Mat2 AttribSize = AttribSize(2 * 2)
-	Mat23 AttribSize = AttribSize(2 * 3)
-	Mat24 AttribSize = AttribSize(2 * 4)
-	Mat3 AttribSize = AttribSize(3 * 3)
-	Mat32 AttribSize = AttribSize(3 * 2)
-	Mat34 AttribSize = AttribSize(3 * 4)
-	Mat4 AttribSize = AttribSize(4 * 4)
-	Mat42 AttribSize = AttribSize(4 * 2)
-	Mat43 AttribSize = AttribSize(4 * 3)
+	AttrInt AttribSize = AttribSize(1)
+	AttrFloat AttribSize = AttribSize(1)
+	AttrVec2 AttribSize = AttribSize(2)
+	AttrVec3 AttribSize = AttribSize(3)
+	AttrVec4 AttribSize = AttribSize(4)
+	AttrMat2 AttribSize = AttribSize(2 * 2)
+	AttrMat23 AttribSize = AttribSize(2 * 3)
+	AttrMat24 AttribSize = AttribSize(2 * 4)
+	AttrMat3 AttribSize = AttribSize(3 * 3)
+	AttrMat32 AttribSize = AttribSize(3 * 2)
+	AttrMat34 AttribSize = AttribSize(3 * 4)
+	AttrMat4 AttribSize = AttribSize(4 * 4)
+	AttrMat42 AttribSize = AttribSize(4 * 2)
+	AttrMat43 AttribSize = AttribSize(4 * 3)
 )
 
 type VertexBuffer struct {
@@ -58,7 +58,8 @@ func (b *SubBuffer) NumVerts() uint32 {
 	return uint32(len(b.buffer) / int(b.attrSize))
 }
 
-func NewVertexBuffer(numVerts, numTris int, shader *Shader, format VertexFormat) *VertexBuffer {
+func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
+	format := shader.attrFmt // TODO - cleanup this variable
 	b := &VertexBuffer{
 		format: format,
 		// vertices: make([]float32, 8 * sof * numVerts), // 8 * floats (sizeof float) * num triangles

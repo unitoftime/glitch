@@ -84,14 +84,6 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 	return win, nil
 }
 
-func Clear(color RGBA) {
-	mainthread.Call(func() {
-		gl.ClearColor(color.R, color.G, color.B, color.A)
-		gl.Clear(gl.COLOR_BUFFER_BIT)
-// TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	})
-}
-
 func (w *Window) Update() {
 	mainthread.Call(func() {
 		w.window.SwapBuffers()

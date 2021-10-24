@@ -11,6 +11,8 @@ github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00 h1:l5lAOZEym3oK3
 github.com/gopherjs/gopherjs v0.0.0-20200217142428-fce0ec30dd00/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/jstewart7/glfw v0.0.0-20200917230936-b3e134d61ab1 h1:uzCFSVuqbFVDwmtho+EaP0RngJpeP4QlgTsHoUMfjzY=
 github.com/jstewart7/glfw v0.0.0-20200917230936-b3e134d61ab1/go.mod h1:zk8BS2+/XI2qc6DsLTwZYrCA3maqJjS4x7PCUy0jmNU=
+github.com/ungerik/go3d v0.0.0-20210928073056-902583bd88b3 h1:94524xlhEvoFo1fcmlMwugNIRleBmgXVQKgN+rMLleI=
+github.com/ungerik/go3d v0.0.0-20210928073056-902583bd88b3/go.mod h1:ipEjrk2uLK4xX8ivWBPIVOD0fMtKyPI0strluUfIlYQ=
 golang.org/x/crypto v0.0.0-20190308221718-c2843e01d9a2/go.mod h1:djNgcEr1/C05ACkg1iLfiJU5Ep61QUkGW8qpdssI0+w=
 golang.org/x/crypto v0.0.0-20190510104115-cbcb75029529/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=
 golang.org/x/crypto v0.0.0-20191011191535-87dc89f01550/go.mod h1:yigFU9vqHzYiE8UmvKecakEJjdnWj3jj499lnFckfCI=

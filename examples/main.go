@@ -28,7 +28,92 @@ func loadImage(path string) (*image.NRGBA, error) {
 }
 
 func main() {
-	glitch.Run(run)
+	glitch.Run(run2)
+}
+
+func run2() {
+	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
+		Vsync: true,
+	})
+	if err != nil { panic(err) }
+
+	attrFmt := glitch.VertexFormat{
+		glitch.Attrib{"aPos", glitch.AttrVec3},
+		glitch.Attrib{"aColor", glitch.AttrVec3},
+		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
+	}
+	uniformFmt := glitch.AttributeFormat{
+		glitch.Attrib{"projection", glitch.AttrMat4},
+		glitch.Attrib{"transform", glitch.AttrMat4},
+	}
+	shader, err := glitch.NewShader(vertexSource, fragmentSource, attrFmt, uniformFmt)
+	if err != nil { panic(err) }
+
+	shader.Bind()
+	identMat := mgl32.Ident4()
+	shader.SetUniform("transform", identMat)
+
+	projMat := mgl32.Ortho2D(0, float32(1920), 0, float32(1080))
+	shader.SetUniform("projection", projMat)
+
+	pass := glitch.NewRenderPass(win, shader)
+
+	manImage, err := loadImage("man.png")
+	if err != nil {
+		panic(err)
+	}
+	texture := glitch.NewTexture(160, 200, manImage.Pix)
+	pass.SetTexture(0, texture)
+
+	mesh := glitch.NewQuadMesh()
+
+	for !win.ShouldClose() {
+		if win.Pressed(glitch.KeyBackspace) {
+			win.Close()
+		}
+
+		pass.Clear()
+		// pass.Draw(mesh)
+		mat := glitch.Mat4Ident().Scale(100).TranslateX(50).TranslateY(50)
+		pass.Draw(mesh, mat)
+
+		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+		pass.Execute()
+
+		win.Update()
+	}
+
+	// glitch.SetTarget(win)
+	// glitch.SetShader(shader)
+	// {
+	// 	identMat := mgl32.Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+	// 	shader.SetUniform("transform", identMat)
+
+	// 	projMat := mgl32.Ortho2D(0, float32(1920), 0, float32(1080))
+	// 	shader.SetUniform("projection", projMat)
+	// }
+
+	// manImage, err := loadImage("man.png")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// texture := glitch.NewTexture(160, 200, manImage.Pix)
+	// mesh := glitch.NewQuadMesh()
+	// glitch.Draw(mesh)
+
+	// for !win.ShouldClose() {
+	// 	if win.Pressed(glitch.KeyBackspace) {
+	// 		win.Close()
+	// 	}
+
+	// 	glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+
+	// 	glitch.SetTexture(0, texture)
+
+	// 	glitch.FinalizeDraw()
+
+	// 	win.Update()
+	// }
 }
 
 func run() {
@@ -37,10 +122,17 @@ func run() {
 	})
 	if err != nil { panic(err) }
 
-	shader, err := glitch.NewShader(vertexSource, fragmentSource, glitch.AttributeFormat{
-		glitch.Attrib{"projection", glitch.Mat4},
-		glitch.Attrib{"transform", glitch.Mat4},
-	})
+	attrFmt := glitch.VertexFormat{
+		glitch.Attrib{"aPos", glitch.AttrVec3},
+		glitch.Attrib{"aColor", glitch.AttrVec3},
+		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
+	}
+	uniformFmt := glitch.AttributeFormat{
+		glitch.Attrib{"projection", glitch.AttrMat4},
+		glitch.Attrib{"transform", glitch.AttrMat4},
+	}
+	shader, err := glitch.NewShader(vertexSource, fragmentSource, attrFmt, uniformFmt)
+
 	if err != nil { panic(err) }
 	shader.Bind()
 
@@ -50,11 +142,7 @@ func run() {
 	projMat := mgl32.Ortho2D(0, float32(1920), 0, float32(1080))
 	shader.SetUniform("projection", projMat)
 
-	batch := glitch.NewVertexBuffer(1000, 1000, shader, glitch.VertexFormat{
-		glitch.Attrib{"aPos", glitch.Vec3},
-		glitch.Attrib{"aColor", glitch.Vec3},
-		glitch.Attrib{"aTexCoord", glitch.Vec2},
-	})
+	batch := glitch.NewVertexBuffer(shader, 1000, 1000)
 
 	// // w := float32(160.0)/4
 	// // h := float32(200.0)/4
@@ -79,6 +167,7 @@ func run() {
 	// 		1, 2, 3,  // second triangle
 	// 	})
 	// // fmt.Println(currentElement, x, y, w, h, len(b.vertices), len(b.indices))
+
 	manImage, err := loadImage("man.png")
 	if err != nil {
 		panic(err)
@@ -87,8 +176,7 @@ func run() {
 
 	sprite := glitch.NewSprite(texture, glitch.R(0, 0, 160, 200))
 
-	sprite.Draw(batch)
-	// sprite.Draw(batch, 50, 50)
+	sprite.Draw(batch, 50, 50)
 	// batch.Add(sprite)
 
 	for !win.ShouldClose() {
@@ -98,35 +186,72 @@ func run() {
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 
-		texture.Bind()
+		texture.Bind(0)
 		batch.Bind()
 		batch.Draw()
 
 		win.Update()
 	}
 
-	// Interface draft 1:
-	// Load a program
-	// Load a bunch of uniform inputs
-	// Load a bunch of geometry inputs
-	// Execute
-	loader := glitch.NewLoader("./")
-	mesh, err := glitch.NewModel(loader.Model("model.gltf"))
-	texture := glitch.NewTexture(loader.Texture("man.png"))
 
-	for {
-		// glitch.BeginDrawing() // Why? to capture previous gpu states?
+	// // Interface draft 1:
+	// // Load a program
+	// // Load a bunch of uniform inputs
+	// // Load a bunch of geometry inputs
+	// // Execute
+	// loader := glitch.NewLoader("./")
+	// mesh, err := glitch.NewModel(loader.Model("model.gltf"))
+	// texture := glitch.NewTexture(loader.Texture("man.png"))
+	// shader := glitch.NewShader(vSrc, fSrc, fmt)
 
-		glitch.SetTarget(win)
-		win.Clear(rgba)
-		glitch.SetShader(shader) // Creates a shader context, then when you draw things you have to draw to a certain vertex specification. So then all the models/meshes/geoms that get drawn, we pull data out in that format! And puts them into vertexbuffers based on some batching rules
-		glitch.SetCamera(camera)
-		glitch.SetMaterial(material) // Sets all uniforms
-		mesh.Draw(matrix) // draw based on shader layout?
+	// for {
+	// 	// glitch.BeginDrawing() // Why? to capture previous gpu states?
 
-		win.Update()
-		// glitch.EndDrawing()
-	}
+	// 	glitch.SetTarget(win)
+	// 	win.Clear(rgba)
+	// 	glitch.SetShader(shader) // Creates a shader context, then when you draw things you have to draw to a certain vertex specification. So then all the models/meshes/geoms that get drawn, we pull data out in that format! And puts them into vertexbuffers based on some batching rules
+	// 	glitch.SetCamera(camera)
+	// 	glitch.SetMaterial(material) // Sets a group of uniforms
+	// 	mesh.Draw(matrix) // draw based on shader layout?
+
+	// 	win.Update()
+	// 	// glitch.EndDrawing()
+	// }
+
+// 	// Interface draft 2:
+// 	// Load a program
+// 	// Load a bunch of uniform inputs
+// 	// Load a bunch of geometry inputs
+// 	// Execute
+// 	loader := glitch.NewLoader("./")
+// 	mesh, err := glitch.NewModel(loader.Model("model.gltf"))
+// 	texture := glitch.NewTexture(loader.Texture("man.png")) // TODO - some way to do mipmaps
+// 	shader := glitch.NewShader(vSrc, fSrc, fmt)
+
+// 	for {
+// 		// glitch.BeginDrawing() // Why? to capture previous gpu states?
+
+// 		glitch.SetTarget(win)
+// 		win.Clear(rgba)
+// 		glitch.SetShader(shader) // Creates a shader context, then when you draw things you have to draw to a certain vertex specification. So then all the models/meshes/geoms that get drawn, we pull data out in that format! And puts them into vertexbuffers based on some batching rules
+// 		glitch.SetTexture(0, texture)
+
+// 		glitch.SetCamera(camera) // More like set uniform?
+
+// 		glitch.SetMaterial(material) // Sets a group of uniforms
+// 		mesh.Draw(matrix) // draw based on shader layout? Matrix to transform positions, color matrix to transform colors, do I need anything else?
+
+// /* https://learnopengl.com/Advanced-OpenGL/Blending
+// Blending: Draw in this order
+// 1. Draw all opaque objects first.
+// 2. Sort all the transparent objects.
+// 3. Draw all the transparent objects in sorted order.
+// OR DO: https://learnopengl.com/Guest-Articles/2020/OIT/Introduction
+// */
+
+// 		win.Update()
+// 		// glitch.EndDrawing()
+// 	}
 }
 
 const (

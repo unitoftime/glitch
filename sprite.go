@@ -1,12 +1,12 @@
 package glitch
 
-type Geometry struct {
-	format []GeomFormat
-}
+// type Geometry struct {
+// 	format []GeomFormat
+// }
 
-func NewGeometry() *Geometry {
+// func NewGeometry() *Geometry {
 	
-}
+// }
 
 type Sprite struct {
 	texture *Texture
@@ -66,8 +66,7 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	// }
 }
 
-func (s *Sprite) Draw(buffer *VertexBuffer) {
-// func (s *Sprite) Draw(buffer *VertexBuffer, x, y float32) {
+func (s *Sprite) Draw(buffer *VertexBuffer, x, y float32) {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
 
 	// verts := []float32{
@@ -119,20 +118,20 @@ func (s *Sprite) Draw(buffer *VertexBuffer) {
 	// 	GeomPosZ: 0.0,
 	// }
 
-	numVerts := 4
-	geometry := make([][]float32, GeomLast)
-	for i := range geometry {
-		geometry[i] = make([]float32, numVerts)
-	}
+	// numVerts := 4
+	// geometry := make([][]float32, GeomLast)
+	// for i := range geometry {
+	// 	geometry[i] = make([]float32, numVerts)
+	// }
 
-	geometry[GeomPosX] = []float32{ s.bounds.W(), s.bounds.W(), 0, 0 }
-	geometry[GeomPosY] = []float32{ s.bounds.H(), 0, 0, s.bounds.H() }
-	geometry[GeomPosZ] = []float32{ 0, 0, 0, 0 }
-	geometry[GeomPosW] = []float32{ 1.0, 1.0, 1.0, 1.0 }
+	// geometry[GeomPosX] = []float32{ s.bounds.W(), s.bounds.W(), 0, 0 }
+	// geometry[GeomPosY] = []float32{ s.bounds.H(), 0, 0, s.bounds.H() }
+	// geometry[GeomPosZ] = []float32{ 0, 0, 0, 0 }
+	// geometry[GeomPosW] = []float32{ 1.0, 1.0, 1.0, 1.0 }
 
-	geomFormat := []GeomFormat{
-		GeomPosX, GeomPosY, GeomPosZ,
-	}
+	// geomFormat := []GeomFormat{
+	// 	GeomPosX, GeomPosY, GeomPosZ,
+	// }
 
 	// positions := make([]float32, 0, numVerts * len(geomFormat))
 	// for i := 0; i < numVerts; i++ {
@@ -143,12 +142,12 @@ func (s *Sprite) Draw(buffer *VertexBuffer) {
 	// 	}
 	// }
 
-	// positions := []float32{
-	// 	x + s.bounds.W()	, y + s.bounds.H(), 0.0,
-	// 	x + s.bounds.W()	, y               , 0.0,
-	// 	x							    , y               , 0.0,
-	// 	x							    , y + s.bounds.H(), 0.0,
-	// }
+	positions := []float32{
+		x + s.bounds.W()	, y + s.bounds.H(), 0.0,
+		x + s.bounds.W()	, y               , 0.0,
+		x							    , y               , 0.0,
+		x							    , y + s.bounds.H(), 0.0,
+	}
 	colors := []float32{
 		color.R, color.G, color.B,
 		color.R, color.G, color.B,

@@ -12,6 +12,7 @@ import (
 type Shader struct {
 	program gl.Program
 	uniforms map[string]Uniform
+	attrFmt VertexFormat
 }
 
 type Uniform struct {
@@ -20,9 +21,10 @@ type Uniform struct {
 	loc gl.Uniform
 }
 
-func NewShader(vertexSource, fragmentSource string, uniformFmt AttributeFormat) (*Shader, error) {
+func NewShader(vertexSource, fragmentSource string, attrFmt VertexFormat, uniformFmt AttributeFormat) (*Shader, error) {
 	shader := &Shader{
 		uniforms: make(map[string]Uniform),
+		attrFmt: attrFmt,
 	}
 	err := mainthread.CallErr(func() error {
 		var err error
