@@ -45,3 +45,29 @@ func MatMul(m *Mat4, v vec3.T) vec3.T {
 		m[0][2]*v[0] + m[1][2]*v[1] + m[2][2]*v[2] + m[3][2], // w = 1.0
 	}
 }
+
+
+// Camera??
+type Camera struct {
+	Projection mgl32.Mat4
+	View mgl32.Mat4
+
+	position mgl32.Vec3
+}
+
+func NewCamera() *Camera {
+	return &Camera{
+		Projection: mgl32.Ident4(),
+		View: mgl32.Ident4(),
+	}
+}
+
+func (c *Camera) SetOrtho2D(win *Window) {
+	bounds := win.Bounds()
+	c.Projection = mgl32.Ortho2D(0, bounds.W(), 0, bounds.H())
+}
+
+func (c *Camera) SetView2D(x, y, scaleX, scaleY float32) {
+	// c.View = mgl32.Translate3D(-x, -y, 0).Mul4(mgl32.Scale3D(scale, scale, 1.0))
+	c.View = mgl32.Scale3D(scaleX, scaleY, 1.0).Mul4(mgl32.Translate3D(-x, -y, 0))
+}

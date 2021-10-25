@@ -11,7 +11,7 @@ import (
 
 // TODO - right now we only support floats (for simplicity)
 type VertexFormat []Attrib
-type AttributeFormat []Attrib
+type UniformFormat []Attrib
 
 type Attrib struct {
 	Name string
@@ -121,7 +121,8 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		// 	offset += sof * int(b.buffers[i].attrSize) * b.buffers[i].maxVerts
 		// }
 		for i := range b.buffers {
-			loc := shader.getAttribLocation(b.buffers[i].name)
+			loc := gl.GetAttribLocation(shader.program, b.buffers[i].name)
+			// loc := shader.getAttribLocation(b.buffers[i].name)
 			gl.VertexAttribPointer(loc, int(b.buffers[i].attrSize), gl.FLOAT, false, int(b.buffers[i].attrSize) * sof, b.buffers[i].offset)
 			gl.EnableVertexAttribArray(loc)
 		}

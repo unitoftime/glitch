@@ -9,6 +9,12 @@ import (
 	"github.com/jstewart7/gl"
 )
 
+type ShaderConfig struct {
+	VertexShader, FragmentShader string
+	VertexFormat VertexFormat
+	UniformFormat UniformFormat
+}
+
 type Shader struct {
 	program gl.Program
 	uniforms map[string]Uniform
@@ -21,7 +27,11 @@ type Uniform struct {
 	loc gl.Uniform
 }
 
-func NewShader(vertexSource, fragmentSource string, attrFmt VertexFormat, uniformFmt AttributeFormat) (*Shader, error) {
+func NewShader(cfg ShaderConfig) (*Shader, error) {
+	return NewShaderExt(cfg.VertexShader, cfg.FragmentShader, cfg.VertexFormat, cfg.UniformFormat)
+}
+
+func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uniformFmt UniformFormat) (*Shader, error) {
 	shader := &Shader{
 		uniforms: make(map[string]Uniform),
 		attrFmt: attrFmt,
@@ -46,15 +56,6 @@ func NewShader(vertexSource, fragmentSource string, attrFmt VertexFormat, unifor
 	}
 	return shader, nil
 }
-
-func (s *Shader) getAttribLocation(name string) gl.Attrib {
-	return gl.GetAttribLocation(s.program, name)
-}
-
-func (s *Shader) GetUniformLocation(name string) gl.Attrib {
-	return gl.GetAttribLocation(s.program, name)
-}
-
 
 func (s *Shader) Bind() {
 	mainthread.Call(func() {
@@ -107,7 +108,7 @@ func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 	return shader, nil
 }
 
-func (s *Shader) SetUniform(uniformName string, value interface{}) (ok bool) {
+func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 	ret := false
 	mainthread.Call(func() {
 		uniform, ok := s.uniforms[uniformName]

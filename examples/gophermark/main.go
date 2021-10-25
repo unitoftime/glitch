@@ -76,25 +76,15 @@ func runGame() {
 	})
 	if err != nil { panic(err) }
 
-	attrFmt := glitch.VertexFormat{
-		glitch.Attrib{"aPos", glitch.AttrVec3},
-		glitch.Attrib{"aColor", glitch.AttrVec3},
-		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
-	}
-	uniformFmt := glitch.AttributeFormat{
-		glitch.Attrib{"projection", glitch.AttrMat4},
-		glitch.Attrib{"transform", glitch.AttrMat4},
-	}
-	shader, err := glitch.NewShader(shaders.SpriteVertexShader, shaders.SpriteFragmentShader, attrFmt, uniformFmt)
-	// shader, err := glitch.NewShader(vertexSource, fragmentSource, attrFmt, uniformFmt)
+	shader, err := glitch.NewShader(shaders.SpriteShader)
 	if err != nil { panic(err) }
 
-	shader.Bind()
-	identMat := mgl32.Ident4()
-	shader.SetUniform("transform", identMat)
+	// shader.Bind()
+	// identMat := mgl32.Ident4()
+	// shader.SetUniform("transform", identMat)
 
-	projMat := mgl32.Ortho2D(0, float32(1920), 0, float32(1080))
-	shader.SetUniform("projection", projMat)
+	// projMat := mgl32.Ortho2D(0, float32(1920), 0, float32(1080))
+	// shader.SetUniform("projection", projMat)
 
 	pass := glitch.NewRenderPass(win, shader)
 
@@ -117,6 +107,7 @@ func runGame() {
 	h := float32(200.0)/4
 	manSize := &vec3.T{w, h, 1}
 
+	camera := glitch.NewCamera()
 	start := time.Now()
 	for !win.ShouldClose() {
 		if win.Pressed(glitch.KeyBackspace) {
@@ -136,6 +127,13 @@ func runGame() {
 		}
 
 		pass.Clear()
+
+		camera.SetOrtho2D(win)
+		camera.SetView2D(1920/2, 1080/2, 1.0, 1.0)
+
+		pass.SetUniform("projection", camera.Projection)
+		pass.SetUniform("view", camera.View)
+
 		for i := range man {
 			mat := glitch.Mat4Ident
 			mat.ScaleVec3(manSize).Translate(&vec3.T{man[i].position[0], man[i].position[1], 0})

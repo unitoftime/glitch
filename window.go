@@ -105,6 +105,10 @@ func (w *Window) ShouldClose() bool {
 	return value
 }
 
+func (w *Window) Bounds() Rect {
+	return R(0, 0, float32(w.width), float32(w.height))
+}
+
 func (w *Window) MousePosition() (float64, float64) {
 	var x, y float64
 	mainthread.Call(func() {

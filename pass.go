@@ -14,6 +14,7 @@ type RenderPass struct {
 	target *Window
 	shader *Shader
 	texture *Texture
+	uniforms map[string]interface{}
 	buffer *BufferPool
 	commands []drawCommand
 }
@@ -24,6 +25,7 @@ func NewRenderPass(target *Window, shader *Shader) *RenderPass {
 		target: target,
 		shader: shader,
 		texture: nil,
+		uniforms: make(map[string]interface{}),
 		// buffer: NewVertexBuffer(shader, 10000, 10000),
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([]drawCommand, 0),
@@ -39,6 +41,12 @@ func (r *RenderPass) Clear() {
 func (r *RenderPass) Execute() {
 	r.shader.Bind()
 	r.texture.Bind(0) // TODO - hardcoded texture slot
+	for k,v := range r.uniforms {
+		ok := r.shader.SetUniform(k, v)
+		if !ok {
+			panic("Error setting uniform - todo decrease this to log")
+		}
+	}
 
 	for _, c := range r.commands {
 		// positions := make([]float32, len(c.mesh.positions) * 3) // 3 b/c vec3
@@ -59,6 +67,10 @@ func (r *RenderPass) Execute() {
 func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	// TODO - use correct texture slot
 	r.texture = texture
+}
+
+func (r *RenderPass) SetUniform(name string, value interface{}) {
+	r.uniforms[name] = value
 }
 
 func (r *RenderPass) Draw(mesh *Mesh, mat *Mat4) {
