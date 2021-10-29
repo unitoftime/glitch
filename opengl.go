@@ -242,10 +242,14 @@ func (v *VertexBuffer) Clear() {
 	v.indices = v.indices[:0]
 }
 
-func (v *VertexBuffer) Reserve(indices []uint32, numVerts int) []interface{} {
+type VBIter struct {
+	b *VertexBuffer
+}
+
+func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
 	// TODO - only checking indices
 	if len(v.indices) + len(indices) > cap(v.indices) {
-		return nil
+		return false
 	}
 
 	currentElement := v.buffers[0].VertexCount()
@@ -253,11 +257,10 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int) []interface{} {
 		v.indices = append(v.indices, currentElement + indices[i])
 	}
 
-	dests := make([]interface{}, len(v.buffers))
 	for i := range v.buffers {
 		dests[i] = v.buffers[i].Reserve(numVerts)
 	}
-	return dests
+	return true
 }
 
 func (v *VertexBuffer) Add2(positions Vec3Add, colors []Vec3, texCoords []Vec2, indices []uint32) bool {
@@ -446,24 +449,24 @@ func (b *BufferPool) Add2(indices []uint32, positions Vec3Add, colors []Vec3, te
 	b.triangleCount += len(indices) / 3
 }
 
-func (b *BufferPool) Reserve(indices []uint32, numVerts int) []interface{} {
+func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
 	for i := range b.buffers {
-		destBuffs := b.buffers[i].Reserve(indices, numVerts)
-		if destBuffs != nil {
+		success := b.buffers[i].Reserve(indices, numVerts, dests)
+		if success {
 			b.triangleCount += len(indices) / 3
-			return destBuffs
+			return true
 		}
 	}
 
 	fmt.Printf("NEW BATCH: %d\n", b.triangleCount)
 	newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
-	destBuffs := newBuff.Reserve(indices, numVerts)
-	if destBuffs == nil {
+	success := newBuff.Reserve(indices, numVerts, dests)
+	if !success {
 		panic("SOMETHING WENT WRONG")
 	}
 	b.buffers = append(b.buffers, newBuff)
 	b.triangleCount += len(indices) / 3
-	return destBuffs
+	return success
 }
 
 func (b *BufferPool) Draw() {
