@@ -58,15 +58,27 @@ func (r *RenderPass) Draw(win *Window) {
 		// r.buffer.Add(positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices)
 
 		// numVerts := len(c.mesh.positions)
-		// subBuffers := r.buffer.Reserve(c.mesh.indices, numVerts)
+		// destBuffs := r.buffer.Reserve(c.mesh.indices, numVerts)
+		// posBuff := destBuffs[0].([]Vec3)
 		// for i := range c.mesh.positions {
-		// 	vec := c.matrix.MulVec3(&c.mesh.positions[i])
-		// 	positions[(i * 3) + 0] = vec[0]
-		// 	positions[(i * 3) + 1] = vec[1]
-		// 	positions[(i * 3) + 2] = vec[2]
+		// 	vec := MatMul(c.matrix, c.mesh.positions[i])
+		// 	posBuff[i] = vec
 		// }
 
-		r.buffer.Add(c.mesh.positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices, c.matrix, c.mask)
+		// colBuf := destBuffs[1].([]Vec3)
+		// colBuf = append(colBuf[:0], c.mesh.colors...)
+		// texBuf := destBuffs[2].([]Vec2)
+		// texBuf = append(texBuf[:0], c.mesh.texCoords...)
+
+		r.buffer.Add2(c.mesh.indices,
+			Vec3Add{
+				c.mesh.positions,
+				func(in *Vec3) {
+					*in = MatMul(c.matrix, *in)
+				},
+			}, c.mesh.colors, c.mesh.texCoords)
+
+		// r.buffer.Add(c.mesh.positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices, c.matrix, c.mask)
 	}
 
 	r.buffer.Draw()

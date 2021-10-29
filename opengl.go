@@ -52,6 +52,7 @@ type ISubBuffer interface {
 	VertexCount() uint32
 	Buffer() interface{}
 	Offset() int
+	Reserve(int) interface{}
 }
 
 type SubBuffer[T any] struct {
@@ -78,6 +79,16 @@ func (b *SubBuffer[T]) Buffer() interface{} {
 
 func (b *SubBuffer[T]) Offset() int {
 	return sof * int(b.attrSize) * b.maxVerts
+}
+
+func (b *SubBuffer[T]) Reserve(count int) interface{} {
+	start := len(b.buffer)
+	b.buffer = b.buffer[:len(b.buffer)+count]
+	end := len(b.buffer)
+	b.vertexCount += count
+
+	// fmt.Println(start, end, len(vals))
+	return b.buffer[start:end]
 }
 
 // Returns the last section appended
@@ -231,6 +242,56 @@ func (v *VertexBuffer) Clear() {
 	v.indices = v.indices[:0]
 }
 
+func (v *VertexBuffer) Reserve(indices []uint32, numVerts int) []interface{} {
+	// TODO - only checking indices
+	if len(v.indices) + len(indices) > cap(v.indices) {
+		return nil
+	}
+
+	currentElement := v.buffers[0].VertexCount()
+	for i := range indices {
+		v.indices = append(v.indices, currentElement + indices[i])
+	}
+
+	dests := make([]interface{}, len(v.buffers))
+	for i := range v.buffers {
+		dests[i] = v.buffers[i].Reserve(numVerts)
+	}
+	return dests
+}
+
+func (v *VertexBuffer) Add2(positions Vec3Add, colors []Vec3, texCoords []Vec2, indices []uint32) bool {
+	// TODO - only checking indices
+	if len(v.indices) + len(indices) > cap(v.indices) {
+		return false
+	}
+
+	currentElement := v.buffers[0].VertexCount()
+
+	{
+		// Write then alter
+		posBuffer := v.buffers[0].(*SubBuffer[Vec3])
+		dest := posBuffer.AppendAndReturnDest(positions.data)
+		if positions.lambda != nil {
+			for i := range dest {
+				positions.lambda(&dest[i])
+			}
+		}
+		// fmt.Println(dest)
+	}
+
+	colBuffer := v.buffers[1].(*SubBuffer[Vec3])
+	colBuffer.AppendAndReturnDest(colors)
+	texBuffer := v.buffers[2].(*SubBuffer[Vec2])
+	texBuffer.AppendAndReturnDest(texCoords)
+
+	for i := range indices {
+		v.indices = append(v.indices, currentElement + indices[i])
+	}
+
+	return true
+}
+
 // TODO - guarantee correct sizes?
 func (v *VertexBuffer) Add(positions []Vec3, colors []Vec3, texCoords []Vec2, indices []uint32, matrix *Mat4) bool {
 	// TODO - only checking indices
@@ -359,33 +420,51 @@ func (b *BufferPool) Add(positions []Vec3, colors []Vec3, texCoords []Vec2, indi
 	b.triangleCount += len(indices) / 3
 }
 
-// Adds indices and returns sliced subbuffers
-// func (b *BufferPool) Reserve(indices []uint32, vertexCount int) []SubBuffer {
-// 	success := false
-// 	for _, v := range b.buffers {
-// 		if len(v.indices) + len(indices) <= cap(v.indices) {
-// 			for i := range indices {
-// 				currentElement := uint32(v.buffers[0].vertexCount) // TODO - 0 okay here? I guess it doesn't matter which vertexCount we retrieve?
-// 				v.indices = append(v.indices, currentElement + indices[i])
-// 			}
-// 			return b.buffers[i]
-// 			success = true
-// 		}
-// 		if success {
-// 			break
-// 		}
-// 	}
+type Vec3Add struct {
+	data []Vec3
+	lambda func(*Vec3)
+}
 
-// 	if !success {
-// 		fmt.Printf("RESERVED NEW BATCH: %d\n", b.triangleCount)
-// 		newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
-// 		b.buffers = append(b.buffers, newBuff)
-// 	}
+func (b *BufferPool) Add2(indices []uint32, positions Vec3Add, colors []Vec3, texCoords []Vec2) {
+	success := false
+	for i := range b.buffers {
+		success = b.buffers[i].Add2(positions, colors, texCoords, indices)
+		if success {
+			break
+		}
+	}
+	if !success {
+		fmt.Printf("NEW BATCH: %d\n", b.triangleCount)
+		newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
+		success := newBuff.Add2(positions, colors, texCoords, indices)
+		if !success {
+			panic("SOMETHING WENT WRONG")
+		}
+		b.buffers = append(b.buffers, newBuff)
+	}
 
-// 	b.triangleCount += len(indices) / 3
+	b.triangleCount += len(indices) / 3
+}
 
-// 	return nil
-// }
+func (b *BufferPool) Reserve(indices []uint32, numVerts int) []interface{} {
+	for i := range b.buffers {
+		destBuffs := b.buffers[i].Reserve(indices, numVerts)
+		if destBuffs != nil {
+			b.triangleCount += len(indices) / 3
+			return destBuffs
+		}
+	}
+
+	fmt.Printf("NEW BATCH: %d\n", b.triangleCount)
+	newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
+	destBuffs := newBuff.Reserve(indices, numVerts)
+	if destBuffs == nil {
+		panic("SOMETHING WENT WRONG")
+	}
+	b.buffers = append(b.buffers, newBuff)
+	b.triangleCount += len(indices) / 3
+	return destBuffs
+}
 
 func (b *BufferPool) Draw() {
 	for i := range b.buffers {
