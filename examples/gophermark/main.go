@@ -122,7 +122,7 @@ func runGame() {
 		pass.Clear()
 
 		camera.SetOrtho2D(win)
-		camera.SetView2D(1920/2, 1080/2, 1.0, 1.0)
+		camera.SetView2D(0, 0, 1.0, 1.0)
 
 		for i := range man {
 			mat := glitch.Mat4Ident

@@ -3,8 +3,6 @@ package glitch
 import (
 	"fmt"
 
-	"github.com/ungerik/go3d/vec3"
-
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
 )
@@ -44,33 +42,67 @@ type VertexBuffer struct {
 	format VertexFormat
 	stride int
 
-	buffers []SubBuffer
+	buffers []ISubBuffer
 	indices []uint32
 }
 
-type SubBuffer struct {
+// TODO - rename
+type ISubBuffer interface {
+	Clear()
+	VertexCount() uint32
+	Buffer() interface{}
+	Offset() int
+}
+
+type SubBuffer[T any] struct {
 	name string
 	attrSize AttribSize
 	maxVerts int
 	offset int
 	vertexCount int
-	buffer []float32
+	buffer []T
 }
 
-func (b *SubBuffer) Clear() {
+func (b *SubBuffer[T]) Clear() {
 	b.buffer = b.buffer[:0]
 	b.vertexCount = 0
 }
 
-func (b *SubBuffer) VertexCount() uint32 {
+func (b *SubBuffer[T]) VertexCount() uint32 {
 	return uint32(b.vertexCount)
-	// return uint32(len(b.buffer) / int(b.attrSize))
 }
 
-// // Returns a pre-sliced underlying buffer based on the reserved amount
+func (b *SubBuffer[T]) Buffer() interface{} {
+	return b.buffer
+}
+
+func (b *SubBuffer[T]) Offset() int {
+	return sof * int(b.attrSize) * b.maxVerts
+}
+
+// Returns the last section appended
+func (b *SubBuffer[T]) AppendAndReturnDest(vals []T) []T {
+	start := len(b.buffer)
+	b.buffer = append(b.buffer, vals...)
+	end := len(b.buffer)
+	b.vertexCount += len(vals)
+
+	// fmt.Println(start, end, len(vals))
+	return b.buffer[start:end]
+}
+
+func (b *SubBuffer[T]) Append(val T) {
+	b.buffer = append(b.buffer, val)
+	b.vertexCount += 1
+}
+
+
+// Returns a pre-sliced underlying buffer based on the reserved amount
 // func (b *SubBuffer) Reserve(vertexCount int) interface{} {
+// 	b.vertexCount += vertexCount
+
+// 	b.buffer
 // 	// Return buffer
-// 	// Increment b.vertexCount
 // }
 
 // // Returns the entire buffer based on the current vertexCount
@@ -83,7 +115,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	b := &VertexBuffer{
 		format: format,
 		// vertices: make([]float32, 8 * sof * numVerts), // 8 * floats (sizeof float) * num triangles
-		buffers: make([]SubBuffer, len(format)),
+		buffers: make([]ISubBuffer, len(format)),
 		indices: make([]uint32, 3 * numTris), // 3 indices per triangle
 	}
 
@@ -92,14 +124,37 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	for i := range format {
 		b.stride += (int(format[i].Size) * sof)
 
-		b.buffers[i] = SubBuffer{
-			name: format[i].Name,
-			attrSize: format[i].Size,
-			maxVerts: numVerts,
-			vertexCount: 0,
-			offset: offset,
-			buffer: make([]float32, int(format[i].Size) * numVerts),
+		if format[i].Size == AttrVec3 {
+			b.buffers[i] = &SubBuffer[Vec3]{
+				name: format[i].Name,
+				attrSize: format[i].Size,
+				maxVerts: numVerts,
+				vertexCount: 0,
+				offset: offset,
+				buffer: make([]Vec3, numVerts),
+			}
+		} else if format[i].Size == AttrVec2 {
+			b.buffers[i] = &SubBuffer[Vec2]{
+				name: format[i].Name,
+				attrSize: format[i].Size,
+				maxVerts: numVerts,
+				vertexCount: 0,
+				offset: offset,
+				buffer: make([]Vec2, numVerts),
+			}
+		} else if format[i].Size == AttrFloat {
+			b.buffers[i] = &SubBuffer[float32]{
+				name: format[i].Name,
+				attrSize: format[i].Size,
+				maxVerts: numVerts,
+				vertexCount: 0,
+				offset: offset,
+				buffer: make([]float32, numVerts),
+			}
+		} else {
+			panic(fmt.Sprintf("Unknown format: %v", format[i]))
 		}
+
 		offset += sof * int(format[i].Size) * numVerts
 	}
 
@@ -138,10 +193,22 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		// 	offset += sof * int(b.buffers[i].attrSize) * b.buffers[i].maxVerts
 		// }
 		for i := range b.buffers {
-			loc := gl.GetAttribLocation(shader.program, b.buffers[i].name)
-			// loc := shader.getAttribLocation(b.buffers[i].name)
-			gl.VertexAttribPointer(loc, int(b.buffers[i].attrSize), gl.FLOAT, false, int(b.buffers[i].attrSize) * sof, b.buffers[i].offset)
-			gl.EnableVertexAttribArray(loc)
+			switch subBuffer := b.buffers[i].(type) {
+			case *SubBuffer[float32]:
+				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
+				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				gl.EnableVertexAttribArray(loc)
+			case *SubBuffer[Vec2]:
+				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
+				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				gl.EnableVertexAttribArray(loc)
+			case *SubBuffer[Vec3]:
+				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
+				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				gl.EnableVertexAttribArray(loc)
+			default:
+				panic("Unknown!")
+			}
 		}
 	})
 
@@ -165,7 +232,7 @@ func (v *VertexBuffer) Clear() {
 }
 
 // TODO - guarantee correct sizes?
-func (v *VertexBuffer) Add(positions []vec3.T, colors, texCoords []float32, indices []uint32, matrix *Mat4) bool {
+func (v *VertexBuffer) Add(positions []Vec3, colors []Vec3, texCoords []Vec2, indices []uint32, matrix *Mat4) bool {
 	// TODO - only checking indices
 	if len(v.indices) + len(indices) > cap(v.indices) {
 		return false
@@ -176,24 +243,45 @@ func (v *VertexBuffer) Add(positions []vec3.T, colors, texCoords []float32, indi
 	currentElement := v.buffers[0].VertexCount()
 
 	{
-		for i := range positions {
-			// vec := matrix.MulVec3(&positions[i])
-			vec := MatMul(matrix, positions[i])
-			v.buffers[0].buffer = append(v.buffers[0].buffer, vec[0])
-			v.buffers[0].buffer = append(v.buffers[0].buffer, vec[1])
-			v.buffers[0].buffer = append(v.buffers[0].buffer, vec[2])
+		// for i := range positions {
+		// 	// vec := matrix.MulVec3(&positions[i])
+		// 	vec := MatMul(matrix, positions[i])
+		// 	v.buffers[0].buffer = append(v.buffers[0].buffer, vec[0])
+		// 	v.buffers[0].buffer = append(v.buffers[0].buffer, vec[1])
+		// 	v.buffers[0].buffer = append(v.buffers[0].buffer, vec[2])
+		// }
+
+		// TODO - speed comparison?
+		// Alter then write
+		// posBuffer := v.buffers[0].(*SubBuffer[Vec3])
+		// for i := range positions {
+		// 	vec := MatMul(matrix, positions[i])
+		// 	posBuffer.Append(vec)
+		// }
+
+		// Write then alter
+		posBuffer := v.buffers[0].(*SubBuffer[Vec3])
+		dest := posBuffer.AppendAndReturnDest(positions)
+		for i := range dest {
+			dest[i] = MatMul(matrix, dest[i])
 		}
+		// fmt.Println(dest)
 	}
-	// v.buffers[0].buffer = append(v.buffers[0].buffer, positions...)
-	v.buffers[1].buffer = append(v.buffers[1].buffer, colors...)
-	v.buffers[2].buffer = append(v.buffers[2].buffer, texCoords...)
+
+	// v.buffers[1].buffer = append(v.buffers[1].buffer, colors...)
+	// v.buffers[2].buffer = append(v.buffers[2].buffer, texCoords...)
+
+	colBuffer := v.buffers[1].(*SubBuffer[Vec3])
+	colBuffer.AppendAndReturnDest(colors)
+	texBuffer := v.buffers[2].(*SubBuffer[Vec2])
+	texBuffer.AppendAndReturnDest(texCoords)
 
 	for i := range indices {
 		v.indices = append(v.indices, currentElement + indices[i])
 	}
 
 	// TODO - Note: Each vec3 element in positions slice represents a vert
-	v.buffers[0].vertexCount += len(positions)
+	// v.buffers[0].vertexCount += len(positions)
 
 	return true
 }
@@ -215,8 +303,9 @@ func (v *VertexBuffer) Draw() {
 		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
 		offset := 0
 		for i := range v.buffers {
-			gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].buffer)
-			offset += sof * int(v.buffers[i].attrSize) * v.buffers[i].maxVerts
+			gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
+			// offset += sof * int(v.buffers[i].attrSize) * v.buffers[i].maxVerts
+			offset += v.buffers[i].Offset()
 		}
 
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
@@ -249,7 +338,7 @@ func (b *BufferPool) Clear() {
 	b.triangleCount = 0
 }
 
-func (b *BufferPool) Add(positions []vec3.T, colors, texCoords []float32, indices []uint32, matrix *Mat4, mask RGBA) {
+func (b *BufferPool) Add(positions []Vec3, colors []Vec3, texCoords []Vec2, indices []uint32, matrix *Mat4, mask RGBA) {
 	success := false
 	for i := range b.buffers {
 		success = b.buffers[i].Add(positions, colors, texCoords, indices, matrix)

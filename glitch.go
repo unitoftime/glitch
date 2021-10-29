@@ -4,7 +4,6 @@ import (
 	"github.com/jstewart7/gl"
 	"github.com/faiface/mainthread"
 
-	"github.com/ungerik/go3d/vec3"
 )
 
 func Run(function func()) {
@@ -142,8 +141,9 @@ func Draw(mesh *Mesh, mat Mat4) {
 }
 */
 type Mesh struct {
-	positions []vec3.T
-	colors, texCoords []float32
+	positions []Vec3
+	colors []Vec3
+	texCoords []Vec2
 	indices []uint32
 }
 
@@ -158,23 +158,23 @@ func (m *Mesh) DrawColorMask(pass *RenderPass, matrix *Mat4, mask RGBA) {
 
 func NewQuadMesh() *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
-	positions := []vec3.T{
-		vec3.T{0.5  , 0.5,  0.0},
-		vec3.T{0.5  , -0.5, 0.0},
-		vec3.T{-0.5 , -0.5, 0.0},
-		vec3.T{-0.5 , 0.5,  0.0},
+	positions := []Vec3{
+		Vec3{0.5  , 0.5,  0.0},
+		Vec3{0.5  , -0.5, 0.0},
+		Vec3{-0.5 , -0.5, 0.0},
+		Vec3{-0.5 , 0.5,  0.0},
 	}
-	colors := []float32{
-		color.R, color.G, color.B,
-		color.R, color.G, color.B,
-		color.R, color.G, color.B,
-		color.R, color.G, color.B,
+	colors := []Vec3{
+		Vec3{color.R, color.G, color.B},
+		Vec3{color.R, color.G, color.B},
+		Vec3{color.R, color.G, color.B},
+		Vec3{color.R, color.G, color.B},
 	}
-	texCoords := []float32{
-		1.0, 0.0,
-		1.0, 1.0,
-		0.0, 1.0,
-		0.0, 0.0,
+	texCoords := []Vec2{
+		Vec2{1.0, 0.0},
+		Vec2{1.0, 1.0},
+		Vec2{0.0, 1.0},
+		Vec2{0.0, 0.0},
 	}
 
 	inds := []uint32{
