@@ -79,14 +79,7 @@ func runGame() {
 	shader, err := glitch.NewShader(shaders.SpriteShader)
 	if err != nil { panic(err) }
 
-	// shader.Bind()
-	// identMat := mgl32.Ident4()
-	// shader.SetUniform("transform", identMat)
-
-	// projMat := mgl32.Ortho2D(0, float32(1920), 0, float32(1080))
-	// shader.SetUniform("projection", projMat)
-
-	pass := glitch.NewRenderPass(win, shader)
+	pass := glitch.NewRenderPass(shader)
 
 	manImage, err := loadImage("gopher.png")
 	if err != nil {
@@ -131,19 +124,18 @@ func runGame() {
 		camera.SetOrtho2D(win)
 		camera.SetView2D(1920/2, 1080/2, 1.0, 1.0)
 
-		pass.SetUniform("projection", camera.Projection)
-		pass.SetUniform("view", camera.View)
-
 		for i := range man {
 			mat := glitch.Mat4Ident
 			mat.ScaleVec3(manSize).Translate(&vec3.T{man[i].position[0], man[i].position[1], 0})
 			// mat := glitch.Mat4Ident().ScaleVec3(manSize).TranslateX(man[i].position[0]).TranslateY(man[i].position[1])
-			pass.Draw(mesh, &mat)
+			mesh.Draw(pass, &mat)
 		}
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 
-		pass.Execute()
+		pass.SetUniform("projection", camera.Projection)
+		pass.SetUniform("view", camera.View)
+		pass.Draw(win)
 
 		win.Update()
 

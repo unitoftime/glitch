@@ -146,6 +146,16 @@ type Mesh struct {
 	colors, texCoords []float32
 	indices []uint32
 }
+
+func (m *Mesh) Draw(pass *RenderPass, matrix *Mat4) {
+	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
+}
+
+func (m *Mesh) DrawColorMask(pass *RenderPass, matrix *Mat4, mask RGBA) {
+	pass.Add(m, matrix, mask)
+}
+
+
 func NewQuadMesh() *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
 	positions := []vec3.T{
@@ -154,12 +164,6 @@ func NewQuadMesh() *Mesh {
 		vec3.T{-0.5 , -0.5, 0.0},
 		vec3.T{-0.5 , 0.5,  0.0},
 	}
-	// positions := []float32{
-	// 	0.5		, 0.5,  0.0,
-	// 	0.5		, -0.5, 0.0,
-	// 	-0.5	, -0.5, 0.0,
-	// 	-0.5	, 0.5,  0.0,
-	// }
 	colors := []float32{
 		color.R, color.G, color.B,
 		color.R, color.G, color.B,

@@ -57,8 +57,25 @@ type SubBuffer struct {
 	buffer []float32
 }
 
-// func (b *SubBuffer) NumVerts() uint32 {
-// 	return uint32(len(b.buffer) / int(b.attrSize))
+func (b *SubBuffer) Clear() {
+	b.buffer = b.buffer[:0]
+	b.vertexCount = 0
+}
+
+func (b *SubBuffer) VertexCount() uint32 {
+	return uint32(b.vertexCount)
+	// return uint32(len(b.buffer) / int(b.attrSize))
+}
+
+// // Returns a pre-sliced underlying buffer based on the reserved amount
+// func (b *SubBuffer) Reserve(vertexCount int) interface{} {
+// 	// Return buffer
+// 	// Increment b.vertexCount
+// }
+
+// // Returns the entire buffer based on the current vertexCount
+// func (b *SubBuffer) Get() interface{} {
+// 	// slice and return the buffer
 // }
 
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
@@ -142,8 +159,7 @@ func (v *VertexBuffer) Bind() {
 func (v *VertexBuffer) Clear() {
 	// v.vertices = v.vertices[:0]
 	for i := range v.buffers {
-		v.buffers[i].buffer = v.buffers[i].buffer[:0]
-		v.buffers[i].vertexCount = 0
+		v.buffers[i].Clear()
 	}
 	v.indices = v.indices[:0]
 }
@@ -156,7 +172,8 @@ func (v *VertexBuffer) Add(positions []vec3.T, colors, texCoords []float32, indi
 	}
 
 	// currentElement := v.buffers[0].NumVerts()
-	currentElement := uint32(v.buffers[0].vertexCount)
+	// currentElement := uint32(v.buffers[0].vertexCount)
+	currentElement := v.buffers[0].VertexCount()
 
 	{
 		for i := range positions {
@@ -232,7 +249,7 @@ func (b *BufferPool) Clear() {
 	b.triangleCount = 0
 }
 
-func (b *BufferPool) Add(positions []vec3.T, colors, texCoords []float32, indices []uint32, matrix *Mat4) {
+func (b *BufferPool) Add(positions []vec3.T, colors, texCoords []float32, indices []uint32, matrix *Mat4, mask RGBA) {
 	success := false
 	for i := range b.buffers {
 		success = b.buffers[i].Add(positions, colors, texCoords, indices, matrix)
@@ -252,6 +269,34 @@ func (b *BufferPool) Add(positions []vec3.T, colors, texCoords []float32, indice
 
 	b.triangleCount += len(indices) / 3
 }
+
+// Adds indices and returns sliced subbuffers
+// func (b *BufferPool) Reserve(indices []uint32, vertexCount int) []SubBuffer {
+// 	success := false
+// 	for _, v := range b.buffers {
+// 		if len(v.indices) + len(indices) <= cap(v.indices) {
+// 			for i := range indices {
+// 				currentElement := uint32(v.buffers[0].vertexCount) // TODO - 0 okay here? I guess it doesn't matter which vertexCount we retrieve?
+// 				v.indices = append(v.indices, currentElement + indices[i])
+// 			}
+// 			return b.buffers[i]
+// 			success = true
+// 		}
+// 		if success {
+// 			break
+// 		}
+// 	}
+
+// 	if !success {
+// 		fmt.Printf("RESERVED NEW BATCH: %d\n", b.triangleCount)
+// 		newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
+// 		b.buffers = append(b.buffers, newBuff)
+// 	}
+
+// 	b.triangleCount += len(indices) / 3
+
+// 	return nil
+// }
 
 func (b *BufferPool) Draw() {
 	for i := range b.buffers {
