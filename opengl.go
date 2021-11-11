@@ -53,9 +53,21 @@ type ISubBuffer interface {
 	Buffer() interface{}
 	Offset() int
 	Reserve(int) interface{}
+	Len() int
+	Cap() int
 }
 
-type SubBuffer[T any] struct {
+type SupportedSubBuffers interface {
+	Vec3 | Vec2 | float32
+}
+
+type BufferReservation interface {
+	Float32() []float32
+	Vec2() []Vec2
+	Vec3() []Vec3
+}
+
+type SubBuffer[T SupportedSubBuffers] struct {
 	name string
 	attrSize AttribSize
 	maxVerts int
@@ -64,9 +76,21 @@ type SubBuffer[T any] struct {
 	buffer []T
 }
 
+type SubSubBuffer[T SupportedSubBuffers] struct {
+	Buffer []T
+}
+
 func (b *SubBuffer[T]) Clear() {
 	b.buffer = b.buffer[:0]
 	b.vertexCount = 0
+}
+
+func (b *SubBuffer[T]) Len() int {
+	return len(b.buffer)
+}
+
+func (b *SubBuffer[T]) Cap() int {
+	return cap(b.buffer)
 }
 
 func (b *SubBuffer[T]) VertexCount() uint32 {
@@ -81,14 +105,27 @@ func (b *SubBuffer[T]) Offset() int {
 	return sof * int(b.attrSize) * b.maxVerts
 }
 
+func ReserveSubBuffer[T SupportedSubBuffers](b *SubBuffer[T], count int) []T {
+	start := len(b.buffer)
+	b.buffer = b.buffer[:len(b.buffer)+count]
+	end := len(b.buffer)
+	b.vertexCount += count
+
+	// // fmt.Println(start, end, len(vals))
+	return b.buffer[start:end]
+}
+
 func (b *SubBuffer[T]) Reserve(count int) interface{} {
 	start := len(b.buffer)
 	b.buffer = b.buffer[:len(b.buffer)+count]
 	end := len(b.buffer)
 	b.vertexCount += count
 
-	// fmt.Println(start, end, len(vals))
-	return b.buffer[start:end]
+	// // fmt.Println(start, end, len(vals))
+	retBuf := SubSubBuffer[T]{
+		b.buffer[start:end],
+	}
+	return retBuf
 }
 
 // Returns the last section appended
@@ -242,13 +279,11 @@ func (v *VertexBuffer) Clear() {
 	v.indices = v.indices[:0]
 }
 
-type VBIter struct {
-	b *VertexBuffer
-}
-
 func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
-	// TODO - only checking indices
 	if len(v.indices) + len(indices) > cap(v.indices) {
+		return false
+	}
+	if v.buffers[0].Len() + numVerts > v.buffers[0].Cap() {
 		return false
 	}
 
@@ -258,7 +293,18 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	}
 
 	for i := range v.buffers {
-		dests[i] = v.buffers[i].Reserve(numVerts)
+		// dests[i] = v.buffers[i].Reserve(numVerts)
+
+		switch subBuffer := v.buffers[i].(type) {
+		case *SubBuffer[float32]:
+			dests[i] = ReserveSubBuffer[float32](subBuffer, numVerts)
+		case *SubBuffer[Vec2]:
+			dests[i] = ReserveSubBuffer[Vec2](subBuffer, numVerts)
+		case *SubBuffer[Vec3]:
+			dests[i] = ReserveSubBuffer[Vec3](subBuffer, numVerts)
+		default:
+			panic("Unknown!")
+		}
 	}
 	return true
 }
@@ -271,6 +317,10 @@ func (v *VertexBuffer) Add2(positions Vec3Add, colors []Vec3, texCoords []Vec2, 
 
 	currentElement := v.buffers[0].VertexCount()
 
+	// TODO
+	// 1. move this code to pass and hook into reserve somehow
+	// 2. Fix Buffer() function on subbuffer type to return specific vals
+	// 3. Type assertions over interfaces?
 	{
 		// Write then alter
 		posBuffer := v.buffers[0].(*SubBuffer[Vec3])
