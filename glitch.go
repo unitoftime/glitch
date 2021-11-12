@@ -140,6 +140,40 @@ func Draw(mesh *Mesh, mat Mat4) {
 	context.vertexBuffer.Add(positions, mesh.colors, mesh.texCoords, mesh.indices)
 }
 */
+
+type Sprite struct {
+	mesh *Mesh
+	bounds Rect
+	texture *Texture
+	textureMatrix Mat3
+}
+
+func NewSprite(texture *Texture, bounds Rect) *Sprite {
+	texMat := Mat3Ident
+	ScaleMat3(&texMat,
+		bounds.W() / float32(texture.width),
+		bounds.H() / float32(texture.height),
+		1.0)
+	TranslateMat3(&texMat,
+		bounds.Min[0] / float32(texture.width),
+		bounds.Min[1] / float32(texture.height),
+	)
+
+	return &Sprite{
+		mesh: spriteMesh,
+		bounds: bounds,
+		texture: texture,
+		textureMatrix: texMat,
+	}
+}
+
+func (s *Sprite) Draw(pass *RenderPass, matrix Mat4) {
+	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.textureMatrix)
+}
+func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
+	pass.Add(s.mesh, matrix, mask, s.textureMatrix)
+}
+
 type Mesh struct {
 	positions []Vec3
 	colors []Vec3
@@ -147,14 +181,15 @@ type Mesh struct {
 	indices []uint32
 }
 
-func (m *Mesh) Draw(pass *RenderPass, matrix *Mat4) {
-	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
+func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
+	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, Mat3Ident)
 }
 
-func (m *Mesh) DrawColorMask(pass *RenderPass, matrix *Mat4, mask RGBA) {
-	pass.Add(m, matrix, mask)
+func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
+	pass.Add(m, matrix, mask, Mat3Ident)
 }
 
+var spriteMesh = NewQuadMesh()
 
 func NewQuadMesh() *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}

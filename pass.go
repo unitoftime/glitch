@@ -7,8 +7,9 @@ package glitch
 type drawCommand struct {
 	command uint64
 	mesh *Mesh
-	matrix *Mat4
+	matrix Mat4
 	mask RGBA
+	texMat Mat3
 }
 
 type RenderPass struct {
@@ -48,72 +49,38 @@ func (r *RenderPass) Draw(win *Window) {
 		}
 	}
 
-	destBuffs := make([]interface{}, 3) // TODO - hardcode
+	destBuffs := make([]interface{}, 3) // TODO - hardcoded
 	destBuffs[0] = &[]Vec3{}
 	destBuffs[1] = &[]Vec3{}
 	destBuffs[2] = &[]Vec2{}
 	for _, c := range r.commands {
-		// positions := make([]float32, len(c.mesh.positions) * 3) // 3 b/c vec3
-		// for i := range c.mesh.positions {
-		// 	vec := c.matrix.MulVec3(&c.mesh.positions[i])
-		// 	positions[(i * 3) + 0] = vec[0]
-		// 	positions[(i * 3) + 1] = vec[1]
-		// 	positions[(i * 3) + 2] = vec[2]
-		// }
-		// r.buffer.Add(positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices)
-
-		// Idea: Reserve a range and retrieve the slices for that range, then write directly to those, modifying as you go
-		// Alternative: This seems slow b/c of []interface{} conversion <- Is this because of generics?
 		numVerts := len(c.mesh.positions)
 		r.buffer.Reserve(c.mesh.indices, numVerts, destBuffs)
 
-		// Try 1
-		// posBuff := (destBuffs[0]).([]Vec3)
-		// for i := range c.mesh.positions {
-		// 	vec := MatMul(c.matrix, c.mesh.positions[i])
-		// 	posBuff[i] = vec
-		// }
-
-		// colBuf := (destBuffs[1]).([]Vec3)
-		// colBuf = append(colBuf[:0], c.mesh.colors...)
-		// texBuf := (destBuffs[2]).([]Vec2)
-		// texBuf = append(texBuf[:0], c.mesh.texCoords...)
-
-		// Try 2
-		// posBuff := (destBuffs[0]).(SubSubBuffer[Vec3])
-		// for i := range c.mesh.positions {
-		// 	vec := MatMul(c.matrix, c.mesh.positions[i])
-		// 	posBuff.Buffer[i] = vec
-		// }
-
-		// colBuf := (destBuffs[1]).(SubSubBuffer[Vec3])
-		// colBuf.Buffer = append(colBuf.Buffer[:0], c.mesh.colors...)
-		// texBuf := (destBuffs[2]).(SubSubBuffer[Vec2])
-		// texBuf.Buffer = append(texBuf.Buffer[:0], c.mesh.texCoords...)
-
-		// Try 3
-		posBuff := *(destBuffs[0]).(*[]Vec3)
+		// work and append
+		posBuf := *(destBuffs[0]).(*[]Vec3)
 		for i := range c.mesh.positions {
-			vec := MatMul(c.matrix, c.mesh.positions[i])
-			posBuff[i] = vec
+			vec := MatApply4x3(&c.matrix, c.mesh.positions[i])
+			posBuf[i] = vec
 		}
 
 		colBuf := *(destBuffs[1]).(*[]Vec3)
-		colBuf = append(colBuf[:0], c.mesh.colors...)
+		for i := range c.mesh.colors {
+			colBuf[i] = Vec3{
+				c.mesh.colors[i][0] * c.mask.R,
+				c.mesh.colors[i][1] * c.mask.G,
+				c.mesh.colors[i][2] * c.mask.B,
+			}
+		}
+
 		texBuf := *(destBuffs[2]).(*[]Vec2)
-		texBuf = append(texBuf[:0], c.mesh.texCoords...)
-
-		// Idea: pass a lambda in to modify data before writing to VBO
-		// r.buffer.Add2(c.mesh.indices,
-		// 	Vec3Add{
-		// 		c.mesh.positions,
-		// 		func(in *Vec3) {
-		// 			*in = MatMul(c.matrix, *in)
-		// 		},
-		// 	}, c.mesh.colors, c.mesh.texCoords)
-
-		// r.buffer.Add(c.mesh.positions, c.mesh.colors, c.mesh.texCoords, c.mesh.indices, c.matrix, c.mask)
-
+		for i := range c.mesh.texCoords {
+			texBuf[i] = MatApply3x2(&c.texMat, c.mesh.texCoords[i])
+			// texBuf[i] = Vec2{
+			// 	c.mesh.texCoords[i][0],
+			// 	c.mesh.texCoords[i][1],
+			// }
+		}
 	}
 
 	r.buffer.Draw()
@@ -128,8 +95,8 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 	r.uniforms[name] = value
 }
 
-func (r *RenderPass) Add(mesh *Mesh, mat *Mat4, mask RGBA) {
+func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, texMat Mat3) {
 	r.commands = append(r.commands, drawCommand{
-		0, mesh, mat, mask,
+		0, mesh, mat, mask, texMat,
 	})
 }

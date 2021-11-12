@@ -91,7 +91,10 @@ func runGame() {
 	texture := glitch.NewTexture(160, 200, manImage.Pix)
 	pass.SetTexture(0, texture)
 
-	mesh := glitch.NewQuadMesh()
+	// mesh := glitch.NewQuadMesh()
+	x := float32(80)
+	y := float32(100)
+	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160/2, y+200/2))
 
 	length := 100000
 	man := make([]Man, length)
@@ -130,8 +133,8 @@ func runGame() {
 		for i := range man {
 			mat := glitch.Mat4Ident
 			mat.ScaleVec3(manSize).Translate(&vec3.T{man[i].position[0], man[i].position[1], 0})
-			// mat := glitch.Mat4Ident().ScaleVec3(manSize).TranslateX(man[i].position[0]).TranslateY(man[i].position[1])
-			mesh.Draw(pass, &mat)
+			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
+			manSprite.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
 		}
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
