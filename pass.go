@@ -49,9 +49,9 @@ func (r *RenderPass) Draw(win *Window) {
 	}
 
 	destBuffs := make([]interface{}, 3) // TODO - hardcode
-	destBuffs[0] = make([]Vec3, 0, 0)
-	destBuffs[1] = make([]Vec3, 0, 0)
-	destBuffs[2] = make([]Vec2, 0, 0)
+	destBuffs[0] = &[]Vec3{}
+	destBuffs[1] = &[]Vec3{}
+	destBuffs[2] = &[]Vec2{}
 	for _, c := range r.commands {
 		// positions := make([]float32, len(c.mesh.positions) * 3) // 3 b/c vec3
 		// for i := range c.mesh.positions {
@@ -92,15 +92,15 @@ func (r *RenderPass) Draw(win *Window) {
 		// texBuf.Buffer = append(texBuf.Buffer[:0], c.mesh.texCoords...)
 
 		// Try 3
-		posBuff := (destBuffs[0]).([]Vec3)
+		posBuff := *(destBuffs[0]).(*[]Vec3)
 		for i := range c.mesh.positions {
 			vec := MatMul(c.matrix, c.mesh.positions[i])
 			posBuff[i] = vec
 		}
 
-		colBuf := (destBuffs[1]).([]Vec3)
+		colBuf := *(destBuffs[1]).(*[]Vec3)
 		colBuf = append(colBuf[:0], c.mesh.colors...)
-		texBuf := (destBuffs[2]).([]Vec2)
+		texBuf := *(destBuffs[2]).(*[]Vec2)
 		texBuf = append(texBuf[:0], c.mesh.texCoords...)
 
 		// Idea: pass a lambda in to modify data before writing to VBO

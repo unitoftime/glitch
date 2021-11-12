@@ -57,14 +57,14 @@ type ISubBuffer interface {
 	Cap() int
 }
 
+// type BufferReservation interface {
+// 	Float32() []float32
+// 	Vec2() []Vec2
+// 	Vec3() []Vec3
+// }
+
 type SupportedSubBuffers interface {
 	Vec3 | Vec2 | float32
-}
-
-type BufferReservation interface {
-	Float32() []float32
-	Vec2() []Vec2
-	Vec3() []Vec3
 }
 
 type SubBuffer[T SupportedSubBuffers] struct {
@@ -297,11 +297,14 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 
 		switch subBuffer := v.buffers[i].(type) {
 		case *SubBuffer[float32]:
-			dests[i] = ReserveSubBuffer[float32](subBuffer, numVerts)
+			d := dests[i].(*[]float32)
+			*d = ReserveSubBuffer[float32](subBuffer, numVerts)
 		case *SubBuffer[Vec2]:
-			dests[i] = ReserveSubBuffer[Vec2](subBuffer, numVerts)
+			d := dests[i].(*[]Vec2)
+			*d = ReserveSubBuffer[Vec2](subBuffer, numVerts)
 		case *SubBuffer[Vec3]:
-			dests[i] = ReserveSubBuffer[Vec3](subBuffer, numVerts)
+			d := dests[i].(*[]Vec3)
+			*d = ReserveSubBuffer[Vec3](subBuffer, numVerts)
 		default:
 			panic("Unknown!")
 		}
@@ -309,7 +312,11 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	return true
 }
 
-func (v *VertexBuffer) Add2(positions Vec3Add, colors []Vec3, texCoords []Vec2, indices []uint32) bool {
+// func (v *VertexBuffer) Add2(positions Vec3Add, colors []Vec3, texCoords []Vec2, indices []uint32) bool {
+func (v *VertexBuffer) Add2(ipositions, icolors, itexCoords interface{}, indices []uint32) bool {
+	positions := ipositions.(Vec3Add)
+	colors := icolors.([]Vec3)
+	texCoords := itexCoords.([]Vec2)
 	// TODO - only checking indices
 	if len(v.indices) + len(indices) > cap(v.indices) {
 		return false
