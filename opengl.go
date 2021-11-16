@@ -2,6 +2,9 @@ package glitch
 
 import (
 	"fmt"
+	"reflect"
+	"unsafe"
+	// "syscall/js"
 
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
@@ -50,10 +53,11 @@ type VertexBuffer struct {
 type ISubBuffer interface {
 	Clear()
 	VertexCount() uint32
-	Buffer() interface{}
+	Buffer() []byte
 	Offset() int
 	Len() int
 	Cap() int
+	// BufferSubData(int)
 }
 
 type SupportedSubBuffers interface {
@@ -90,9 +94,47 @@ func (b *SubBuffer[T]) VertexCount() uint32 {
 	return uint32(b.vertexCount)
 }
 
-func (b *SubBuffer[T]) Buffer() interface{} {
-	return b.buffer
+func (b *SubBuffer[T]) Buffer() []byte {
+	// TODO - maybe I could put this in the struct so its not allocated every time?
+	// https://github.com/golang/go/issues/45380
+	var tt T
+	t := interface{}(tt)
+
+	buff := b.buffer
+	switch s := t.(type) {
+	case float32:
+		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
+		h.Len *= 1 * 4
+		h.Cap *= 1 * 4
+		// fmt.Println("float32", h.Len, h.Cap)
+		return *(*[]byte)(unsafe.Pointer(h))
+	case Vec2:
+		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
+		h.Len *= 2 * 4
+		h.Cap *= 2 * 4
+		// fmt.Println("Vec2", h.Len, h.Cap)
+		return *(*[]byte)(unsafe.Pointer(h))
+	case Vec3:
+		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
+		h.Len *= 3 * 4
+		h.Cap *= 3 * 4
+		// fmt.Println("Vec3", h.Len, h.Cap)
+		return *(*[]byte)(unsafe.Pointer(h))
+	default:
+		panic(fmt.Sprintf("Error: %T", s))
+	}
+	return nil
 }
+
+// func (b *SubBuffer[T]) BufferSubData(offset int) {
+// 	if b.attrSize == AttrVec2 {
+// 		gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][3]float32(b.buffer))
+// 	} else if b.attrSize == AttrVec3 {
+// 		gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][2]float32(b.buffer))
+// 	} else {
+// 		panic("Unknown")
+// 	}
+// }
 
 func (b *SubBuffer[T]) Offset() int {
 	return sof * int(b.attrSize) * b.maxVerts
@@ -159,6 +201,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 	mainthread.Call(func() {
 		b.vao = gl.GenVertexArrays()
+		// fmt.Printf("%v\n", js.ValueOf(b.vao.Value))
 		b.vbo = gl.GenBuffers()
 		b.ebo = gl.GenBuffers()
 
@@ -243,6 +286,10 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 }
 
 func (v *VertexBuffer) Draw() {
+	if len(v.indices) <= 0 {
+		return
+	}
+
 	mainthread.Call(func() {
 		gl.BindVertexArray(v.vao)
 
@@ -250,6 +297,13 @@ func (v *VertexBuffer) Draw() {
 		offset := 0
 		for i := range v.buffers {
 			gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
+			// byteBuff := v.buffers[i].Buffer()
+			// switch t := byteBuff.(type) {
+			// case []Vec2:
+			// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][2]float32(t))
+			// case []Vec3:
+			// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][3]float32(t))
+			// }
 			offset += v.buffers[i].Offset()
 		}
 
@@ -305,6 +359,7 @@ func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}
 
 func (b *BufferPool) Draw() {
 	for i := range b.buffers {
+		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
 		b.buffers[i].Draw()
 	}
 }

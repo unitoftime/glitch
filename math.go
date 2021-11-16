@@ -2,16 +2,16 @@ package glitch
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"github.com/ungerik/go3d/mat4"
+	// "github.com/ungerik/go3d/mat4"
 )
 
-type Vec2 = [2]float32
-type Vec3 = [3]float32
+type Vec2 [2]float32
+type Vec3 [3]float32
+type Vec4 [4]float32
 
-type Mat2 = [2][2]float32
-type Mat3 = [3][3]float32
-// type Mat4 = [4]float32
-// var Mat4Ident Mat4 = mgl32.Ident4()
+type Mat2 [2][2]float32
+type Mat3 [3][3]float32
+type Mat4 [4][4]float32
 
 // Notably this definition looks transposed, I'm building columns here
 var Mat3Ident Mat3 = Mat3{
@@ -19,6 +19,15 @@ var Mat3Ident Mat3 = Mat3{
 	Vec3{0.0, 1.0, 0.0},
 	Vec3{0.0, 0.0, 1.0},
 }
+var Mat4Ident Mat4 = Mat4{
+	Vec4{1.0, 0.0, 0.0, 0.0},
+	Vec4{0.0, 1.0, 0.0, 0.0},
+	Vec4{0.0, 0.0, 1.0, 0.0},
+	Vec4{0.0, 0.0, 0.0, 1.0},
+}
+
+// type Mat4 = mat4.T
+// var Mat4Ident Mat4 = mat4.Ident
 
 func ScaleMat3(m *Mat3, x, y, z float32) {
 	m[0][0] = m[0][0] * x
@@ -31,7 +40,17 @@ func TranslateMat3(m *Mat3, x, y float32) {
 	m[2][1] = m[2][1] + y
 }
 
-type Vec4 mgl32.Vec4
+func ScaleMat4(m *Mat4, x, y, z float32) {
+	m[0][0] = m[0][0] * x
+	m[1][1] = m[1][1] * y
+	m[2][2] = m[2][2] * z
+}
+
+func TranslateMat4(m *Mat4, x, y, z float32) {
+	m[3][0] = m[3][0] + x
+	m[3][1] = m[3][1] + y
+	m[3][2] = m[3][2] + z
+}
 
 type Rect struct {
 	Min, Max Vec2
@@ -52,13 +71,6 @@ func (r *Rect) H() float32 {
 	return r.Max[1] - r.Min[1]
 }
 
-// TODO - Not sure I like the type alias here. Eventually rewrite
-type Mat4 = mat4.T
-var Mat4Ident Mat4 = mat4.Ident
-// func Mat4Ident() Mat4 {
-// 	return mat4.Ident
-// }
-
 func MatApply4x3(m *Mat4, v Vec3) Vec3 {
 	return Vec3{
 		m[0][0]*v[0] + m[1][0]*v[1] + m[2][0]*v[2] + m[3][0], // w = 1.0
@@ -73,7 +85,6 @@ func MatApply3x2(m *Mat3, v Vec2) Vec2 {
 		m[0][1]*v[0] + m[1][1]*v[1] + m[2][1],
 	}
 }
-
 
 // Camera??
 type Camera struct {
