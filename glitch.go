@@ -150,14 +150,22 @@ type Sprite struct {
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	texMat := Mat3Ident
-	ScaleMat3(&texMat,
+	texMat.Scale(
 		bounds.W() / float32(texture.width),
 		bounds.H() / float32(texture.height),
-		1.0)
-	TranslateMat3(&texMat,
-		bounds.Min[0] / float32(texture.width),
-		bounds.Min[1] / float32(texture.height),
-	)
+		1.0).Translate(
+			bounds.Min[0] / float32(texture.width),
+			bounds.Min[1] / float32(texture.height),
+		)
+
+	// ScaleMat3(&texMat,
+	// 	bounds.W() / float32(texture.width),
+	// 	bounds.H() / float32(texture.height),
+	// 	1.0)
+	// TranslateMat3(&texMat,
+	// 	bounds.Min[0] / float32(texture.width),
+	// 	bounds.Min[1] / float32(texture.height),
+	// )
 
 	return &Sprite{
 		mesh: spriteMesh,

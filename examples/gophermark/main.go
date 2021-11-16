@@ -132,9 +132,7 @@ func runGame() {
 
 		for i := range man {
 			mat := glitch.Mat4Ident
-			glitch.ScaleMat4(&mat, manSize[0], manSize[1], 1.0)
-			glitch.TranslateMat4(&mat, man[i].position[0], man[i].position[1], 0)
-			// mat.ScaleVec3(manSize).Translate(&vec3.T{man[i].position[0], man[i].position[1], 0})
+			mat.Scale(manSize[0], manSize[1], 1.0).Translate(man[i].position[0], man[i].position[1], 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
 			manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})

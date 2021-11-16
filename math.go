@@ -2,55 +2,100 @@ package glitch
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	// "github.com/ungerik/go3d/mat4"
 )
 
 type Vec2 [2]float32
 type Vec3 [3]float32
 type Vec4 [4]float32
 
-type Mat2 [2][2]float32
-type Mat3 [3][3]float32
-type Mat4 [4][4]float32
+// type Mat2 [4]float32
+type Mat3 [9]float32
+// type Mat4 [4][4]float32
+type Mat4 [16]float32
 
 // Notably this definition looks transposed, I'm building columns here
+// This is in column major order
+// var Mat3Ident Mat3 = Mat3{
+// 	Vec3{1.0, 0.0, 0.0},
+// 	Vec3{0.0, 1.0, 0.0},
+// 	Vec3{0.0, 0.0, 1.0},
+// }
+// var Mat4Ident Mat4 = Mat4{
+// 	Vec4{1.0, 0.0, 0.0, 0.0},
+// 	Vec4{0.0, 1.0, 0.0, 0.0},
+// 	Vec4{0.0, 0.0, 1.0, 0.0},
+// 	Vec4{0.0, 0.0, 0.0, 1.0},
+// }
 var Mat3Ident Mat3 = Mat3{
-	Vec3{1.0, 0.0, 0.0},
-	Vec3{0.0, 1.0, 0.0},
-	Vec3{0.0, 0.0, 1.0},
+	1.0, 0.0, 0.0,
+	0.0, 1.0, 0.0,
+	0.0, 0.0, 1.0,
 }
 var Mat4Ident Mat4 = Mat4{
-	Vec4{1.0, 0.0, 0.0, 0.0},
-	Vec4{0.0, 1.0, 0.0, 0.0},
-	Vec4{0.0, 0.0, 1.0, 0.0},
-	Vec4{0.0, 0.0, 0.0, 1.0},
+	1.0, 0.0, 0.0, 0.0,
+	0.0, 1.0, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.0, 0.0, 0.0, 1.0,
 }
 
-// type Mat4 = mat4.T
-// var Mat4Ident Mat4 = mat4.Ident
-
-func ScaleMat3(m *Mat3, x, y, z float32) {
-	m[0][0] = m[0][0] * x
-	m[1][1] = m[1][1] * y
-	m[2][2] = m[2][2] * z
+func (m *Mat3) Scale(x, y, z float32) *Mat3 {
+	m[i3_0_0] = m[i3_0_0] * x
+	m[i3_1_1] = m[i3_1_1] * y
+	m[i3_2_2] = m[i3_2_2] * z
+	return m
 }
 
-func TranslateMat3(m *Mat3, x, y float32) {
-	m[2][0] = m[2][0] + x
-	m[2][1] = m[2][1] + y
+func (m *Mat3) Translate(x, y float32) *Mat3 {
+	m[i3_2_0] = m[i3_2_0] + x
+	m[i3_2_1] = m[i3_2_1] + y
+	return m
 }
 
-func ScaleMat4(m *Mat4, x, y, z float32) {
-	m[0][0] = m[0][0] * x
-	m[1][1] = m[1][1] * y
-	m[2][2] = m[2][2] * z
+func (m *Mat4) Scale(x, y, z float32) *Mat4 {
+	m[i4_0_0] = m[i4_0_0] * x
+	m[i4_1_1] = m[i4_1_1] * y
+	m[i4_2_2] = m[i4_2_2] * z
+	return m
 }
 
-func TranslateMat4(m *Mat4, x, y, z float32) {
-	m[3][0] = m[3][0] + x
-	m[3][1] = m[3][1] + y
-	m[3][2] = m[3][2] + z
+func (m *Mat4) Translate(x, y, z float32) *Mat4 {
+	m[i4_3_0] = m[i4_3_0] + x
+	m[i4_3_1] = m[i4_3_1] + y
+	m[i4_3_2] = m[i4_3_2] + z
+	return m
 }
+
+// Matrix Indices
+const (
+	// 4x4 - x_y
+	i4_0_0 = 0
+	i4_0_1 = 1
+	i4_0_2 = 2
+	i4_0_3 = 3
+	i4_1_0 = 4
+	i4_1_1 = 5
+	i4_1_2 = 6
+	i4_1_3 = 7
+	i4_2_0 = 8
+	i4_2_1 = 9
+	i4_2_2 = 10
+	i4_2_3 = 11
+	i4_3_0 = 12
+	i4_3_1 = 13
+	i4_3_2 = 14
+	i4_3_3 = 15
+
+	// 3x3 - x_y
+	i3_0_0 = 0
+	i3_0_1 = 1
+	i3_0_2 = 2
+	i3_1_0 = 3
+	i3_1_1 = 4
+	i3_1_2 = 5
+	i3_2_0 = 6
+	i3_2_1 = 7
+	i3_2_2 = 8
+)
 
 type Rect struct {
 	Min, Max Vec2
@@ -71,42 +116,45 @@ func (r *Rect) H() float32 {
 	return r.Max[1] - r.Min[1]
 }
 
-func MatApply4x3(m *Mat4, v Vec3) Vec3 {
+func (m *Mat4) Apply(v Vec3) Vec3 {
 	return Vec3{
-		m[0][0]*v[0] + m[1][0]*v[1] + m[2][0]*v[2] + m[3][0], // w = 1.0
-		m[0][1]*v[0] + m[1][1]*v[1] + m[2][1]*v[2] + m[3][1], // w = 1.0
-		m[0][2]*v[0] + m[1][2]*v[1] + m[2][2]*v[2] + m[3][2], // w = 1.0
+		m[i4_0_0]*v[0] + m[i4_1_0]*v[1] + m[i4_2_0]*v[2] + m[i4_3_0], // w = 1.0
+		m[i4_0_1]*v[0] + m[i4_1_1]*v[1] + m[i4_2_1]*v[2] + m[i4_3_1], // w = 1.0
+		m[i4_0_2]*v[0] + m[i4_1_2]*v[1] + m[i4_2_2]*v[2] + m[i4_3_2], // w = 1.0
 	}
 }
 
-func MatApply3x2(m *Mat3, v Vec2) Vec2 {
+func (m *Mat3) Apply( v Vec2) Vec2 {
 	return Vec2{
-		m[0][0]*v[0] + m[1][0]*v[1] + m[2][0],
-		m[0][1]*v[0] + m[1][1]*v[1] + m[2][1],
+		m[i3_0_0]*v[0] + m[i3_1_0]*v[1] + m[i3_2_0],
+		m[i3_0_1]*v[0] + m[i3_1_1]*v[1] + m[i3_2_1],
 	}
 }
 
 // Camera??
 type Camera struct {
-	Projection mgl32.Mat4
-	View mgl32.Mat4
+	Projection Mat4
+	View Mat4
 
-	position mgl32.Vec3
+	position Vec3
 }
 
 func NewCamera() *Camera {
 	return &Camera{
-		Projection: mgl32.Ident4(),
-		View: mgl32.Ident4(),
+		Projection: Mat4Ident,
+		View: Mat4Ident,
 	}
 }
 
 func (c *Camera) SetOrtho2D(win *Window) {
 	bounds := win.Bounds()
-	c.Projection = mgl32.Ortho2D(0, bounds.W(), 0, bounds.H())
+	// c.Projection = Ortho2D(0, bounds.W(), 0, bounds.H())
+	c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
 }
 
 func (c *Camera) SetView2D(x, y, scaleX, scaleY float32) {
 	// c.View = mgl32.Translate3D(-x, -y, 0).Mul4(mgl32.Scale3D(scale, scale, 1.0))
-	c.View = mgl32.Scale3D(scaleX, scaleY, 1.0).Mul4(mgl32.Translate3D(-x, -y, 0))
+	//	c.View = mgl32.Scale3D(scaleX, scaleY, 1.0).Mul4(mgl32.Translate3D(-x, -y, 0))
+	c.View = Mat4Ident
+	c.View.Scale(scaleX, scaleY, 1.0).Translate(-x, -y, 0)
 }

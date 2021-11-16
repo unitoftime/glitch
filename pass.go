@@ -60,7 +60,7 @@ func (r *RenderPass) Draw(win *Window) {
 		// work and append
 		posBuf := *(destBuffs[0]).(*[]Vec3)
 		for i := range c.mesh.positions {
-			vec := MatApply4x3(&c.matrix, c.mesh.positions[i])
+			vec := c.matrix.Apply(c.mesh.positions[i])
 			posBuf[i] = vec
 		}
 
@@ -75,11 +75,7 @@ func (r *RenderPass) Draw(win *Window) {
 
 		texBuf := *(destBuffs[2]).(*[]Vec2)
 		for i := range c.mesh.texCoords {
-			texBuf[i] = MatApply3x2(&c.texMat, c.mesh.texCoords[i])
-			// texBuf[i] = Vec2{
-			// 	c.mesh.texCoords[i][0],
-			// 	c.mesh.texCoords[i][1],
-			// }
+			texBuf[i] = c.texMat.Apply(c.mesh.texCoords[i])
 		}
 	}
 

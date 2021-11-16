@@ -3,7 +3,7 @@ package glitch
 import (
 	"fmt"
 
-	"github.com/go-gl/mathgl/mgl32"
+	// "github.com/go-gl/mathgl/mgl32"
 
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
@@ -122,11 +122,11 @@ func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 		case float32:
 			sliced := []float32{val}
 			gl.Uniform1fv(uniform.loc, sliced)
-		case mgl32.Vec3:
+		case Vec3:
 			gl.Uniform3fv(uniform.loc, val[:])
-		case mgl32.Vec4:
+		case Vec4:
 			gl.Uniform4fv(uniform.loc, val[:])
-		case mgl32.Mat4:
+		case Mat4:
 			gl.UniformMatrix4fv(uniform.loc, val[:])
 		default:
 			fmt.Println("ERROR", uniform)
