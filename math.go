@@ -8,29 +8,19 @@ type Vec2 [2]float32
 type Vec3 [3]float32
 type Vec4 [4]float32
 
-// type Mat2 [4]float32
+// All Matrices are in column-major order
+type Mat2 [4]float32
 type Mat3 [9]float32
-// type Mat4 [4][4]float32
 type Mat4 [16]float32
 
-// Notably this definition looks transposed, I'm building columns here
 // This is in column major order
-// var Mat3Ident Mat3 = Mat3{
-// 	Vec3{1.0, 0.0, 0.0},
-// 	Vec3{0.0, 1.0, 0.0},
-// 	Vec3{0.0, 0.0, 1.0},
-// }
-// var Mat4Ident Mat4 = Mat4{
-// 	Vec4{1.0, 0.0, 0.0, 0.0},
-// 	Vec4{0.0, 1.0, 0.0, 0.0},
-// 	Vec4{0.0, 0.0, 1.0, 0.0},
-// 	Vec4{0.0, 0.0, 0.0, 1.0},
-// }
 var Mat3Ident Mat3 = Mat3{
 	1.0, 0.0, 0.0,
 	0.0, 1.0, 0.0,
 	0.0, 0.0, 1.0,
 }
+
+// This is in column major order
 var Mat4Ident Mat4 = Mat4{
 	1.0, 0.0, 0.0, 0.0,
 	0.0, 1.0, 0.0, 0.0,
@@ -148,13 +138,10 @@ func NewCamera() *Camera {
 
 func (c *Camera) SetOrtho2D(win *Window) {
 	bounds := win.Bounds()
-	// c.Projection = Ortho2D(0, bounds.W(), 0, bounds.H())
 	c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
 }
 
 func (c *Camera) SetView2D(x, y, scaleX, scaleY float32) {
-	// c.View = mgl32.Translate3D(-x, -y, 0).Mul4(mgl32.Scale3D(scale, scale, 1.0))
-	//	c.View = mgl32.Scale3D(scaleX, scaleY, 1.0).Mul4(mgl32.Translate3D(-x, -y, 0))
 	c.View = Mat4Ident
 	c.View.Scale(scaleX, scaleY, 1.0).Translate(-x, -y, 0)
 }

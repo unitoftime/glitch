@@ -16,7 +16,7 @@ var SpriteShader = glitch.ShaderConfig{
 	FragmentShader: SpriteFragmentShader,
 	VertexFormat: glitch.VertexFormat{
 		glitch.Attrib{"aPos", glitch.AttrVec3},
-		glitch.Attrib{"aColor", glitch.AttrVec3},
+		glitch.Attrib{"aColor", glitch.AttrVec4},
 		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
 	},
 	UniformFormat: glitch.UniformFormat{

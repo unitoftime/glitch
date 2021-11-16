@@ -135,7 +135,7 @@ func runGame() {
 			mat.Scale(manSize[0], manSize[1], 1.0).Translate(man[i].position[0], man[i].position[1], 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
-			manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
+			manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 0.5})
 		}
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})

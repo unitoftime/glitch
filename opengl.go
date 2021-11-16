@@ -61,7 +61,7 @@ type ISubBuffer interface {
 }
 
 type SupportedSubBuffers interface {
-	Vec3 | Vec2 | float32
+	Vec4 | Vec3 | Vec2 | float32
 }
 
 type SubBuffer[T SupportedSubBuffers] struct {
@@ -120,6 +120,12 @@ func (b *SubBuffer[T]) Buffer() []byte {
 		h.Cap *= 3 * 4
 		// fmt.Println("Vec3", h.Len, h.Cap)
 		return *(*[]byte)(unsafe.Pointer(h))
+	case Vec4:
+		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
+		h.Len *= 4 * 4
+		h.Cap *= 4 * 4
+		// fmt.Println("Vec3", h.Len, h.Cap)
+		return *(*[]byte)(unsafe.Pointer(h))
 	default:
 		panic(fmt.Sprintf("Error: %T", s))
 	}
@@ -162,7 +168,16 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	for i := range format {
 		b.stride += (int(format[i].Size) * sof)
 
-		if format[i].Size == AttrVec3 {
+		if format[i].Size == AttrVec4 {
+			b.buffers[i] = &SubBuffer[Vec4]{
+				name: format[i].Name,
+				attrSize: format[i].Size,
+				maxVerts: numVerts,
+				vertexCount: 0,
+				offset: offset,
+				buffer: make([]Vec4, numVerts),
+			}
+		} else if format[i].Size == AttrVec3 {
 			b.buffers[i] = &SubBuffer[Vec3]{
 				name: format[i].Name,
 				attrSize: format[i].Size,
@@ -229,6 +244,10 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
 				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
+			case *SubBuffer[Vec4]:
+				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
+				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				gl.EnableVertexAttribArray(loc)
 			default:
 				panic("Unknown!")
 			}
@@ -278,6 +297,9 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 		case *SubBuffer[Vec3]:
 			d := dests[i].(*[]Vec3)
 			*d = ReserveSubBuffer[Vec3](subBuffer, numVerts)
+		case *SubBuffer[Vec4]:
+			d := dests[i].(*[]Vec4)
+			*d = ReserveSubBuffer[Vec4](subBuffer, numVerts)
 		default:
 			panic("Unknown!")
 		}

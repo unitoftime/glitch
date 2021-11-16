@@ -51,7 +51,7 @@ func (r *RenderPass) Draw(win *Window) {
 
 	destBuffs := make([]interface{}, 3) // TODO - hardcoded
 	destBuffs[0] = &[]Vec3{}
-	destBuffs[1] = &[]Vec3{}
+	destBuffs[1] = &[]Vec4{}
 	destBuffs[2] = &[]Vec2{}
 	for _, c := range r.commands {
 		numVerts := len(c.mesh.positions)
@@ -64,12 +64,13 @@ func (r *RenderPass) Draw(win *Window) {
 			posBuf[i] = vec
 		}
 
-		colBuf := *(destBuffs[1]).(*[]Vec3)
+		colBuf := *(destBuffs[1]).(*[]Vec4)
 		for i := range c.mesh.colors {
-			colBuf[i] = Vec3{
+			colBuf[i] = Vec4{
 				c.mesh.colors[i][0] * c.mask.R,
 				c.mesh.colors[i][1] * c.mask.G,
 				c.mesh.colors[i][2] * c.mask.B,
+				c.mesh.colors[i][2] * c.mask.A,
 			}
 		}
 

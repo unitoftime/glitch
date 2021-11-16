@@ -6,7 +6,7 @@ precision highp float;
 
 out vec4 FragColor;
 
-in vec3 ourColor;
+in vec4 ourColor;
 in vec2 TexCoord;
 
 //texture samplers
@@ -16,6 +16,7 @@ void main()
 {
 	// linearly interpolate between both textures (80% container, 20% awesomeface)
 	//FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);
-  FragColor = vec4(ourColor, 1.0) * texture(texture1, TexCoord);
+  FragColor = ourColor * texture(texture1, TexCoord);
+//  FragColor = vec4(ourColor, 1.0) * texture(texture1, TexCoord);
 //  FragColor = vec4(ourColor, 1.0);
 }
