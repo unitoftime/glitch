@@ -1,5 +1,10 @@
 package glitch
 
+import (
+	"sort"
+)
+
+// https://realtimecollisiondetection.net/blog/?p=86
 // Sort by:
 // - Front-to-back vs Back-to-front (single bit)
 // - Depth bits
@@ -9,7 +14,6 @@ type drawCommand struct {
 	mesh *Mesh
 	matrix Mat4
 	mask RGBA
-	texMat Mat3
 }
 
 type RenderPass struct {
@@ -40,6 +44,10 @@ func (r *RenderPass) Clear() {
 
 // TODO - Mat?
 func (r *RenderPass) Draw(win *Window) {
+	sort.Slice(r.commands, func(i, j int) bool {
+		return r.commands[i].command < r.commands[j].command
+	})
+
 	r.shader.Bind()
 	r.texture.Bind(0) // TODO - hardcoded texture slot
 	for k,v := range r.uniforms {
@@ -60,6 +68,9 @@ func (r *RenderPass) Draw(win *Window) {
 		// work and append
 		posBuf := *(destBuffs[0]).(*[]Vec3)
 		for i := range c.mesh.positions {
+			// vec := c.mesh.positions[i].Scale(160, 200, 1)
+			// vec = c.matrix.Apply(vec)
+
 			vec := c.matrix.Apply(c.mesh.positions[i])
 			posBuf[i] = vec
 		}
@@ -70,14 +81,18 @@ func (r *RenderPass) Draw(win *Window) {
 				c.mesh.colors[i][0] * c.mask.R,
 				c.mesh.colors[i][1] * c.mask.G,
 				c.mesh.colors[i][2] * c.mask.B,
-				c.mesh.colors[i][2] * c.mask.A,
+				c.mesh.colors[i][3] * c.mask.A,
 			}
 		}
 
 		texBuf := *(destBuffs[2]).(*[]Vec2)
 		for i := range c.mesh.texCoords {
-			texBuf[i] = c.texMat.Apply(c.mesh.texCoords[i])
+			texBuf[i] = c.mesh.texCoords[i]
 		}
+		// texBuf := *(destBuffs[2]).(*[]Vec2)
+		// for i := range c.mesh.texCoords {
+		// 	texBuf[i] = c.texMat.Apply(c.mesh.texCoords[i])
+		// }
 	}
 
 	r.buffer.Draw()
@@ -92,8 +107,8 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 	r.uniforms[name] = value
 }
 
-func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, texMat Mat3) {
+func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA) {
 	r.commands = append(r.commands, drawCommand{
-		0, mesh, mat, mask, texMat,
+		0, mesh, mat, mask,
 	})
 }

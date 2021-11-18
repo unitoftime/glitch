@@ -145,80 +145,71 @@ type Sprite struct {
 	mesh *Mesh
 	bounds Rect
 	texture *Texture
-	textureMatrix Mat3
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
-	texMat := Mat3Ident
-	texMat.Scale(
-		bounds.W() / float32(texture.width),
-		bounds.H() / float32(texture.height),
-		1.0).Translate(
-			bounds.Min[0] / float32(texture.width),
-			bounds.Min[1] / float32(texture.height),
-		)
-
-	// ScaleMat3(&texMat,
-	// 	bounds.W() / float32(texture.width),
-	// 	bounds.H() / float32(texture.height),
-	// 	1.0)
-	// TranslateMat3(&texMat,
-	// 	bounds.Min[0] / float32(texture.width),
-	// 	bounds.Min[1] / float32(texture.height),
-	// )
+	uvBounds := R(
+		bounds.Min[0] / float32(texture.width),
+		bounds.Min[1] / float32(texture.height),
+		bounds.Max[0] / float32(texture.width),
+		bounds.Max[1] / float32(texture.height),
+	)
 
 	return &Sprite{
-		mesh: spriteMesh,
+		mesh: NewQuadMesh(bounds.W(), bounds.H(), uvBounds),
 		bounds: bounds,
 		texture: texture,
-		textureMatrix: texMat,
 	}
 }
 
 func (s *Sprite) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.textureMatrix)
+	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
 }
 func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(s.mesh, matrix, mask, s.textureMatrix)
+	pass.Add(s.mesh, matrix, mask)
 }
 
 type Mesh struct {
 	positions []Vec3
-	colors []Vec3
+	colors []Vec4
 	texCoords []Vec2
 	indices []uint32
 }
 
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, Mat3Ident)
+	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
 }
 
 func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(m, matrix, mask, Mat3Ident)
+	pass.Add(m, matrix, mask)
 }
 
-var spriteMesh = NewQuadMesh()
-
-func NewQuadMesh() *Mesh {
+func NewQuadMesh(w, h float32, uvBounds Rect) *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
 	positions := []Vec3{
-		Vec3{0.5  , 0.5,  0.0},
-		Vec3{0.5  , -0.5, 0.0},
-		Vec3{-0.5 , -0.5, 0.0},
-		Vec3{-0.5 , 0.5,  0.0},
+		Vec3{ 0.5 * w,  0.5 * h, 0.0},
+		Vec3{ 0.5 * w, -0.5 * h, 0.0},
+		Vec3{-0.5 * w, -0.5 * h, 0.0},
+		Vec3{-0.5 * w,  0.5 * h, 0.0},
 	}
-	colors := []Vec3{
-		Vec3{color.R, color.G, color.B},
-		Vec3{color.R, color.G, color.B},
-		Vec3{color.R, color.G, color.B},
-		Vec3{color.R, color.G, color.B},
+	colors := []Vec4{
+		Vec4{color.R, color.G, color.B, color.A},
+		Vec4{color.R, color.G, color.B, color.A},
+		Vec4{color.R, color.G, color.B, color.A},
+		Vec4{color.R, color.G, color.B, color.A},
 	}
 	texCoords := []Vec2{
-		Vec2{1.0, 0.0},
-		Vec2{1.0, 1.0},
-		Vec2{0.0, 1.0},
-		Vec2{0.0, 0.0},
+		Vec2{uvBounds.Max[0], uvBounds.Min[1]},
+		Vec2{uvBounds.Max[0], uvBounds.Max[1]},
+		Vec2{uvBounds.Min[0], uvBounds.Max[1]},
+		Vec2{uvBounds.Min[0], uvBounds.Min[1]},
 	}
+	// texCoords := []Vec2{
+	// 	Vec2{1.0, 0.0},
+	// 	Vec2{1.0, 1.0},
+	// 	Vec2{0.0, 1.0},
+	// 	Vec2{0.0, 0.0},
+	// }
 
 	inds := []uint32{
 		0, 1, 3,
@@ -232,6 +223,42 @@ func NewQuadMesh() *Mesh {
 		indices: inds,
 	}
 }
+
+// var spriteMesh = NewQuadMesh()
+
+// func NewQuadMesh() *Mesh {
+// 	color := RGBA{1.0, 1.0, 1.0, 1.0}
+// 	positions := []Vec3{
+// 		Vec3{0.5  , 0.5,  0.0},
+// 		Vec3{0.5  , -0.5, 0.0},
+// 		Vec3{-0.5 , -0.5, 0.0},
+// 		Vec3{-0.5 , 0.5,  0.0},
+// 	}
+// 	colors := []Vec3{
+// 		Vec3{color.R, color.G, color.B},
+// 		Vec3{color.R, color.G, color.B},
+// 		Vec3{color.R, color.G, color.B},
+// 		Vec3{color.R, color.G, color.B},
+// 	}
+// 	texCoords := []Vec2{
+// 		Vec2{1.0, 0.0},
+// 		Vec2{1.0, 1.0},
+// 		Vec2{0.0, 1.0},
+// 		Vec2{0.0, 0.0},
+// 	}
+
+// 	inds := []uint32{
+// 		0, 1, 3,
+// 		1, 2, 3,
+// 	}
+
+// 	return &Mesh{
+// 		positions: positions,
+// 		colors: colors,
+// 		texCoords: texCoords,
+// 		indices: inds,
+// 	}
+// }
 
 // type Material struct {
 // 	uniforms map[string]interface{}

@@ -14,9 +14,6 @@ import (
 	"flag"
 	"os"
 
-	"github.com/ungerik/go3d/vec3"
-
-	"github.com/go-gl/mathgl/mgl32"
 	"github.com/jstewart7/glitch"
 	"github.com/jstewart7/glitch/shaders"
 )
@@ -104,7 +101,6 @@ func runGame() {
 
 	w := float32(160.0)/4
 	h := float32(200.0)/4
-	manSize := &vec3.T{w, h, 1}
 
 	camera := glitch.NewCamera()
 	start := time.Now()
@@ -132,7 +128,7 @@ func runGame() {
 
 		for i := range man {
 			mat := glitch.Mat4Ident
-			mat.Scale(manSize[0], manSize[1], 1.0).Translate(man[i].position[0], man[i].position[1], 0)
+			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
 			manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 0.5})
@@ -152,7 +148,7 @@ func runGame() {
 }
 
 type Man struct {
-	position, velocity mgl32.Vec2
+	position, velocity glitch.Vec2
 	R, G, B float32
 }
 func NewMan() Man {
@@ -161,8 +157,8 @@ func NewMan() Man {
 		// position: mgl32.Vec2{100, 100},
 		// position: mgl32.Vec2{float32(float64(width/2) * rand.Float64()),
 		// 	float32(float64(height/2) * rand.Float64())},
-		position: mgl32.Vec2{1920/2, 1080/2},
-		velocity: mgl32.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
+		position: glitch.Vec2{1920/2, 1080/2},
+		velocity: glitch.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
 			float32(2*vScale * (rand.Float64()-0.5))},
 		R: rand.Float32(),
 		G: rand.Float32(),
