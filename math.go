@@ -176,7 +176,8 @@ func NewCamera() *Camera {
 
 func (c *Camera) SetOrtho2D(win *Window) {
 	bounds := win.Bounds()
-	c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
+	// c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
+	c.Projection = Mat4(mgl32.Ortho(0, bounds.W(), 0, bounds.H(), -1080, 1080))
 }
 
 func (c *Camera) SetView2D(x, y, scaleX, scaleY float32) {

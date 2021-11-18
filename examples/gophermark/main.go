@@ -128,10 +128,12 @@ func runGame() {
 
 		for i := range man {
 			mat := glitch.Mat4Ident
-			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
+			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
-			manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 0.5})
+			pass.SetLayer(man[i].layer)
+			manSprite.DrawColorMask(pass, mat, man[i].color)
+			// manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
 		}
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
@@ -149,9 +151,16 @@ func runGame() {
 
 type Man struct {
 	position, velocity glitch.Vec2
-	R, G, B float32
+	color glitch.RGBA
+	layer uint8
 }
 func NewMan() Man {
+	colors := []glitch.RGBA{
+		glitch.RGBA{1.0, 0, 0, 1.0},
+		glitch.RGBA{0, 1.0, 0, 1.0},
+		glitch.RGBA{0, 0, 1.0, 1.0},
+	}
+	randIndex := rand.Intn(len(colors))
 	vScale := 5.0
 	return Man{
 		// position: mgl32.Vec2{100, 100},
@@ -160,9 +169,8 @@ func NewMan() Man {
 		position: glitch.Vec2{1920/2, 1080/2},
 		velocity: glitch.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
 			float32(2*vScale * (rand.Float64()-0.5))},
-		R: rand.Float32(),
-		G: rand.Float32(),
-		B: rand.Float32(),
+		color: colors[randIndex],
+		layer: uint8(randIndex),
 	}
 }
 

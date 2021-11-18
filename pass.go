@@ -1,7 +1,9 @@
 package glitch
 
 import (
-	"sort"
+	// "github.com/faiface/mainthread"
+	// "github.com/jstewart7/gl"
+	// "sort"
 )
 
 // https://realtimecollisiondetection.net/blog/?p=86
@@ -9,6 +11,7 @@ import (
 // - Front-to-back vs Back-to-front (single bit)
 // - Depth bits
 // - Material / Uniforms / Textures
+// - Sort by: x, y, z, depth?
 type drawCommand struct {
 	command uint64
 	mesh *Mesh
@@ -16,13 +19,17 @@ type drawCommand struct {
 	mask RGBA
 }
 
+// This is essentially a generalized 2D render pass
 type RenderPass struct {
 	shader *Shader
 	texture *Texture
 	uniforms map[string]interface{}
 	buffer *BufferPool
-	commands []drawCommand
+	commands [][]drawCommand
+	currentLayer uint8
 }
+
+const DefaultLayer uint8 = 127
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 100000
@@ -30,23 +37,41 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		shader: shader,
 		texture: nil,
 		uniforms: make(map[string]interface{}),
-		// buffer: NewVertexBuffer(shader, 10000, 10000),
 		buffer: NewBufferPool(shader, defaultBatchSize),
-		commands: make([]drawCommand, 0),
+		// commands: make([]drawCommand, 0),
+		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
+		currentLayer: DefaultLayer,
 	}
 }
 
 func (r *RenderPass) Clear() {
 	// Clear stuff
 	r.buffer.Clear()
-	r.commands = r.commands[:0]
+	// r.commands = r.commands[:0]
+	for l := range r.commands {
+		r.commands[l] = r.commands[l][:0]
+	}
+}
+
+func (r *RenderPass) SetLayer(layer uint8) {
+	r.currentLayer = layer
 }
 
 // TODO - Mat?
 func (r *RenderPass) Draw(win *Window) {
-	sort.Slice(r.commands, func(i, j int) bool {
-		return r.commands[i].command < r.commands[j].command
-	})
+	// Hardware depth testing
+	// mainthread.Call(func() {
+	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
+	// 	// Do I need? glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.9f); - maybe prevents "discard;" in frag shader
+	// 	gl.Enable(gl.DEPTH_TEST)
+	// })
+
+	// sort.Slice(r.commands, func(i, j int) bool {
+	// 	// return r.commands[i].matrix[i4_3_0] < r.commands[j].matrix[i4_3_0] // Sort by x
+	// 	// return r.commands[i].matrix[i4_3_1] < r.commands[j].matrix[i4_3_1] // Sort by y
+	// 	// return r.commands[i].matrix[i4_3_2] < r.commands[j].matrix[i4_3_2] // Sort by z
+	// 	return r.commands[i].command < r.commands[j].command
+	// })
 
 	r.shader.Bind()
 	r.texture.Bind(0) // TODO - hardcoded texture slot
@@ -61,38 +86,34 @@ func (r *RenderPass) Draw(win *Window) {
 	destBuffs[0] = &[]Vec3{}
 	destBuffs[1] = &[]Vec4{}
 	destBuffs[2] = &[]Vec2{}
-	for _, c := range r.commands {
-		numVerts := len(c.mesh.positions)
-		r.buffer.Reserve(c.mesh.indices, numVerts, destBuffs)
+	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+		for _, c := range r.commands[l] {
+			// for _, c := range r.commands {
+			numVerts := len(c.mesh.positions)
+			r.buffer.Reserve(c.mesh.indices, numVerts, destBuffs)
 
-		// work and append
-		posBuf := *(destBuffs[0]).(*[]Vec3)
-		for i := range c.mesh.positions {
-			// vec := c.mesh.positions[i].Scale(160, 200, 1)
-			// vec = c.matrix.Apply(vec)
+			// work and append
+			posBuf := *(destBuffs[0]).(*[]Vec3)
+			for i := range c.mesh.positions {
+				vec := c.matrix.Apply(c.mesh.positions[i])
+				posBuf[i] = vec
+			}
 
-			vec := c.matrix.Apply(c.mesh.positions[i])
-			posBuf[i] = vec
-		}
+			colBuf := *(destBuffs[1]).(*[]Vec4)
+			for i := range c.mesh.colors {
+				colBuf[i] = Vec4{
+					c.mesh.colors[i][0] * c.mask.R,
+					c.mesh.colors[i][1] * c.mask.G,
+					c.mesh.colors[i][2] * c.mask.B,
+					c.mesh.colors[i][3] * c.mask.A,
+				}
+			}
 
-		colBuf := *(destBuffs[1]).(*[]Vec4)
-		for i := range c.mesh.colors {
-			colBuf[i] = Vec4{
-				c.mesh.colors[i][0] * c.mask.R,
-				c.mesh.colors[i][1] * c.mask.G,
-				c.mesh.colors[i][2] * c.mask.B,
-				c.mesh.colors[i][3] * c.mask.A,
+			texBuf := *(destBuffs[2]).(*[]Vec2)
+			for i := range c.mesh.texCoords {
+				texBuf[i] = c.mesh.texCoords[i]
 			}
 		}
-
-		texBuf := *(destBuffs[2]).(*[]Vec2)
-		for i := range c.mesh.texCoords {
-			texBuf[i] = c.mesh.texCoords[i]
-		}
-		// texBuf := *(destBuffs[2]).(*[]Vec2)
-		// for i := range c.mesh.texCoords {
-		// 	texBuf[i] = c.texMat.Apply(c.mesh.texCoords[i])
-		// }
 	}
 
 	r.buffer.Draw()
@@ -108,7 +129,10 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 }
 
 func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA) {
-	r.commands = append(r.commands, drawCommand{
+	r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
 		0, mesh, mat, mask,
 	})
+	// r.commands = append(r.commands, drawCommand{
+	// 	0, mesh, mat, mask,
+	// })
 }
