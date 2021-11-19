@@ -8,7 +8,6 @@ import (
 	"image/draw"
 	_ "image/png"
 	"time"
-	"math/rand"
 	"runtime"
 	"runtime/pprof"
 	"flag"
@@ -77,7 +76,7 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
-		Vsync: false,
+		Vsync: true,
 	})
 	if err != nil { panic(err) }
 
@@ -85,6 +84,10 @@ func runGame() {
 	if err != nil { panic(err) }
 
 	pass := glitch.NewRenderPass(shader)
+
+	diffuseShader, err := glitch.NewShader(shaders.DiffuseShader)
+	if err != nil { panic(err) }
+	diffusePass := glitch.NewRenderPass(diffuseShader)
 
 	manImage, err := loadImage("gopher.png")
 	if err != nil {
@@ -98,15 +101,6 @@ func runGame() {
 	x := float32(0)
 	y := float32(0)
 	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
-
-	length := 100000
-	man := make([]Man, length)
-	for i := range man {
-		man[i] = NewMan()
-	}
-
-	w := float32(160.0)/4
-	h := float32(200.0)/4
 
 	// Text
 	// TODO - use this instead of hardcoding
@@ -124,7 +118,10 @@ func runGame() {
 
 	text := atlas.Text("hello world")
 
-	camera := glitch.NewCamera()
+	cube := glitch.NewModel(glitch.NewCubeMesh(100), nil)
+
+	camera := glitch.NewCameraOrtho()
+	pCam := glitch.NewCamera()
 	start := time.Now()
 	var dt time.Duration
 	for !win.ShouldClose() {
@@ -132,34 +129,27 @@ func runGame() {
 			win.Close()
 		}
 		start = time.Now()
-		for i := range man {
-			man[i].position[0] += man[i].velocity[0]
-			man[i].position[1] += man[i].velocity[1]
-
-			if man[i].position[0] <= 0 || (man[i].position[0]+w) >= float32(1920) {
-				man[i].velocity[0] = -man[i].velocity[0]
-			}
-			if man[i].position[1] <= 0 || (man[i].position[1]+h) >= float32(1080) {
-				man[i].velocity[1] = -man[i].velocity[1]
-			}
-		}
 
 		pass.Clear()
+		diffusePass.Clear()
 
 		camera.SetOrtho2D(win)
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
-		for i := range man {
-			mat := glitch.Mat4Ident
-			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
-
-			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
-			pass.SetLayer(man[i].layer)
-			manSprite.DrawColorMask(pass, mat, man[i].color)
-			// manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
-		}
+		pCam.SetPerspective(win)
+		pCam.SetViewLookAt(win)
 
 		mat := glitch.Mat4Ident
+		mat.Scale(0.25, 0.25, 1.0).Translate(100, 100, 0)
+
+		pass.SetLayer(glitch.DefaultLayer)
+		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
+
+		mat = glitch.Mat4Ident
+		mat.Translate(200, 200, 0)
+		cube.Draw(diffusePass, mat)
+
+		mat = glitch.Mat4Ident
 		mat.Translate(0, 0, 0)
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
 		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
@@ -170,34 +160,13 @@ func runGame() {
 		pass.SetUniform("view", camera.View)
 		pass.Draw(win)
 
+		diffusePass.SetUniform("projection", pCam.Projection)
+		diffusePass.SetUniform("view", pCam.View)
+		diffusePass.Draw(win)
+
 		win.Update()
 
 		dt = time.Since(start)
 		fmt.Println(dt.Seconds() * 1000)
-	}
-}
-
-type Man struct {
-	position, velocity glitch.Vec2
-	color glitch.RGBA
-	layer uint8
-}
-func NewMan() Man {
-	colors := []glitch.RGBA{
-		glitch.RGBA{1.0, 0, 0, 1.0},
-		glitch.RGBA{0, 1.0, 0, 1.0},
-		glitch.RGBA{0, 0, 1.0, 1.0},
-	}
-	randIndex := rand.Intn(len(colors))
-	vScale := 5.0
-	return Man{
-		// position: mgl32.Vec2{100, 100},
-		// position: mgl32.Vec2{float32(float64(width/2) * rand.Float64()),
-		// 	float32(float64(height/2) * rand.Float64())},
-		position: glitch.Vec2{1920/2, 1080/2},
-		velocity: glitch.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
-			float32(2*vScale * (rand.Float64()-0.5))},
-		color: colors[randIndex],
-		layer: uint8(randIndex),
 	}
 }

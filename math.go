@@ -1,6 +1,7 @@
 package glitch
 
 import (
+	"math"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -159,28 +160,61 @@ func (m *Mat3) Apply( v Vec2) Vec2 {
 	}
 }
 
-// Camera??
-type Camera struct {
+
+type CameraOrtho struct {
 	Projection Mat4
 	View Mat4
 
 	position Vec3
 }
 
-func NewCamera() *Camera {
-	return &Camera{
+func NewCameraOrtho() *CameraOrtho {
+	return &CameraOrtho{
 		Projection: Mat4Ident,
 		View: Mat4Ident,
 	}
 }
 
-func (c *Camera) SetOrtho2D(win *Window) {
+func (c *CameraOrtho) SetOrtho2D(win *Window) {
 	bounds := win.Bounds()
 	// c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
 	c.Projection = Mat4(mgl32.Ortho(0, bounds.W(), 0, bounds.H(), -1080, 1080))
 }
 
-func (c *Camera) SetView2D(x, y, scaleX, scaleY float32) {
+func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {
 	c.View = Mat4Ident
 	c.View.Scale(scaleX, scaleY, 1.0).Translate(-x, -y, 0)
+}
+
+type Camera struct {
+	Projection Mat4
+	View Mat4
+
+	position Vec3
+	target Vec3
+}
+
+func NewCamera() *Camera {
+	return &Camera{
+		Projection: Mat4Ident,
+		View: Mat4Ident,
+		position: Vec3{0, 0, 0},
+		target: Vec3{0, 0, 0},
+	}
+}
+
+func (c *Camera) SetPerspective(win *Window) {
+	bounds := win.Bounds()
+	aspect := bounds.W() / bounds.H()
+	// c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
+	// c.Projection = Mat4(mgl32.Ortho(0, bounds.W(), 0, bounds.H(), -1080, 1080))
+	c.Projection = Mat4(mgl32.Perspective(math.Pi/4, aspect, 0.1, 1000))
+}
+
+func (c *Camera) SetViewLookAt(win *Window) {
+	c.View = Mat4(mgl32.LookAt(
+		c.position[0], c.position[1], c.position[2],
+		200, 200, 0, // target
+		0, 0, 1,
+	))
 }
