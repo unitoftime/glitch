@@ -14,8 +14,13 @@ import (
 	"flag"
 	"os"
 
+	"unicode"
+
 	"github.com/jstewart7/glitch"
 	"github.com/jstewart7/glitch/shaders"
+
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font/gofont/goregular"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
@@ -85,7 +90,9 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
-	texture := glitch.NewTexture(160, 200, manImage.Pix)
+	// texture := glitch.NewTexture(160, 200, manImage.Pix)
+	texture := glitch.NewTexture(manImage)
+	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
 
 	// mesh := glitch.NewQuadMesh()
 	x := float32(0)
@@ -100,6 +107,22 @@ func runGame() {
 
 	w := float32(160.0)/4
 	h := float32(200.0)/4
+
+	// Text
+	// TODO - use this instead of hardcoding
+	runes := make([]rune, unicode.MaxASCII - 32)
+	for i := range runes {
+		runes[i] = rune(32 + i)
+	}
+	font, err := truetype.Parse(goregular.TTF)
+	atlas := glitch.NewAtlas(
+		truetype.NewFace(font, &truetype.Options{
+			Size: 64,
+			GlyphCacheEntries: 1,
+		}),
+		runes)
+
+	text := atlas.Text("hello world")
 
 	camera := glitch.NewCamera()
 	start := time.Now()
@@ -134,6 +157,10 @@ func runGame() {
 			manSprite.DrawColorMask(pass, mat, man[i].color)
 			// manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
 		}
+
+		mat := glitch.Mat4Ident
+		mat.Translate(100, 100, 0)
+		text.Draw(pass, mat)
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 

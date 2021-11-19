@@ -1,6 +1,7 @@
 package glitch
 
 import (
+	"image"
 	"runtime"
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
@@ -11,7 +12,11 @@ type Texture struct {
 	width, height int
 }
 
-func NewTexture(width, height int, pixels []uint8) *Texture {
+func NewTexture(img *image.NRGBA) *Texture {
+// func NewTexture(width, height int, pixels []uint8) *Texture {
+	width := img.Bounds().Dx()
+	height := img.Bounds().Dy()
+	pixels := img.Pix
 	t := &Texture{
 		width: width,
 		height: height,

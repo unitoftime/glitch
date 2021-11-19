@@ -158,7 +158,7 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	)
 
 	return &Sprite{
-		mesh: NewQuadMesh(bounds.W(), bounds.H(), uvBounds),
+		mesh: NewSpriteMesh(bounds.W(), bounds.H(), uvBounds),
 		bounds: bounds,
 		texture: texture,
 		material: NewSpriteMaterial(texture),
@@ -181,6 +181,15 @@ type Mesh struct {
 	indices []uint32
 }
 
+func NewMesh() *Mesh {
+	return &Mesh{
+		positions: make([]Vec3, 0),
+		colors: make([]Vec4, 0),
+		texCoords: make([]Vec2, 0),
+		indices: make([]uint32, 0),
+	}
+}
+
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
 	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, nil)
 }
@@ -189,14 +198,42 @@ func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 	pass.Add(m, matrix, mask, nil)
 }
 
-func NewQuadMesh(w, h float32, uvBounds Rect) *Mesh {
+// TODO - should this be more like draw?
+func (m *Mesh) Append(m2 *Mesh) {
+	currentElement := uint32(len(m.positions))
+	for i := range m2.indices {
+		m.indices = append(m.indices, currentElement + m2.indices[i])
+	}
+
+	m.positions = append(m.positions, m2.positions...)
+	m.colors = append(m.colors, m2.colors...)
+	m.texCoords = append(m.texCoords, m2.texCoords...)
+}
+
+// TODO - clear function? Should append be more like draw?
+// func (m *Mesh) Clear() {
+	
+// }
+
+// Basically a quad mesh, but with a centered position
+func NewSpriteMesh(w, h float32, uvBounds Rect) *Mesh {
+	return NewQuadMesh(R(-w/2, -h/2, w/2, h/2), uvBounds)
+}
+
+func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
 	positions := []Vec3{
-		Vec3{ 0.5 * w,  0.5 * h, 0.0},
-		Vec3{ 0.5 * w, -0.5 * h, 0.0},
-		Vec3{-0.5 * w, -0.5 * h, 0.0},
-		Vec3{-0.5 * w,  0.5 * h, 0.0},
+		Vec3{bounds.Max[0], bounds.Max[1], 0.0},
+		Vec3{bounds.Max[0], bounds.Min[1], 0.0},
+		Vec3{bounds.Min[0], bounds.Min[1], 0.0},
+		Vec3{bounds.Min[0], bounds.Max[1], 0.0},
 	}
+	// positions := []Vec3{
+	// 	Vec3{ 0.5 * w,  0.5 * h, 0.0},
+	// 	Vec3{ 0.5 * w, -0.5 * h, 0.0},
+	// 	Vec3{-0.5 * w, -0.5 * h, 0.0},
+	// 	Vec3{-0.5 * w,  0.5 * h, 0.0},
+	// }
 	colors := []Vec4{
 		Vec4{color.R, color.G, color.B, color.A},
 		Vec4{color.R, color.G, color.B, color.A},
