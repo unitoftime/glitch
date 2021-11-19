@@ -42,6 +42,8 @@ const (
 type VertexBuffer struct {
 	vao, vbo, ebo gl.Buffer
 
+	materialSet bool
+	material Material
 	format VertexFormat
 	stride int
 
@@ -271,15 +273,25 @@ func (v *VertexBuffer) Clear() {
 		v.buffers[i].Clear()
 	}
 	v.indices = v.indices[:0]
+	v.material = nil
+	v.materialSet = false
 }
 
-func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
+func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) bool {
+	// If material is set and it doesn't match the reserved material
+	if v.materialSet && v.material != material {
+		fmt.Println("Material not matching")
+		return false
+	}
 	if len(v.indices) + len(indices) > cap(v.indices) {
 		return false
 	}
 	if v.buffers[0].Len() + numVerts > v.buffers[0].Cap() {
 		return false
 	}
+
+	v.materialSet = true
+	v.material = material
 
 	currentElement := v.buffers[0].VertexCount()
 	for i := range indices {
@@ -337,11 +349,13 @@ func (v *VertexBuffer) Draw() {
 }
 
 // BufferPool
+// TODO - Idea Improvements: You'd be able to calculate in the pass how many draws with the same material you'd be doing. Based on that you could have really well sized buffers. Also in here you could have different VertexBuffer sizes and order them as needed into a final draw slice
 type BufferPool struct {
 	shader *Shader
 	triangleBatchSize int
 	triangleCount int
 	buffers []*VertexBuffer
+	currentIndex int
 }
 func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
 	return &BufferPool{
@@ -349,7 +363,9 @@ func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
 		triangleBatchSize: triangleBatchSize,
 		triangleCount: 0,
 		buffers: make([]*VertexBuffer, 0),
+		currentIndex: 0,
 	}
+
 }
 
 func (b *BufferPool) Clear() {
@@ -357,31 +373,43 @@ func (b *BufferPool) Clear() {
 		b.buffers[i].Clear()
 	}
 	b.triangleCount = 0
+	b.currentIndex = 0
 }
 
-func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
-	for i := range b.buffers {
-		success := b.buffers[i].Reserve(indices, numVerts, dests)
+func (b *BufferPool) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) bool {
+	for i := b.currentIndex; i < len(b.buffers); i++ {
+		success := b.buffers[i].Reserve(material, indices, numVerts, dests)
 		if success {
 			b.triangleCount += len(indices) / 3
+			b.currentIndex = i
 			return true
 		}
 	}
 
-	fmt.Printf("NEW BATCH: %d\n", b.triangleCount)
+	fmt.Printf("NEW BATCH: %d - index: %d\n", b.triangleCount, b.currentIndex)
 	newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
-	success := newBuff.Reserve(indices, numVerts, dests)
+	success := newBuff.Reserve(material, indices, numVerts, dests)
 	if !success {
 		panic("SOMETHING WENT WRONG")
 	}
 	b.buffers = append(b.buffers, newBuff)
 	b.triangleCount += len(indices) / 3
+
+	b.currentIndex = len(b.buffers) - 1
+
 	return success
 }
 
 func (b *BufferPool) Draw() {
+	lastMaterial := Material(nil)
 	for i := range b.buffers {
 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
+		if lastMaterial != b.buffers[i].material {
+			lastMaterial = b.buffers[i].material
+			if lastMaterial != nil {
+				lastMaterial.Bind()
+			}
+		}
 		b.buffers[i].Draw()
 	}
 }

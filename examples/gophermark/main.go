@@ -86,7 +86,6 @@ func runGame() {
 		panic(err)
 	}
 	texture := glitch.NewTexture(160, 200, manImage.Pix)
-	pass.SetTexture(0, texture)
 
 	// mesh := glitch.NewQuadMesh()
 	x := float32(0)

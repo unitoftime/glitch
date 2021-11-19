@@ -17,6 +17,7 @@ type drawCommand struct {
 	mesh *Mesh
 	matrix Mat4
 	mask RGBA
+	material Material
 }
 
 // This is essentially a generalized 2D render pass
@@ -59,13 +60,14 @@ func (r *RenderPass) SetLayer(layer uint8) {
 
 // TODO - Mat?
 func (r *RenderPass) Draw(win *Window) {
-	// Hardware depth testing
+	// TODO - Hardware depth testing
 	// mainthread.Call(func() {
 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
 	// 	// Do I need? glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.9f); - maybe prevents "discard;" in frag shader
 	// 	gl.Enable(gl.DEPTH_TEST)
 	// })
 
+	// TODO - Software sorting
 	// sort.Slice(r.commands, func(i, j int) bool {
 	// 	// return r.commands[i].matrix[i4_3_0] < r.commands[j].matrix[i4_3_0] // Sort by x
 	// 	// return r.commands[i].matrix[i4_3_1] < r.commands[j].matrix[i4_3_1] // Sort by y
@@ -74,7 +76,6 @@ func (r *RenderPass) Draw(win *Window) {
 	// })
 
 	r.shader.Bind()
-	r.texture.Bind(0) // TODO - hardcoded texture slot
 	for k,v := range r.uniforms {
 		ok := r.shader.SetUniform(k, v)
 		if !ok {
@@ -90,7 +91,8 @@ func (r *RenderPass) Draw(win *Window) {
 		for _, c := range r.commands[l] {
 			// for _, c := range r.commands {
 			numVerts := len(c.mesh.positions)
-			r.buffer.Reserve(c.mesh.indices, numVerts, destBuffs)
+
+			r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 
 			// work and append
 			posBuf := *(destBuffs[0]).(*[]Vec3)
@@ -128,11 +130,8 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 	r.uniforms[name] = value
 }
 
-func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA) {
+func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 	r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
-		0, mesh, mat, mask,
+		0, mesh, mat, mask, material,
 	})
-	// r.commands = append(r.commands, drawCommand{
-	// 	0, mesh, mat, mask,
-	// })
 }

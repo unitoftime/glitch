@@ -146,6 +146,7 @@ type Sprite struct {
 	mesh *Mesh
 	bounds Rect
 	texture *Texture
+	material Material
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
@@ -160,14 +161,17 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		mesh: NewQuadMesh(bounds.W(), bounds.H(), uvBounds),
 		bounds: bounds,
 		texture: texture,
+		material: NewSpriteMaterial(texture),
 	}
 }
 
 func (s *Sprite) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
+	// pass.SetTexture(0, s.texture)
+	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 }
 func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(s.mesh, matrix, mask)
+	// pass.SetTexture(0, s.texture)
+	pass.Add(s.mesh, matrix, mask, s.material)
 }
 
 type Mesh struct {
@@ -178,11 +182,11 @@ type Mesh struct {
 }
 
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
+	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, nil)
 }
 
 func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(m, matrix, mask)
+	pass.Add(m, matrix, mask, nil)
 }
 
 func NewQuadMesh(w, h float32, uvBounds Rect) *Mesh {
@@ -261,9 +265,24 @@ func NewQuadMesh(w, h float32, uvBounds Rect) *Mesh {
 // 	}
 // }
 
-// type Material struct {
-// 	uniforms map[string]interface{}
-// }
+type Material interface {
+	Bind()
+}
+
+type SpriteMaterial struct {
+	texture *Texture
+}
+
+func NewSpriteMaterial(texture *Texture) SpriteMaterial {
+	return SpriteMaterial{
+		texture: texture,
+	}
+}
+
+func (m SpriteMaterial) Bind() {
+	m.texture.Bind(0) // Direct opengl? Or should I call through shader?
+	// pass.SetTexture(0, m.texture) // TODO - hardcoded slot?
+}
 
 // type Model struct {
 // 	meshes []Mesh
