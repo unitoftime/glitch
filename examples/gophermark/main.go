@@ -126,6 +126,7 @@ func runGame() {
 
 	camera := glitch.NewCamera()
 	start := time.Now()
+	var dt time.Duration
 	for !win.ShouldClose() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
@@ -159,7 +160,8 @@ func runGame() {
 		}
 
 		mat := glitch.Mat4Ident
-		mat.Translate(100, 100, 0)
+		mat.Translate(0, 0, 0)
+		text.Set(fmt.Sprintf("%02f", dt.Seconds()))
 		text.Draw(pass, mat)
 
 		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
@@ -170,7 +172,7 @@ func runGame() {
 
 		win.Update()
 
-		dt := time.Since(start)
+		dt = time.Since(start)
 		fmt.Println(dt.Seconds() * 1000)
 	}
 }

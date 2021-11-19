@@ -10,10 +10,8 @@ import (
 	"image/png"
 
 	"golang.org/x/image/font"
-	// "github.com/golang/freetype/truetype"
 
 	"golang.org/x/image/math/fixed"
-	// "github.com/go-gl/mathgl/mgl32"
 )
 
 type Glyph struct {
@@ -119,11 +117,10 @@ func (a *Atlas) StringVerts(text string, size float32) *Mesh {
 	return mesh
 }
 
-func (a *Atlas) RuneVerts(r rune, dot Vec2, size float32) (*Mesh, Vec2) {
-	//	size := float32(0.5) // TODO - hardcoded
-	//	size = size / 32 // TODO - hardcoding. Not actually computing the right font size
-	//	size = float32(1)
-	size = size * 12 // // TODO - hardcoding. Not actually computing the right font size
+func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2) {
+	// multiplying by texture sizes converts from UV to pixel coords
+	scaleX := scale * float32(a.texture.width)
+	scaleY := scale * float32(a.texture.height)
 
 	glyph, ok := a.mapping[r]
 	if !ok { panic("Missing Rune!") }
@@ -136,42 +133,54 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, size float32) (*Mesh, Vec2) {
 	v1 := glyph.BoundsUV.Min[1]
 	v2 := glyph.BoundsUV.Max[1]
 
-	// x1 := dot.X
-	// x2 := dot.X + size * (u2 - u1)
-	// y1 := dot.Y
-	// y2 := dot.Y + size * (v2 - v1)
-
-	// gl position coordinates of the quad
-	// Note: we scale by size here because the atlas isn't necessarily 1:1 with the fontsize
-	x1 := dot[0] + (size * glyph.Bearing[0])
-	x2 := x1 + (size * (u2 - u1))
-	y1 := dot[1] + (size * glyph.Bearing[1])
-	y2 := y1 + (size * (v2 - v1))
+	// Pixel coordinates of the quad (scaled by scale)
+	x1 := dot[0] + (scaleX * glyph.Bearing[0])
+	x2 := x1 + (scaleX * (u2 - u1))
+	y1 := dot[1] + (scaleY * glyph.Bearing[1])
+	y2 := y1 + (scaleY * (v2 - v1))
 
 	mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 
-	dot[0] += (size * glyph.Advance)
+	dot[0] += (scaleX * glyph.Advance)
 
 	return mesh, dot
 }
 
 func (a *Atlas) Text(str string) *Text {
-	return &Text{
-		currentString: str,
-		mesh: a.StringVerts(str, 36),
+	t := &Text{
+		currentString: "",
+		atlas: a,
 		texture: a.texture,
 		material: NewSpriteMaterial(a.texture),
+		scale: 1.0,
 	}
+
+	t.Set(str)
+
+	return t
 }
 
 type Text struct {
 	currentString string
 	mesh *Mesh
+	atlas *Atlas
 	bounds Rect
 	texture *Texture
 	material Material
+	scale float32
+}
+
+func (t *Text) Set(str string) {
+	if t.currentString != str {
+		t.currentString = str
+		t.mesh = t.atlas.StringVerts(str, t.scale)
+	}
 }
 
 func (t *Text) Draw(pass *RenderPass, matrix Mat4) {
 	pass.Add(t.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, t.material)
+}
+
+func (t *Text) DrawColorMask(pass *RenderPass, matrix Mat4, color RGBA) {
+	pass.Add(t.mesh, matrix, color, t.material)
 }
