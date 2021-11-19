@@ -1,13 +1,12 @@
 package glitch
 
 import (
-	"os"
-
+	// "os"
+	// "image/png"
 	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
-	"image/png"
 
 	"golang.org/x/image/font"
 
@@ -95,10 +94,10 @@ func NewAtlas(face font.Face, runes []rune) *Atlas {
 	}
 
 	// outputFile is a File type which satisfies Writer interface
-	outputFile, err := os.Create("test.png")
-	if err != nil { panic(err) }
-	png.Encode(outputFile, img)
-	outputFile.Close()
+	// outputFile, err := os.Create("test.png")
+	// if err != nil { panic(err) }
+	// png.Encode(outputFile, img)
+	// outputFile.Close()
 
 	atlas.texture = NewTexture(img)
 	fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
