@@ -9,6 +9,22 @@ type Vec2 [2]float32
 type Vec3 [3]float32
 type Vec4 [4]float32
 
+func (v Vec2) Add(u Vec2) Vec2 {
+	return Vec2{v[0] + u[0], v[1] + u[1]}
+}
+
+func (v Vec2) Sub(u Vec2) Vec2 {
+	return Vec2{v[0] - u[0], v[1] - u[1]}
+}
+
+func (v Vec2) Len() float32 {
+	return float32(math.Hypot(float64(v[0]), float64(v[1])))
+}
+
+func (v Vec2) Scaled(s float32) Vec2 {
+	return Vec2{s * v[0], s * v[1]}
+}
+
 func (v Vec3) Scale(x, y, z float32) Vec3 {
 	v[0] *= x
 	v[1] *= y
@@ -111,6 +127,7 @@ const (
 	i4_2_3 = 11
 	i4_3_0 = 12
 	i4_3_1 = 13
+
 	i4_3_2 = 14
 	i4_3_3 = 15
 
@@ -143,6 +160,24 @@ func (r *Rect) W() float32 {
 
 func (r *Rect) H() float32 {
 	return r.Max[1] - r.Min[1]
+}
+
+func (r Rect) Center() Vec2 {
+	return Vec2{r.Min[0] + (r.W()/2), r.Min[1] + (r.H()/2)}
+}
+
+func (r Rect) Norm() Rect {
+	x1, x2 := minMax(r.Min[0], r.Max[0])
+	y1, y2 := minMax(r.Min[1], r.Max[1])
+	return R(x1, y1, x2, y2)
+}
+
+// returns the min, max of the two numbers
+func minMax(a, b float32) (float32, float32) {
+	if a > b {
+		return b, a
+	}
+	return a, b
 }
 
 func (m *Mat4) Apply(v Vec3) Vec3 {
@@ -178,7 +213,7 @@ func NewCameraOrtho() *CameraOrtho {
 func (c *CameraOrtho) SetOrtho2D(win *Window) {
 	bounds := win.Bounds()
 	// c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
-	c.Projection = Mat4(mgl32.Ortho(0, bounds.W(), 0, bounds.H(), -1080, 1080))
+	c.Projection = Mat4(mgl32.Ortho(0, bounds.W(), 0, bounds.H(), -1, 1))
 }
 
 func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {

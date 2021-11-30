@@ -174,6 +174,10 @@ func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 	pass.Add(s.mesh, matrix, mask, s.material)
 }
 
+func (s *Sprite) Bounds() Rect {
+	return s.bounds
+}
+
 type Material interface {
 	Bind()
 }

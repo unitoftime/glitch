@@ -20,6 +20,7 @@ func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
 	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, nil)
 }
 
+// TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 	pass.Add(m, matrix, mask, nil)
 }

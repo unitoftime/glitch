@@ -3,7 +3,6 @@ module github.com/jstewart7/glitch
 go 1.18
 
 replace github.com/jstewart7/gl => /home/jacob/go/src/github.com/jstewart7/gl
-
 replace github.com/jstewart7/glfw => /home/jacob/go/src/github.com/jstewart7/glfw
 
 require (

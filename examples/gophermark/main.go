@@ -124,7 +124,7 @@ func runGame() {
 
 	text := atlas.Text("hello world")
 
-	camera := glitch.NewCamera()
+	camera := glitch.NewCameraOrtho()
 	start := time.Now()
 	var dt time.Duration
 	for !win.ShouldClose() {
@@ -151,7 +151,8 @@ func runGame() {
 
 		for i := range man {
 			mat := glitch.Mat4Ident
-			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
+			// mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
+			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
 			pass.SetLayer(man[i].layer)

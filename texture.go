@@ -2,6 +2,7 @@ package glitch
 
 import (
 	"image"
+	"image/draw"
 	"runtime"
 	"github.com/faiface/mainthread"
 	"github.com/jstewart7/gl"
@@ -12,11 +13,14 @@ type Texture struct {
 	width, height int
 }
 
-func NewTexture(img *image.NRGBA) *Texture {
+func NewTexture(img image.Image) *Texture {
 // func NewTexture(width, height int, pixels []uint8) *Texture {
-	width := img.Bounds().Dx()
-	height := img.Bounds().Dy()
-	pixels := img.Pix
+	nrgba := image.NewNRGBA(img.Bounds())
+	draw.Draw(nrgba, nrgba.Bounds(), img, img.Bounds().Min, draw.Src)
+
+	width := nrgba.Bounds().Dx()
+	height := nrgba.Bounds().Dy()
+	pixels := nrgba.Pix
 	t := &Texture{
 		width: width,
 		height: height,
@@ -49,6 +53,10 @@ func NewTexture(img *image.NRGBA) *Texture {
 	runtime.SetFinalizer(t, (*Texture).delete)
 
 	return t
+}
+
+func (t *Texture) Bounds() Rect {
+	return R(0, 0, float32(t.width), float32(t.height))
 }
 
 func (t *Texture) Bind(position int) {
