@@ -19,6 +19,12 @@ type Window struct {
 	window *glfw.Window
 
 	width, height int
+
+	input struct {
+		scroll struct {
+			X, Y float64
+		}
+	}
 }
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
@@ -73,6 +79,11 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			gl.Viewport(0, 0, int(win.width), int(win.height))
 		})
 
+		win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
+			win.input.scroll.X += xoff
+			win.input.scroll.Y += yoff
+		})
+
 		// TODO - other callbacks?
 
 		return nil
@@ -89,6 +100,9 @@ func (w *Window) Update() {
 		w.window.SwapBuffers()
 		glfw.PollEvents()
 	})
+
+	w.input.scroll.X = 0
+	w.input.scroll.Y = 0
 }
 
 func (w *Window) Close() {
@@ -136,4 +150,8 @@ func (w *Window) Pressed(key Key) bool {
 		return true
 	}
 	return false
+}
+
+func (w *Window) MouseScroll() (float64, float64) {
+	return w.input.scroll.X, w.input.scroll.Y
 }
