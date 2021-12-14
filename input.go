@@ -1,6 +1,6 @@
 package glitch
 
 // import (
-// 	"github.com/jstewart7/glfw"
+// 	"github.com/unitoftime/glfw"
 // )
 

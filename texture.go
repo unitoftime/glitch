@@ -5,7 +5,7 @@ import (
 	"image/draw"
 	"runtime"
 	"github.com/faiface/mainthread"
-	"github.com/jstewart7/gl"
+	"github.com/unitoftime/gl"
 )
 
 type Texture struct {

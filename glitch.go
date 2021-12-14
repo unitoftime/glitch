@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	"github.com/jstewart7/gl"
+	"github.com/unitoftime/gl"
 	"github.com/faiface/mainthread"
 
 )

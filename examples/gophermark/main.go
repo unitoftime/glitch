@@ -16,8 +16,8 @@ import (
 
 	"unicode"
 
-	"github.com/jstewart7/glitch"
-	"github.com/jstewart7/glitch/shaders"
+	"github.com/unitoftime/glitch"
+	"github.com/unitoftime/glitch/shaders"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"

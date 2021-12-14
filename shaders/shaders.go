@@ -1,7 +1,7 @@
 package shaders
 
 import (
-	"github.com/jstewart7/glitch"
+	"github.com/unitoftime/glitch"
 	_ "embed"
 )
 

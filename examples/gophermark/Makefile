@@ -18,6 +18,6 @@ compress:
 	ls -lh main.wasm.gz
 
 serve:
-	~/go/src/github.com/jstewart7/go-experiments/fileserver/fileserver
+	~/go/src/github.com/unitoftime/go-experiments/fileserver/fileserver
 
 run: wasm compress serve

@@ -7,7 +7,7 @@ import (
 	// "syscall/js"
 
 	"github.com/faiface/mainthread"
-	"github.com/jstewart7/gl"
+	"github.com/unitoftime/gl"
 )
 
 // TODO - right now we only support floats (for simplicity)

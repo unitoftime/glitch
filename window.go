@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"github.com/faiface/mainthread"
 
-	"github.com/jstewart7/glfw"
-	"github.com/jstewart7/gl"
+	"github.com/unitoftime/glfw"
+	"github.com/unitoftime/gl"
 )
 
 

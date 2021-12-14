@@ -2,7 +2,7 @@ package glitch
 
 import (
 	// "github.com/faiface/mainthread"
-	// "github.com/jstewart7/gl"
+	// "github.com/unitoftime/gl"
 	// "sort"
 )
 
