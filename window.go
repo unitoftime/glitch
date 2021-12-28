@@ -123,12 +123,12 @@ func (w *Window) Bounds() Rect {
 	return R(0, 0, float32(w.width), float32(w.height))
 }
 
-func (w *Window) MousePosition() (float64, float64) {
+func (w *Window) MousePosition() (float32, float32) {
 	var x, y float64
 	mainthread.Call(func() {
 		x, y = w.window.GetCursorPos()
 	})
-	return x,y
+	return float32(x), float32(float64(w.height) - y) // This flips the coordinate to quadrant 1
 }
 
 // // Returns true if the key was pressed in the last frame

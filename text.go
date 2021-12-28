@@ -104,19 +104,26 @@ func NewAtlas(face font.Face, runes []rune) *Atlas {
 	return atlas
 }
 
-func (a *Atlas) StringVerts(text string, size float32) *Mesh {
-	dot := Vec2{0,0}
+func (a *Atlas) StringVerts(text string, size float32) (*Mesh, Rect) {
+	initialDot := Vec2{0, 0}
+	dot := initialDot
+
+	maxAscent := float32(0)
 
 	mesh := NewMesh()
 	for _,r := range text {
-		runeMesh, newDot := a.RuneVerts(r, dot, size)
+		runeMesh, newDot, ascent := a.RuneVerts(r, dot, size)
 		mesh.Append(runeMesh)
 		dot = newDot
+
+		if maxAscent < ascent {
+			maxAscent = ascent
+		}
 	}
-	return mesh
+	return mesh, R(initialDot[0], initialDot[1], dot[0], maxAscent)
 }
 
-func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2) {
+func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32) {
 	// multiplying by texture sizes converts from UV to pixel coords
 	scaleX := scale * float32(a.texture.width)
 	scaleY := scale * float32(a.texture.height)
@@ -142,7 +149,7 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2) {
 
 	dot[0] += (scaleX * glyph.Advance)
 
-	return mesh, dot
+	return mesh, dot, y2
 }
 
 func (a *Atlas) Text(str string) *Text {
@@ -169,10 +176,14 @@ type Text struct {
 	scale float32
 }
 
+func (t *Text) Bounds() Rect {
+	return t.bounds
+}
+
 func (t *Text) Set(str string) {
 	if t.currentString != str {
 		t.currentString = str
-		t.mesh = t.atlas.StringVerts(str, t.scale)
+		t.mesh, t.bounds = t.atlas.StringVerts(str, t.scale)
 	}
 }
 
@@ -182,4 +193,10 @@ func (t *Text) Draw(pass *RenderPass, matrix Mat4) {
 
 func (t *Text) DrawColorMask(pass *RenderPass, matrix Mat4, color RGBA) {
 	pass.Add(t.mesh, matrix, color, t.material)
+}
+
+func (t *Text) DrawRect(pass *RenderPass, rect Rect, color RGBA) {
+	mat := Mat4Ident
+	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
+	pass.Add(t.mesh, mat, color, t.material)
 }

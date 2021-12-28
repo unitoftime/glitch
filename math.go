@@ -1,6 +1,7 @@
 package glitch
 
 import (
+	// "fmt"
 	"math"
 	"github.com/go-gl/mathgl/mgl32"
 )
@@ -170,6 +171,69 @@ func (r Rect) Norm() Rect {
 	x1, x2 := minMax(r.Min[0], r.Max[0])
 	y1, y2 := minMax(r.Min[1], r.Max[1])
 	return R(x1, y1, x2, y2)
+}
+
+func (r Rect) Contains(x, y float32) bool {
+	return x > r.Min[0] && x < r.Max[0] && y > r.Min[1] && y < r.Max[1]
+}
+
+func (r *Rect) CutLeft(amount float32) Rect {
+	cutRect := *r
+	cutRect.Max[0] = cutRect.Min[0] + amount
+	r.Min[0] += amount
+	return cutRect
+}
+
+func (r *Rect) CutRight(amount float32) Rect {
+	cutRect := *r
+	cutRect.Min[0] = cutRect.Max[0] - amount
+	r.Max[0] -= amount
+	return cutRect
+}
+
+func (r *Rect) CutBottom(amount float32) Rect {
+	cutRect := *r
+	cutRect.Max[1] = cutRect.Min[1] + amount
+	r.Min[1] += amount
+	return cutRect
+}
+
+func (r *Rect) CutTop(amount float32) Rect {
+	cutRect := *r
+	cutRect.Min[1] = cutRect.Max[1] - amount
+	r.Max[1] -= amount
+	return cutRect
+}
+
+// Returns a centered horizontal sliver with height set by amount
+func (r Rect) SliceHorizontal(amount float32) Rect {
+	r.CutTop((r.H() - amount) / 2)
+	return r.CutTop(amount)
+}
+
+// Returns a centered vertical sliver with width set by amount
+func (r Rect) SliceVertical(amount float32) Rect {
+	r.CutRight((r.W() - amount) / 2)
+	return r.CutRight(amount)
+}
+
+// Takes r2 and places it in r based on the alignment
+func (r Rect) Anchor(r2 Rect, anchor Vec2) Rect {
+	// Anchor point is the position in r that we are anchoring to
+	anchorPoint := Vec2{r.Min[0] + (anchor[0] * r.W()) , r.Min[1] + (anchor[1] * r.H())}
+	pivotPoint := Vec2{r2.Min[0] + (anchor[0] * r2.W()) , r2.Min[1] + (anchor[1] * r2.H())}
+
+	// fmt.Println("Anchor:", anchorPoint)
+	// fmt.Println("Pivot:", pivotPoint)
+
+	a := Vec2{anchorPoint[0] - pivotPoint[0], anchorPoint[1] - pivotPoint[1]}
+	return R(a[0], a[1], a[0] + r2.W(), a[1] + r2.H()).Norm()
+}
+
+func lerp(a, b float32, t float32) float32 {
+	m := b - a // Slope = Rise over run | Note: Run = (1 - 0)
+	y := (m * t) + a
+	return y
 }
 
 // returns the min, max of the two numbers

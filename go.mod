@@ -2,9 +2,8 @@ module github.com/unitoftime/glitch
 
 go 1.18
 
-replace github.com/unitoftime/gl => /home/jacob/go/src/github.com/unitoftime/gl
-
-replace github.com/unitoftime/glfw => /home/jacob/go/src/github.com/unitoftime/glfw
+//replace github.com/unitoftime/gl => /home/jacob/go/src/github.com/unitoftime/gl
+//replace github.com/unitoftime/glfw => /home/jacob/go/src/github.com/unitoftime/glfw
 
 require (
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
