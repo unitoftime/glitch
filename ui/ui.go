@@ -1,23 +1,46 @@
 package ui
 
 import (
-// 	"math"
-// 	"image/color"
-
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
-
-// 	"github.com/unitoftime/flow/asset"
 )
+
+// TODO - Should I use these?
+type Drawer interface {
+	Bounds() glitch.Rect
+	Draw(*glitch.RenderPass, glitch.Rect, glitch.Mat4)
+}
+
+// type Hoverer interface {
+// 	Drawer
+// 	Hover()
+// }
+
+// type Presser interface {
+// 	Drawer
+// 	Press()
+// }
+
+// type Button struct{
+// 	normal, hover *glitch.Sprite
+// }
+
+// func (b *Button) Draw(pass *glitch.RenderPass, rect glitch.Rect) {
+// 	mat := glitch.Mat4Ident
+// 	bounds := b.normal.Bounds()
+// 	mat.Scale(rect.W() / bounds.W(), rect.H() / bounds.H(), 1).Translate(rect.W()/2 + rect.Min[0], rect.H()/2 + rect.Min[1], 0)
+// 	b.normal.Draw(pass, mat)
+// }
+
+// func (b *Button) Hover() {
+	
+// }
 
 type Group struct {
 	win *glitch.Window
 	pass *glitch.RenderPass
 	camera *glitch.CameraOrtho
 	atlas *glitch.Atlas
-	// text *text.Text
-	// batch *pixel.Batch
-	// spritesheet *asset.Spritesheet
 	// unionBounds *Rect // A union of all drawn object's bounds
 	Debug bool
 	// debugImd *imdraw.IMDraw
@@ -33,9 +56,6 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 		camera: glitch.NewCameraOrtho(),
 		pass: pass,
 		atlas: atlas,
-		// text: text.New(pixel.V(0, 0), atlas), // TODO - specify anchor point?
-		// batch: pixel.NewBatch(&pixel.TrianglesData{}, spritesheet.Picture()),
-		// spritesheet: spritesheet,
 		// unionBounds: nil,
 		Debug: false,
 		// debugImd : imdraw.New(nil),
@@ -50,8 +70,6 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 func (g *Group) Clear() {
 	g.pass.Clear()
 	// g.unionBounds = nil
-	// g.batch.Clear()
-	// g.text.Clear()
 
 	// g.debugImd.Clear()
 	// g.debugImd.Color = pixel.RGB(1, 0, 0)
@@ -65,8 +83,6 @@ func (g *Group) Draw() {
 	g.pass.SetUniform("view", g.camera.View)
 
 	g.pass.Draw(g.win)
-	// g.batch.Draw(g.win)
-	// g.text.Draw(g.win, pixel.IM)
 
 	// if g.Debug {
 	// 	if g.unionBounds != nil {
@@ -77,14 +93,19 @@ func (g *Group) Draw() {
 	// }
 }
 
-func (g *Group) Sprite(sprite *glitch.Sprite, rect glitch.Rect) {
+// func (g *Group) Panel(sprite *glitch.Sprite, rect glitch.Rect) {
+
+// }
+
+func (g *Group) Sprite(sprite Drawer, rect glitch.Rect) {
+	// sprite.Draw(g.pass, rect)
 	mat := glitch.Mat4Ident
-	bounds := sprite.Bounds()
-	mat.Scale(rect.W() / bounds.W(), rect.H() / bounds.H(), 1).Translate(rect.W()/2 + rect.Min[0], rect.H()/2 + rect.Min[1], 0)
-	sprite.Draw(g.pass, mat)
+	// bounds := sprite.Bounds()
+	// mat.Scale(rect.W() / bounds.W(), rect.H() / bounds.H(), 1).Translate(rect.W()/2 + rect.Min[0], rect.H()/2 + rect.Min[1], 0)
+	sprite.Draw(g.pass, rect, mat)
 }
 
-func (g *Group) HoveredSprite(normal, hovered *glitch.Sprite, rect glitch.Rect) bool {
+func (g *Group) HoveredSprite(normal, hovered Drawer, rect glitch.Rect) bool {
 	mX, mY := g.win.MousePosition()
 	if rect.Contains(mX, mY) {
 		g.Sprite(hovered, rect)
@@ -99,51 +120,7 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.atlas.Text(str)
 	r := rect.Anchor(text.Bounds(), anchor)
 	text.DrawRect(g.pass, r, glitch.RGBA{0, 0, 0, 1.0})
-	// c.text.Dot = position
-	// bounds := c.text.BoundsOf(str)
-	// c.text.Dot.X -= math.Round(bounds.W() * alignment.X)
-	// c.text.Dot.Y -= math.Round(bounds.H() * alignment.Y)
-	// bounds = c.text.BoundsOf(str)
-
-	// c.text.WriteString(str)
-
-	// c.appendUnionBounds(Rect{bounds})
-	// return Rect{bounds}
 }
-
-// // TODO - call this Layout?
-// type Rect struct {
-// 	pixel.Rect
-// }
-
-// func (r Rect) Moved(v pixel.Vec) Rect {
-// 	return Rect{r.Rect.Moved(v)}
-// }
-// func (r Rect) Union(r2 Rect) Rect {
-// 	return Rect{r.Rect.Union(r2.Rect)}
-// }
-
-// func (r Rect) AnchorBL() pixel.Vec {
-// 	return r.Min
-// }
-
-// func (r Rect) AnchorBR() pixel.Vec {
-// 	return pixel.V(r.Max.X, r.Min.Y)
-// }
-
-// func (r Rect) AnchorTL() pixel.Vec {
-// 	return pixel.V(r.Min.X, r.Max.Y)
-// }
-
-// func (r Rect) AnchorTR() pixel.Vec {
-// 	return r.Max
-// }
-
-// func (r Rect) Anchor(x, y float64) pixel.Vec {
-// 	return pixel.V(
-// 		r.Min.X + (x * r.W()),
-// 		r.Min.Y + (y * r.H()))
-// }
 
 // // Pads around center
 // func (r Rect) Pad(x, y float64) Rect {
@@ -171,49 +148,6 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 // 	)}
 // }
 
-
-// func (r *Rect) CutLeft(amount float64) Rect {
-// 	cutRect := *r
-// 	cutRect.Max.X = cutRect.Min.X + amount
-// 	r.Min.X += amount
-// 	return cutRect
-// }
-
-// func (r *Rect) CutRight(amount float64) Rect {
-// 	cutRect := *r
-// 	cutRect.Min.X = cutRect.Max.X - amount
-// 	r.Max.X -= amount
-// 	return cutRect
-// }
-
-// func (r *Rect) CutBottom(amount float64) Rect {
-// 	cutRect := *r
-// 	cutRect.Max.Y = cutRect.Min.Y + amount
-// 	r.Min.Y += amount
-// 	return cutRect
-// }
-
-// func (r *Rect) CutTop(amount float64) Rect {
-// 	cutRect := *r
-// 	cutRect.Min.Y = cutRect.Max.Y - amount
-// 	r.Max.Y -= amount
-// 	return cutRect
-// }
-
-// // Returns a centered horizontal sliver with height set by amount
-// func (r Rect) SliceHorizontal(amount float64) Rect {
-// 	r.CutTop((r.H() - amount) / 2)
-// 	return r.CutTop(amount)
-// }
-
-// // Returns a centered vertical sliver with width set by amount
-// func (r Rect) SliceVertical(amount float64) Rect {
-// 	r.CutRight((r.W() - amount) / 2)
-// 	return r.CutRight(amount)
-// }
-
-
-
 // // Maintains the current union of all bounds
 // func (c *Context) appendUnionBounds(newBounds Rect) {
 // 	if c.unionBounds == nil {
@@ -225,54 +159,6 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 // }
 
 
-// func (c *Context) NewWindowRect() Rect {
-// 	return Rect{c.win.Bounds()}
-// }
-
-// // TODO - this could be good for dividing layout from rendering? Maybe extend this thought to Context instead of layout? like fill out the context drawcall list instead of in layout?
-// // type DrawCall struct {
-// // 	name string
-// // 	rect Rect
-// // }
-
-// // func (d *DrawCall) draw(c *Context) {
-// // 	c.SpriteFull2(name, rect)
-// // }
-
-// // type Layout struct {
-// // 	Bounds Rect
-// // 	Size, Pivot pixel.Vec
-// // 	ctx *Context
-// // 	// draws []DrawCall
-// // }
-
-// // func (c *Context) NewLayout(bounds Rect, size, pivot pixel.Vec) Layout {
-// // 	return Layout{
-// // 		Bounds: bounds,
-// // 		Size: size,
-// // 		Pivot: pivot,
-// // 		ctx: c,
-// // 	}
-// // }
-
-// // func (l *Layout) Sprite(name string) {
-// // 	l.ctx.SpriteFull(name, l.Size, l.Bounds.Center(), l.Pivot)
-// // }
-
-// // func (l *Layout) SlicedSprite(name string) {
-// // 	l.ctx.PanelFull(name, l.Size, l.Bounds.Center(), l.Pivot)
-// // }
-
-// // func (l *Layout) SlicedPanel(name string) {
-// // 	l.ctx.PanelFull2(name, l.Bounds)
-// // }
-
-// // func (l *Layout) Draw() {
-// // 	for i := range l.draws {
-		
-// // 	}
-// // }
-
 // func (c *Context) Place(position, size, pivot pixel.Vec) Rect {
 // 	destRect := pixel.R(
 // 		position.X - (size.X * pivot.X),
@@ -281,17 +167,6 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 // 		position.Y + (size.Y * (1-pivot.Y)),
 // 	)
 // 	return Rect{destRect}
-// }
-
-// func (c *Context) HoverSprite(normal, hovered string, bounds Rect) bool {
-// 	mousePos := c.win.MousePosition()
-// 	if bounds.Contains(mousePos) {
-// 		c.Sprite(hovered, bounds)
-// 		return true
-// 	}
-
-// 	c.Sprite(normal, bounds)
-// 	return false
 // }
 
 // func (c *Context) HoverSlicedSprite(normal, hovered string, bounds Rect) bool {
@@ -368,56 +243,12 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 // // }
 
 
-// func (c *Context) MeasureText(str string, position, alignment pixel.Vec) Rect {
-// 	c.text.Dot = position
-// 	bounds := c.text.BoundsOf(str)
-// 	c.text.Dot.X -= math.Round(bounds.W() * alignment.X)
-// 	c.text.Dot.Y -= math.Round(bounds.H() * alignment.Y)
-// 	bounds = c.text.BoundsOf(str)
-// 	return Rect{bounds}
-// }
-
-// func (c *Context) SetTextColor(newColor color.Color) {
-// 	c.text.Color = newColor
-// }
-
-// func (c *Context) Text(str string, position, alignment pixel.Vec) Rect {
-// 	c.text.Dot = position
-// 	bounds := c.text.BoundsOf(str)
-// 	c.text.Dot.X -= math.Round(bounds.W() * alignment.X)
-// 	c.text.Dot.Y -= math.Round(bounds.H() * alignment.Y)
-// 	bounds = c.text.BoundsOf(str)
-
-// 	c.text.WriteString(str)
-
-// 	c.appendUnionBounds(Rect{bounds})
-// 	return Rect{bounds}
-// }
-
 // func (c *Context) DebugRect(destRect Rect) {
 // 	if !c.Debug { return } // Only draw if debug mode
 
 // 	c.debugImd.Push(destRect.Min)
 // 	c.debugImd.Push(destRect.Max)
 // 	c.debugImd.Rectangle(1)
-// }
-
-// // Sprites
-// func (c *Context) Sprite(name string, destRect Rect) {
-// 	destRect = destRect.Round()
-
-// 	sprite, err := c.spritesheet.Get(name)
-// 	if err != nil { panic(err) }
-// 	bounds := ZeroRect(sprite.Frame())
-
-// 	scale := pixel.V(destRect.W() / bounds.W(), destRect.H() / bounds.H())
-// 	mat := pixel.IM.ScaledXY(pixel.ZV, scale)
-// 	mat = mat.Moved(destRect.Center())
-
-// 	c.appendUnionBounds(destRect)
-// 	sprite.Draw(c.batch, mat)
-
-// 	c.DebugRect(destRect)
 // }
 
 // // TODO - this might have issues with it's bounding box being slightly off because of the rotation
@@ -434,23 +265,6 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 
 // 	c.appendUnionBounds(destRect)
 // 	sprite.Draw(c.batch, mat)
-
-// 	c.DebugRect(destRect)
-// }
-
-// func (c *Context) SpriteColorMask(name string, destRect Rect, mask color.Color) {
-// 	destRect = destRect.Round()
-
-// 	sprite, err := c.spritesheet.Get(name)
-// 	if err != nil { panic(err) }
-// 	bounds := ZeroRect(sprite.Frame())
-
-// 	scale := pixel.V(destRect.W() / bounds.W(), destRect.H() / bounds.H())
-// 	mat := pixel.IM.ScaledXY(pixel.ZV, scale)
-// 	mat = mat.Moved(destRect.Center())
-
-// 	c.appendUnionBounds(destRect)
-// 	sprite.DrawColorMask(c.batch, mat, mask)
 
 // 	c.DebugRect(destRect)
 // }

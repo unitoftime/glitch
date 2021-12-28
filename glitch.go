@@ -142,42 +142,6 @@ func Draw(mesh *Mesh, mat Mat4) {
 }
 */
 
-type Sprite struct {
-	mesh *Mesh
-	bounds Rect
-	texture *Texture
-	material Material
-}
-
-func NewSprite(texture *Texture, bounds Rect) *Sprite {
-	uvBounds := R(
-		bounds.Min[0] / float32(texture.width),
-		bounds.Min[1] / float32(texture.height),
-		bounds.Max[0] / float32(texture.width),
-		bounds.Max[1] / float32(texture.height),
-	)
-
-	return &Sprite{
-		mesh: NewSpriteMesh(bounds.W(), bounds.H(), uvBounds),
-		bounds: bounds,
-		texture: texture,
-		material: NewSpriteMaterial(texture),
-	}
-}
-
-func (s *Sprite) Draw(pass *RenderPass, matrix Mat4) {
-	// pass.SetTexture(0, s.texture)
-	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
-}
-func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	// pass.SetTexture(0, s.texture)
-	pass.Add(s.mesh, matrix, mask, s.material)
-}
-
-func (s *Sprite) Bounds() Rect {
-	return s.bounds
-}
-
 type Material interface {
 	Bind()
 }

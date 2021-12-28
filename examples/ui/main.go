@@ -61,9 +61,9 @@ func runGame() {
 	}
 
 	texture := glitch.NewTexture(buttonImage)
-	buttonSprite := glitch.NewSprite(texture, texture.Bounds())
+	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds())
 	texture2 := glitch.NewTexture(buttonPressImage)
-	buttonPressSprite := glitch.NewSprite(texture2, texture2.Bounds())
+	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds())
 
 	// Text
 	// TODO - use this instead of hardcoding
@@ -111,8 +111,10 @@ func runGame() {
 		menuRect := win.Bounds().SliceHorizontal(500).SliceVertical(500)
 		group.Sprite(buttonPressSprite, menuRect)
 
+		// basicHover := ui.BasicHover{buttonSprite, buttonPressSprite}
+
 		r := menuRect.CutTop(100)
-		r = menuRect.CutTop(100)
+		r = menuRect.CutTop(200)
 		group.HoveredSprite(buttonSprite, buttonPressSprite, r)
 		group.Text("Hello World", r, glitch.Vec2{0.5, 0.5})
 		// group.Sprite(buttonSprite, glitch.R(0, 0, 200, 75))
