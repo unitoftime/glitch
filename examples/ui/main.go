@@ -61,9 +61,9 @@ func runGame() {
 	}
 
 	texture := glitch.NewTexture(buttonImage)
-	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds())
+	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(90, 90, 90, 90))
 	texture2 := glitch.NewTexture(buttonPressImage)
-	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds())
+	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(90, 90, 90, 90))
 
 	// Text
 	// TODO - use this instead of hardcoding

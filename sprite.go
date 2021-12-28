@@ -1,9 +1,5 @@
 package glitch
 
-import (
-	"fmt"
-)
-
 type Sprite struct {
 	mesh *Mesh
 	bounds Rect
@@ -46,24 +42,20 @@ type NinePanelSprite struct {
 	bounds Rect
 }
 
-func NewNinePanelSprite(texture *Texture, bounds Rect) *NinePanelSprite {
+func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {
 	fullBounds := bounds
-	borderTop := float32(90)
-	borderBot := float32(90)
-	borderLeft := float32(90)
-	borderRight := float32(90)
 
 	// TODO - Textures are upside down, so we cut the texture up upside down as well
-	top := bounds.CutBottom(borderBot)
-	bot := bounds.CutTop(borderTop)
+	top := bounds.CutBottom(border.Min[1])
+	bot := bounds.CutTop(border.Max[1])
 
-	topLeft := top.CutLeft(borderLeft)
-	topRight := top.CutRight(borderRight)
+	topLeft := top.CutLeft(border.Min[0])
+	topRight := top.CutRight(border.Max[0])
 
-	botLeft := bot.CutLeft(borderLeft)
-	botRight := bot.CutRight(borderRight)
-	left := bounds.CutLeft(borderLeft)
-	right := bounds.CutRight(borderRight)
+	botLeft := bot.CutLeft(border.Min[0])
+	botRight := bot.CutRight(border.Max[0])
+	left := bounds.CutLeft(border.Min[0])
+	right := bounds.CutRight(border.Max[0])
 
 	rects := []Rect{
 		bounds, // Center
@@ -87,7 +79,7 @@ func NewNinePanelSprite(texture *Texture, bounds Rect) *NinePanelSprite {
 	return &NinePanelSprite{
 		sprites: sprites,
 		bounds: fullBounds,
-		border: R(borderLeft, borderBot, borderRight, borderTop),
+		border: border,
 	}
 }
 
@@ -102,8 +94,6 @@ func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
 	left := bounds.CutLeft(s.border.Min[0])
 	right := bounds.CutRight(s.border.Max[0])
 
-	fmt.Println(top, bot)
-
 	destRects := [9]Rect{
 		bounds, //center
 
@@ -117,8 +107,6 @@ func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
 		botLeft, // BL
 		botRight, // BR
 	}
-
-	fmt.Println(top, bot)
 
 	for i := range s.sprites {
 		matrix := Mat4Ident
