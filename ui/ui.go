@@ -33,7 +33,6 @@ type Drawer interface {
 // }
 
 // func (b *Button) Hover() {
-	
 // }
 
 type Group struct {
@@ -43,7 +42,6 @@ type Group struct {
 	atlas *glitch.Atlas
 	// unionBounds *Rect // A union of all drawn object's bounds
 	Debug bool
-	// debugImd *imdraw.IMDraw
 }
 
 func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
@@ -58,7 +56,6 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 		atlas: atlas,
 		// unionBounds: nil,
 		Debug: false,
-		// debugImd : imdraw.New(nil),
 	}
 }
 
@@ -93,16 +90,13 @@ func (g *Group) Draw() {
 	// }
 }
 
-// func (g *Group) Panel(sprite *glitch.Sprite, rect glitch.Rect) {
-
-// }
-
 func (g *Group) Sprite(sprite Drawer, rect glitch.Rect) {
 	// sprite.Draw(g.pass, rect)
 	mat := glitch.Mat4Ident
 	// bounds := sprite.Bounds()
 	// mat.Scale(rect.W() / bounds.W(), rect.H() / bounds.H(), 1).Translate(rect.W()/2 + rect.Min[0], rect.H()/2 + rect.Min[1], 0)
 	sprite.Draw(g.pass, rect, mat)
+	g.debugRect(rect)
 }
 
 func (g *Group) HoveredSprite(normal, hovered Drawer, rect glitch.Rect) bool {
@@ -120,6 +114,19 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.atlas.Text(str)
 	r := rect.Anchor(text.Bounds(), anchor)
 	text.DrawRect(g.pass, r, glitch.RGBA{0, 0, 0, 1.0})
+	g.debugRect(rect)
+}
+
+func (g *Group) debugRect(rect glitch.Rect) {
+	if !g.Debug { return }
+
+	lineWidth := float32(5.0)
+
+	g.pass.SetLayer(126)
+
+	m := glitch.Rectangle(rect, lineWidth)
+	m.Draw(g.pass, glitch.Mat4Ident)
+	g.pass.SetLayer(glitch.DefaultLayer)
 }
 
 // // Pads around center

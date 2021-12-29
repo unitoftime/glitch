@@ -37,6 +37,18 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.texCoords = append(m.texCoords, m2.texCoords...)
 }
 
+// TODO - Maybe this is faster in some scenarios?
+// func (m *Mesh) AddTriangle(a, b, c Vec3, uv1, uv2, uv3 Vec2) {
+// 	currentElement := uint32(len(m.positions))
+// 	for i := range m2.indices {
+// 		m.indices = append(m.indices, currentElement + m2.indices[i])
+// 	}
+
+// 	m.positions = append(m.positions, m2.positions...)
+// 	m.colors = append(m.colors, m2.colors...)
+// 	m.texCoords = append(m.texCoords, m2.texCoords...)
+// }
+
 // TODO - clear function? Should append be more like draw?
 // func (m *Mesh) Clear() {
 // }

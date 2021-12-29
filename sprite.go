@@ -73,6 +73,7 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 
 	sprites := make([]*Sprite, 9)
 	for i := range rects {
+		// TODO - instead of sprites, use quadmesh so I can manage a little more tightly
 		sprites[i] = NewSprite(texture, rects[i])
 	}
 

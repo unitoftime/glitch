@@ -26,7 +26,28 @@ func (v Vec2) Scaled(s float32) Vec2 {
 	return Vec2{s * v[0], s * v[1]}
 }
 
-func (v Vec3) Scale(x, y, z float32) Vec3 {
+func (v Vec3) Add(u Vec3) Vec3 {
+	return Vec3{v[0] + u[0], v[1] + u[1], v[2] + u[2]}
+}
+
+func (v Vec3) Sub(u Vec3) Vec3 {
+	return Vec3{v[0] - u[0], v[1] - u[1], v[2] - u[2]}
+}
+
+func (v Vec3) Len() float32 {
+	// return float32(math.Hypot(float64(v[0]), float64(v[1])))
+	a := float64(v[0])
+	b := float64(v[1])
+	c := float64(v[2])
+	return float32(math.Sqrt((a * a) + (b * b) + (c * c)))
+}
+
+func (v Vec3) Unit() Vec3 {
+	len := v.Len()
+	return Vec3{v[0]/len, v[1]/len, v[2]/len}
+}
+
+func (v Vec3) Scaled(x, y, z float32) Vec3 {
 	v[0] *= x
 	v[1] *= y
 	v[2] *= z
