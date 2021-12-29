@@ -29,8 +29,16 @@ package glitch
 // 	// g.mesh.AddTriangle(
 // }
 
+type GeomDraw struct {
+	color RGBA
+}
+
+func (g *GeomDraw) SetColor (color RGBA) {
+	g.color = color
+}
+
 // if width == 0, then fill the rect
-func Rectangle(rect Rect, width float32) *Mesh {
+func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 	if width <= 0 {
 		panic("TODO - FILL Rect")
 	}
@@ -43,18 +51,18 @@ func Rectangle(rect Rect, width float32) *Mesh {
 		Vec3{rect.Min[0], rect.Min[1], 0},
 	}
 
-	return LineStrip(points, width)
+	return g.LineStrip(points, width)
 }
 
-func LineStrip(points []Vec3, width float32) *Mesh {
+func (g *GeomDraw) LineStrip(points []Vec3, width float32) *Mesh {
 	m := NewMesh()
 	for i := 0; i < len(points)-1; i++ {
-		m.Append(Line(points[i], points[i+1], width))
+		m.Append(g.Line(points[i], points[i+1], width))
 	}
 	return m
 }
 
-func Line(a, b Vec3, width float32) *Mesh {
+func (g *GeomDraw) Line(a, b Vec3, width float32) *Mesh {
 	line := a.Sub(b).Unit()
 
 	// Shift the point over by width
@@ -71,7 +79,6 @@ func Line(a, b Vec3, width float32) *Mesh {
 	b1 := b.Add(wLineUp)
 	b2 := b.Add(wLineDown)
 
-	color := RGBA{1.0, 1.0, 1.0, 1.0}
 	positions := []Vec3{
 		b1,
 		b2,
@@ -79,15 +86,15 @@ func Line(a, b Vec3, width float32) *Mesh {
 		a1,
 	}
 	colors := []Vec4{
-		Vec4{color.R, color.G, color.B, color.A},
-		Vec4{color.R, color.G, color.B, color.A},
-		Vec4{color.R, color.G, color.B, color.A},
-		Vec4{color.R, color.G, color.B, color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
 	}
 	texCoords := []Vec2{
-		Vec2{0, 0},
-		Vec2{0, 0},
-		Vec2{0, 0},
+		Vec2{1, 0},
+		Vec2{1, 1},
+		Vec2{0, 1},
 		Vec2{0, 0},
 	}
 

@@ -3,10 +3,30 @@ package glitch
 import (
 	"image"
 	"image/draw"
+	"image/color"
 	"runtime"
 	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
 )
+
+// TODO - Should I use this as default? Or is there a way to do null textures for textureless things?
+var whiteTexture *Texture
+func WhiteTexture() *Texture {
+	if whiteTexture != nil { return whiteTexture }
+	max := 128 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
+	img := image.NewNRGBA(image.Rect(0,0,max,max))
+
+	col := uint8(255)
+	for x:=0; x<max; x++ {
+		for y:=0; y<max; y++ {
+			img.SetNRGBA(x,y, color.NRGBA{col,col,col, 255})
+		}
+	}
+
+	whiteTexture = NewTexture(img)
+
+	return whiteTexture
+}
 
 type Texture struct {
 	texture gl.Texture

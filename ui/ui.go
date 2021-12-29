@@ -42,6 +42,7 @@ type Group struct {
 	atlas *glitch.Atlas
 	// unionBounds *Rect // A union of all drawn object's bounds
 	Debug bool
+	geomDraw glitch.GeomDraw
 }
 
 func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
@@ -55,7 +56,7 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 		pass: pass,
 		atlas: atlas,
 		// unionBounds: nil,
-		Debug: false,
+		Debug: true,
 	}
 }
 
@@ -67,9 +68,6 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 func (g *Group) Clear() {
 	g.pass.Clear()
 	// g.unionBounds = nil
-
-	// g.debugImd.Clear()
-	// g.debugImd.Color = pixel.RGB(1, 0, 0)
 }
 
 func (g *Group) Draw() {
@@ -120,11 +118,12 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 func (g *Group) debugRect(rect glitch.Rect) {
 	if !g.Debug { return }
 
-	lineWidth := float32(5.0)
+	lineWidth := float32(2.0)
 
 	g.pass.SetLayer(126)
 
-	m := glitch.Rectangle(rect, lineWidth)
+	g.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
+	m := g.geomDraw.Rectangle(rect, lineWidth)
 	m.Draw(g.pass, glitch.Mat4Ident)
 	g.pass.SetLayer(glitch.DefaultLayer)
 }

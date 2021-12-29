@@ -161,6 +161,12 @@ func (m SpriteMaterial) Bind() {
 	// pass.SetTexture(0, m.texture) // TODO - hardcoded slot?
 }
 
+func DefaultMaterial() SpriteMaterial {
+	return SpriteMaterial{
+		texture: WhiteTexture(),
+	}
+}
+
 // type Model struct {
 // 	meshes []Mesh
 // 	materials []Material
