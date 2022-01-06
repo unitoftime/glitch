@@ -28,6 +28,8 @@ type RenderPass struct {
 	buffer *BufferPool
 	commands [][]drawCommand
 	currentLayer uint8
+
+	dirty bool // Indicates if we need to re-draw to the buffers
 }
 
 const DefaultLayer uint8 = 127
@@ -42,10 +44,12 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		// commands: make([]drawCommand, 0),
 		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
 		currentLayer: DefaultLayer,
+		dirty: true,
 	}
 }
 
 func (r *RenderPass) Clear() {
+	r.dirty = true
 	// Clear stuff
 	r.buffer.Clear()
 	// r.commands = r.commands[:0]
@@ -83,37 +87,41 @@ func (r *RenderPass) Draw(win *Window) {
 		}
 	}
 
-	destBuffs := make([]interface{}, 3) // TODO - hardcoded
-	destBuffs[0] = &[]Vec3{}
-	destBuffs[1] = &[]Vec4{}
-	destBuffs[2] = &[]Vec2{}
-	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
-		for _, c := range r.commands[l] {
-			// for _, c := range r.commands {
-			numVerts := len(c.mesh.positions)
+	if r.dirty {
+		r.dirty = false
 
-			r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
+		destBuffs := make([]interface{}, 3) // TODO - hardcoded
+		destBuffs[0] = &[]Vec3{}
+		destBuffs[1] = &[]Vec4{}
+		destBuffs[2] = &[]Vec2{}
+		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+			for _, c := range r.commands[l] {
+				// for _, c := range r.commands {
+				numVerts := len(c.mesh.positions)
 
-			// work and append
-			posBuf := *(destBuffs[0]).(*[]Vec3)
-			for i := range c.mesh.positions {
-				vec := c.matrix.Apply(c.mesh.positions[i])
-				posBuf[i] = vec
-			}
+				r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 
-			colBuf := *(destBuffs[1]).(*[]Vec4)
-			for i := range c.mesh.colors {
-				colBuf[i] = Vec4{
-					c.mesh.colors[i][0] * c.mask.R,
-					c.mesh.colors[i][1] * c.mask.G,
-					c.mesh.colors[i][2] * c.mask.B,
-					c.mesh.colors[i][3] * c.mask.A,
+				// work and append
+				posBuf := *(destBuffs[0]).(*[]Vec3)
+				for i := range c.mesh.positions {
+					vec := c.matrix.Apply(c.mesh.positions[i])
+					posBuf[i] = vec
 				}
-			}
 
-			texBuf := *(destBuffs[2]).(*[]Vec2)
-			for i := range c.mesh.texCoords {
-				texBuf[i] = c.mesh.texCoords[i]
+				colBuf := *(destBuffs[1]).(*[]Vec4)
+				for i := range c.mesh.colors {
+					colBuf[i] = Vec4{
+						c.mesh.colors[i][0] * c.mask.R,
+						c.mesh.colors[i][1] * c.mask.G,
+						c.mesh.colors[i][2] * c.mask.B,
+						c.mesh.colors[i][3] * c.mask.A,
+					}
+				}
+
+				texBuf := *(destBuffs[2]).(*[]Vec2)
+				for i := range c.mesh.texCoords {
+					texBuf[i] = c.mesh.texCoords[i]
+				}
 			}
 		}
 	}
@@ -131,6 +139,7 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 }
 
 func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
+	r.dirty = true
 	r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
 		0, mesh, mat, mask, material,
 	})
