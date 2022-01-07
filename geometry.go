@@ -33,7 +33,7 @@ type GeomDraw struct {
 	color RGBA
 }
 
-func (g *GeomDraw) SetColor (color RGBA) {
+func (g *GeomDraw) SetColor(color RGBA) {
 	g.color = color
 }
 

@@ -280,7 +280,7 @@ func (v *VertexBuffer) Clear() {
 func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) bool {
 	// If material is set and it doesn't match the reserved material
 	if v.materialSet && v.material != material {
-		fmt.Println("Material not matching")
+		// fmt.Println("Material not matching")
 		return false
 	}
 	if len(v.indices) + len(indices) > cap(v.indices) {

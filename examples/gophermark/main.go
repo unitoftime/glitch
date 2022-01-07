@@ -52,7 +52,6 @@ func main() {
 		}
 		defer f.Close() // error handling omitted for example
 		go func() {
-			time.Sleep(10 * time.Second)
 			if err := pprof.StartCPUProfile(f); err != nil {
 				log.Fatal("could not start CPU profile: ", err)
 			}
@@ -162,6 +161,7 @@ func runGame() {
 
 		mat := glitch.Mat4Ident
 		mat.Translate(0, 0, 0)
+		pass.SetLayer(0)
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
 		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
 
@@ -174,7 +174,7 @@ func runGame() {
 		win.Update()
 
 		dt = time.Since(start)
-		fmt.Println(dt.Seconds() * 1000)
+		// fmt.Println(dt.Seconds() * 1000)
 	}
 }
 
@@ -199,6 +199,6 @@ func NewMan() Man {
 		velocity: glitch.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
 			float32(2*vScale * (rand.Float64()-0.5))},
 		color: colors[randIndex],
-		layer: uint8(randIndex),
+		layer: uint8(randIndex) + 1,
 	}
 }
