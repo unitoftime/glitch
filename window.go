@@ -12,7 +12,7 @@ import (
 type WindowConfig struct {
 	Vsync bool
 	// Resizable bool
-	// Samples int
+	Samples int
 }
 
 type Window struct {
@@ -39,7 +39,9 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		glfw.WindowHint(glfw.ContextVersionMajor, 3)
 		glfw.WindowHint(glfw.ContextVersionMinor, 3)
 		// glfw.WindowHint(glfw.Resizable, config.Resizable)
-		// glfw.WindowHint(glfw.Samples, config.Samples)
+		if config.Samples > 0 {
+			glfw.WindowHint(glfw.Samples, config.Samples)
+		}
 		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True) // Compatibility - For Mac only?
 
@@ -54,8 +56,12 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// log.Printf("OpenGL: %s %s %s; %v samples.\n", gl.GetString(gl.VENDOR), gl.GetString(gl.RENDERER), gl.GetString(gl.VERSION), gl.GetInteger(gl.SAMPLES))
 		// log.Printf("GLSL: %s.\n", gl.GetString(gl.SHADING_LANGUAGE_VERSION))
 
+		if config.Samples > 0 {
+			// TODO - But how to work with wasm (which enables multisample in the context?)
+			gl.Enable(gl.MULTISAMPLE)
+		}
+
 		// gl.Enable(gl.DEPTH_TEST)
-		// gl.Enable(gl.MULTISAMPLE) // TODO - reenable? But how to work with wasm (which enables multisample in the context?)
 		// gl.Enable(gl.CULL_FACE)
 		// gl.CullFace(gl.BACK)
 		// gl.FrontFace(gl.CCW) // Default

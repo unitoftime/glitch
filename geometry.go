@@ -33,6 +33,12 @@ type GeomDraw struct {
 	color RGBA
 }
 
+func NewGeomDraw() *GeomDraw {
+	return &GeomDraw{
+		color: RGBA{1, 1, 1, 1},
+	}
+}
+
 func (g *GeomDraw) SetColor(color RGBA) {
 	g.color = color
 }
