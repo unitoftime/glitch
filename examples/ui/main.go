@@ -10,14 +10,13 @@ import (
 	"unicode"
 
 	"github.com/unitoftime/glitch"
-	// "github.com/unitoftime/glitch/shaders"
 	"github.com/unitoftime/glitch/ui"
 
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
 )
 
-//go:embed button.png button_hover.png button_press.png panel.png
+//go:embed button.png button_hover.png button_press.png panel.png panel_inner.png
 var f embed.FS
 
 func loadImage(path string) (*image.NRGBA, error) {
@@ -41,33 +40,23 @@ func main() {
 }
 
 func runGame() {
-	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
+	win, err := glitch.NewWindow(1920, 1080, "Glitch UI Demo", glitch.WindowConfig{
 		Vsync: false,
 		Samples: 0,
 	})
 	if err != nil { panic(err) }
 
-	// shader, err := glitch.NewShader(shaders.SpriteShader)
-	// if err != nil { panic(err) }
-
-	// pass := glitch.NewRenderPass(shader)
-
 	buttonImage, err := loadImage("button.png")
-	if err != nil {
-		panic(err)
-	}
+	if err != nil { panic(err) }
 	buttonHoverImage, err := loadImage("button_hover.png")
-	if err != nil {
-		panic(err)
-	}
+	if err != nil { panic(err) }
 	buttonPressImage, err := loadImage("button_press.png")
-	if err != nil {
-		panic(err)
-	}
+	if err != nil { panic(err) }
 	panelImage, err := loadImage("panel.png")
-	if err != nil {
-		panic(err)
-	}
+	if err != nil { panic(err) }
+	panelInnerImage, err := loadImage("panel_inner.png")
+	if err != nil { panic(err) }
+
 
 	texture := glitch.NewTexture(buttonImage)
 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
@@ -84,7 +73,11 @@ func runGame() {
 	texture4 := glitch.NewTexture(panelImage)
 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
 	panelSprite.Scale = 10
-	// panelSprite.Mask = glitch.RGBA{0.4, 0.4, 0.4, 1.0}
+
+	panelInnerTex := glitch.NewTexture(panelInnerImage)
+	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glitch.R(2, 2, 2, 2))
+	panelInnerSprite.Scale = 10
+	panelInnerSprite.Mask = glitch.RGBA{1, 0, 0, 1}
 
 	// Text
 	// TODO - use this instead of hardcoding
@@ -100,7 +93,6 @@ func runGame() {
 		}),
 		runes)
 
-	// text := atlas.Text("hello world")
 	group := ui.NewGroup(win, atlas)
 	// group.Debug = true
 
@@ -139,6 +131,13 @@ func runGame() {
 			group.Text("Button 1", r, glitch.Vec2{0.5, 0.5})
 		}
 		// group.Sprite(buttonSprite, glitch.R(0, 0, 200, 75))
+
+		menuRect.CutTop(10) // Padding
+		{
+			r := menuRect.CutTop(100)
+			group.Panel(panelSprite, r)
+			group.Panel(panelInnerSprite, r)
+		}
 
 		group.Draw()
 
