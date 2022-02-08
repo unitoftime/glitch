@@ -5,35 +5,10 @@ import (
 	"github.com/unitoftime/glitch/shaders"
 )
 
-// TODO - Should I use these?
 type Drawer interface {
 	Bounds() glitch.Rect
-	Draw(*glitch.RenderPass, glitch.Rect, glitch.Mat4)
+	RectDraw(*glitch.RenderPass, glitch.Rect)
 }
-
-// type Hoverer interface {
-// 	Drawer
-// 	Hover()
-// }
-
-// type Presser interface {
-// 	Drawer
-// 	Press()
-// }
-
-// type Button struct{
-// 	normal, hover *glitch.Sprite
-// }
-
-// func (b *Button) Draw(pass *glitch.RenderPass, rect glitch.Rect) {
-// 	mat := glitch.Mat4Ident
-// 	bounds := b.normal.Bounds()
-// 	mat.Scale(rect.W() / bounds.W(), rect.H() / bounds.H(), 1).Translate(rect.W()/2 + rect.Min[0], rect.H()/2 + rect.Min[1], 0)
-// 	b.normal.Draw(pass, mat)
-// }
-
-// func (b *Button) Hover() {
-// }
 
 type Group struct {
 	win *glitch.Window
@@ -56,7 +31,7 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 		pass: pass,
 		atlas: atlas,
 		// unionBounds: nil,
-		Debug: true,
+		Debug: false,
 	}
 }
 
@@ -88,23 +63,36 @@ func (g *Group) Draw() {
 	// }
 }
 
-func (g *Group) Sprite(sprite Drawer, rect glitch.Rect) {
-	// sprite.Draw(g.pass, rect)
-	mat := glitch.Mat4Ident
-	// bounds := sprite.Bounds()
-	// mat.Scale(rect.W() / bounds.W(), rect.H() / bounds.H(), 1).Translate(rect.W()/2 + rect.Min[0], rect.H()/2 + rect.Min[1], 0)
-	sprite.Draw(g.pass, rect, mat)
+func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
+	sprite.RectDraw(g.pass, rect)
 	g.debugRect(rect)
 }
 
-func (g *Group) HoveredSprite(normal, hovered Drawer, rect glitch.Rect) bool {
+func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
 	mX, mY := g.win.MousePosition()
 	if rect.Contains(mX, mY) {
-		g.Sprite(hovered, rect)
+		g.Panel(hovered, rect)
 		return true
 	}
 
-	g.Sprite(normal, rect)
+	g.Panel(normal, rect)
+	return false
+}
+
+func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
+	mX, mY := g.win.MousePosition()
+	if !rect.Contains(mX, mY) {
+		g.Panel(normal, rect)
+		return false
+	}
+
+	// If we are here, then we know we are at least hovering
+	if g.win.Pressed(glitch.MouseButtonLeft) {
+		g.Panel(pressed, rect)
+		return true
+	}
+
+	g.Panel(hovered, rect)
 	return false
 }
 

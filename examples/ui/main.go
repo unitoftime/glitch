@@ -17,7 +17,7 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 )
 
-//go:embed button.png button_press.png
+//go:embed button.png button_hover.png button_press.png panel.png
 var f embed.FS
 
 func loadImage(path string) (*image.NRGBA, error) {
@@ -43,6 +43,7 @@ func main() {
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
 		Vsync: false,
+		Samples: 0,
 	})
 	if err != nil { panic(err) }
 
@@ -55,15 +56,35 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
+	buttonHoverImage, err := loadImage("button_hover.png")
+	if err != nil {
+		panic(err)
+	}
 	buttonPressImage, err := loadImage("button_press.png")
+	if err != nil {
+		panic(err)
+	}
+	panelImage, err := loadImage("panel.png")
 	if err != nil {
 		panic(err)
 	}
 
 	texture := glitch.NewTexture(buttonImage)
-	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(90, 90, 90, 90))
+	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
+	buttonSprite.Scale = 10
+
 	texture2 := glitch.NewTexture(buttonPressImage)
-	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(90, 90, 90, 90))
+	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(1, 1, 1, 1))
+	buttonPressSprite.Scale = 10
+
+	texture3 := glitch.NewTexture(buttonHoverImage)
+	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glitch.R(1, 1, 1, 1))
+	buttonHoverSprite.Scale = 10
+
+	texture4 := glitch.NewTexture(panelImage)
+	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
+	panelSprite.Scale = 10
+	// panelSprite.Mask = glitch.RGBA{0.4, 0.4, 0.4, 1.0}
 
 	// Text
 	// TODO - use this instead of hardcoding
@@ -81,8 +102,7 @@ func runGame() {
 
 	// text := atlas.Text("hello world")
 	group := ui.NewGroup(win, atlas)
-
-	// camera := glitch.NewCameraOrtho()
+	// group.Debug = true
 
 	for !win.ShouldClose() {
 		if win.Pressed(glitch.KeyBackspace) {
@@ -91,33 +111,35 @@ func runGame() {
 
 		mx, my := win.MousePosition()
 		log.Println("Mouse: ", mx, my)
-		// pass.Clear()
 
-		// camera.SetOrtho2D(win)
-		// camera.SetView2D(0, 0, 1.0, 1.0)
-
-		// mat := glitch.Mat4Ident
-		// mat.Translate(0, 0, 0)
-		// text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
-		// text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
-
-		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
-
-		// pass.SetUniform("projection", camera.Projection)
-		// pass.SetUniform("view", camera.View)
-		// pass.Draw(win)
+		glitch.Clear(glitch.Black)
 
 		group.Clear()
 		menuRect := win.Bounds().SliceHorizontal(500).SliceVertical(500)
-		group.Sprite(buttonPressSprite, menuRect)
+		group.Panel(panelSprite, menuRect)
 
 		// basicHover := ui.BasicHover{buttonSprite, buttonPressSprite}
 
-		r := menuRect.CutTop(100)
-		r = menuRect.CutTop(200)
-		group.HoveredSprite(buttonSprite, buttonPressSprite, r)
-		group.Text("Hello World", r, glitch.Vec2{0.5, 0.5})
+		menuRect.CutLeft(20)
+		menuRect.CutRight(20)
+		{
+			r := menuRect.CutTop(100)
+			group.Text("Menu", r, glitch.Vec2{0.5, 0.5})
+		}
+		menuRect.CutTop(10) // Padding
+		{
+			r := menuRect.CutTop(100)
+			group.Button(buttonSprite, buttonHoverSprite, buttonPressSprite, r)
+			group.Text("Button 0", r, glitch.Vec2{0.5, 0.5})
+		}
+		menuRect.CutTop(10) // Padding
+		{
+			r := menuRect.CutTop(100)
+			group.Button(buttonSprite, buttonHoverSprite, buttonPressSprite, r)
+			group.Text("Button 1", r, glitch.Vec2{0.5, 0.5})
+		}
 		// group.Sprite(buttonSprite, glitch.R(0, 0, 200, 75))
+
 		group.Draw()
 
 		win.Update()

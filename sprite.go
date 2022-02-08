@@ -1,5 +1,7 @@
 package glitch
 
+// import "fmt"
+
 type Sprite struct {
 	mesh *Mesh
 	bounds Rect
@@ -40,6 +42,8 @@ type NinePanelSprite struct {
 	sprites []*Sprite
 	border Rect
 	bounds Rect
+	Mask RGBA // This represents the default color mask to draw with (unless one is passed in via a draw function, Example: *Mask)
+	Scale float32
 }
 
 func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {
@@ -81,19 +85,36 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 		sprites: sprites,
 		bounds: fullBounds,
 		border: border,
+		Mask: White,
+		Scale: 1,
 	}
 }
 
 // Should 'matrix' just be scale and rotation? to scale up and down border pieces
-func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
-	top := bounds.CutTop(s.border.Max[1])
-	topLeft := top.CutLeft(s.border.Min[0])
-	topRight := top.CutRight(s.border.Max[0])
-	bot := bounds.CutBottom(s.border.Min[1])
-	botLeft := bot.CutLeft(s.border.Min[0])
-	botRight := bot.CutRight(s.border.Max[0])
-	left := bounds.CutLeft(s.border.Min[0])
-	right := bounds.CutRight(s.border.Max[0])
+// func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
+// 	s.DrawColorMask(pass, bounds, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
+// }
+// Should I inlude this?
+// func (s *NinePanelSprite) RectDrawMask(pass *RenderPass, bounds Rect) { }
+
+func (s *NinePanelSprite) RectDraw(pass *RenderPass, bounds Rect) {
+	// fmt.Println("here")
+	// fmt.Println(bounds.W(), bounds.H())
+
+	border := R(
+		s.Scale * s.border.Min[0],
+		s.Scale * s.border.Min[1],
+		s.Scale * s.border.Max[0],
+		s.Scale * s.border.Max[1])
+
+	top := bounds.CutTop(border.Max[1])
+	topLeft := top.CutLeft(border.Min[0])
+	topRight := top.CutRight(border.Max[0])
+	bot := bounds.CutBottom(border.Min[1])
+	botLeft := bot.CutLeft(border.Min[0])
+	botRight := bot.CutRight(border.Max[0])
+	left := bounds.CutLeft(border.Min[0])
+	right := bounds.CutRight(border.Max[0])
 
 	destRects := [9]Rect{
 		bounds, //center
@@ -109,17 +130,14 @@ func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
 		botRight, // BR
 	}
 
+
 	for i := range s.sprites {
+		// fmt.Println(destRects[i].W(), destRects[i].H())
 		matrix := Mat4Ident
 		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min[0], destRects[i].H()/2 + destRects[i].Min[1], 0)
-		pass.Add(s.sprites[i].mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.sprites[i].material)
+		pass.Add(s.sprites[i].mesh, matrix, s.Mask, s.sprites[i].material)
 	}
 }
-// func (s *NinePanelSprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-// 	for _, s := range s.sprites {
-// 		pass.Add(s.mesh, matrix, mask, s.material)
-// 	}
-// }
 
 func (s *NinePanelSprite) Bounds() Rect {
 	return s.bounds
