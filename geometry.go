@@ -29,6 +29,18 @@ package glitch
 // 	// g.mesh.AddTriangle(
 // }
 
+// type Geometry struct {
+// 	mesh *Mesh
+// }
+
+// func NewGeometry() *Geometry {
+// 	return &Geometry{
+// 		mesh: NewMesh(),
+// 	}
+// }
+
+
+// TODO - Can I just pass meshes into these functions to have them get drawn to?
 type GeomDraw struct {
 	color RGBA
 }
@@ -97,6 +109,8 @@ func (g *GeomDraw) Line(a, b Vec3, width float32) *Mesh {
 		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
 		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
 	}
+
+	// TODO - Finalize what these should be
 	texCoords := []Vec2{
 		Vec2{1, 0},
 		Vec2{1, 1},

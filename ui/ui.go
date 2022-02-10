@@ -117,7 +117,6 @@ func (g *Group) debugRect(rect glitch.Rect) {
 }
 
 // func (g *Group) Bar(outer, inner Drawer, bounds glitch.Rect, value float64) Rect {
-	
 // 	_, barInner := c.SlicedSprite(outer, bounds)
 // 	c.SpriteColorMask(inner, barInner.ScaledXY(barInner.Anchor(0, 0), value, 1), innerColor)
 // 	return bounds

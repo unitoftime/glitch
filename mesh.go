@@ -16,6 +16,14 @@ func NewMesh() *Mesh {
 	}
 }
 
+// TODO - clear function? Should append be more like draw?
+func (m *Mesh) Clear() {
+	m.positions = m.positions[:0]
+	m.colors = m.colors[:0]
+	m.texCoords = m.texCoords[:0]
+	m.indices = m.indices[:0]
+}
+
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
 	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, DefaultMaterial())
 }
@@ -47,10 +55,6 @@ func (m *Mesh) Append(m2 *Mesh) {
 // 	m.positions = append(m.positions, m2.positions...)
 // 	m.colors = append(m.colors, m2.colors...)
 // 	m.texCoords = append(m.texCoords, m2.texCoords...)
-// }
-
-// TODO - clear function? Should append be more like draw?
-// func (m *Mesh) Clear() {
 // }
 
 // Basically a quad mesh, but with a centered position

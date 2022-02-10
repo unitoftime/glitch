@@ -75,6 +75,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			glfw.SwapInterval(0)
 		}
 
+		win.width = width
+		win.height = height
 		gl.Viewport(0, 0, int(width), int(height))
 
 		win.window.SetFramebufferSizeCallback(func(w *glfw.Window, width, height int) {
