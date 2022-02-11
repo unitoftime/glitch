@@ -20,7 +20,7 @@ type Window struct {
 
 	width, height int
 
-	input struct {
+	tmpInput, input struct {
 		scroll struct {
 			X, Y float64
 		}
@@ -88,8 +88,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		})
 
 		win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
-			win.input.scroll.X += xoff
-			win.input.scroll.Y += yoff
+			win.tmpInput.scroll.X += xoff
+			win.tmpInput.scroll.Y += yoff
 		})
 
 		// TODO - other callbacks?
@@ -109,8 +109,9 @@ func (w *Window) Update() {
 		glfw.PollEvents()
 	})
 
-	w.input.scroll.X = 0
-	w.input.scroll.Y = 0
+	w.input = w.tmpInput
+	w.tmpInput.scroll.X = 0
+	w.tmpInput.scroll.Y = 0
 }
 
 func (w *Window) Close() {
