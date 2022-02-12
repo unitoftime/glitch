@@ -154,7 +154,7 @@ func runGame() {
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
 		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
 
-		glitch.Clear(glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 
 		pass.SetUniform("projection", camera.Projection)
 		pass.SetUniform("view", camera.View)

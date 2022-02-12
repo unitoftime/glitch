@@ -6,6 +6,11 @@ import (
 	// "sort"
 )
 
+type Target interface {
+	// TODO - Should this be differentiated from being a source Vs a target binding. For example, I'm using this now to bind the target that we draw to. But If I want to have another function on frambuffers to use them as image texture inputs, what would that API be called?
+	Bind()
+}
+
 // https://realtimecollisiondetection.net/blog/?p=86
 // Sort by:
 // - Front-to-back vs Back-to-front (single bit)
@@ -63,7 +68,11 @@ func (r *RenderPass) SetLayer(layer uint8) {
 }
 
 // TODO - Mat?
-func (r *RenderPass) Draw(win *Window) {
+func (r *RenderPass) Draw(target Target) {
+	// Bind render target
+	target.Bind()
+
+
 	// TODO - Hardware depth testing
 	// mainthread.Call(func() {
 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl

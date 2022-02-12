@@ -46,6 +46,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True) // Compatibility - For Mac only?
 
 		// TODO - For fullscreen: glfw.GetPrimaryMonitor()
+		// monitor := glfw.GetPrimaryMonitor()
+		// win.window, err = glfw.CreateWindow(width, height, title, monitor, nil)
 		win.window, err = glfw.CreateWindow(width, height, title, nil, nil)
 		if err != nil {
 			return err
@@ -83,7 +85,6 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			// log.Println("Framebuffer size callback")
 			win.width = width
 			win.height = height
-			// gl.Viewport(int32(0), int32(0), int32(win.width), int32(win.height))
 			gl.Viewport(0, 0, int(win.width), int(win.height))
 		})
 
@@ -100,6 +101,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 	if err != nil {
 		return nil, fmt.Errorf("Failed CreateWindow: %w", err)
 	}
+
+	win.Update()
 	return win, nil
 }
 
@@ -144,6 +147,14 @@ func (w *Window) MousePosition() (float32, float32) {
 // func (w *Window) JustPressed(key Key) bool {
 	// TODO 
 // }
+
+// Binds the window as the OpenGL render targe
+func (w *Window) Bind() {
+	mainthread.Call(func() {
+		// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
+		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
+	})
+}
 
 func (w *Window) Pressed(key Key) bool {
 	var action glfw.Action

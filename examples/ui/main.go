@@ -104,7 +104,7 @@ func runGame() {
 		mx, my := win.MousePosition()
 		log.Println("Mouse: ", mx, my)
 
-		glitch.Clear(glitch.Black)
+		glitch.Clear(win, glitch.Black)
 
 		group.Clear()
 		menuRect := win.Bounds().SliceHorizontal(500).SliceVertical(500)

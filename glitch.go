@@ -89,7 +89,8 @@ func SetTarget(win *Window) {
 // func Clear(rgba RGBA) {
 // context.target.Clear(rgba)
 // }
-func Clear(color RGBA) {
+func Clear(target Target, color RGBA) {
+	target.Bind()
 	mainthread.Call(func() {
 		gl.ClearColor(color.R, color.G, color.B, color.A)
 		// gl.Clear(gl.COLOR_BUFFER_BIT)

@@ -2,17 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"embed"
 	"image"
 	"image/draw"
 	_ "image/png"
 	"time"
 	"math/rand"
-	"runtime"
-	"runtime/pprof"
-	"flag"
-	"os"
 
 	"unicode"
 
@@ -22,9 +17,6 @@ import (
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
 )
-
-var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
-var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 //go:embed gopher.png
 var f embed.FS
@@ -44,38 +36,11 @@ func loadImage(path string) (*image.NRGBA, error) {
 }
 
 func main() {
-	flag.Parse()
-	if *cpuprofile != "" {
-		f, err := os.Create(*cpuprofile)
-		if err != nil {
-			log.Fatal("could not create CPU profile: ", err)
-		}
-		defer f.Close() // error handling omitted for example
-		go func() {
-			if err := pprof.StartCPUProfile(f); err != nil {
-				log.Fatal("could not start CPU profile: ", err)
-			}
-		}()
-		defer pprof.StopCPUProfile()
-	}
-
 	glitch.Run(runGame)
-
-	if *memprofile != "" {
-		f, err := os.Create(*memprofile)
-		if err != nil {
-			log.Fatal("could not create memory profile: ", err)
-		}
-		defer f.Close() // error handling omitted for example
-		runtime.GC() // get up-to-date statistics
-		if err := pprof.WriteHeapProfile(f); err != nil {
-			log.Fatal("could not write memory profile: ", err)
-		}
-	}
 }
 
 func runGame() {
-	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
+	win, err := glitch.NewWindow(1920, 1080, "Glitch - Framebuffer", glitch.WindowConfig{
 		Vsync: false,
 	})
 	if err != nil { panic(err) }
@@ -84,16 +49,14 @@ func runGame() {
 	if err != nil { panic(err) }
 
 	pass := glitch.NewRenderPass(shader)
+	windowPass := glitch.NewRenderPass(shader)
 
 	manImage, err := loadImage("gopher.png")
 	if err != nil {
 		panic(err)
 	}
-	// texture := glitch.NewTexture(160, 200, manImage.Pix)
 	texture := glitch.NewTexture(manImage)
-	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
 
-	// mesh := glitch.NewQuadMesh()
 	x := float32(0)
 	y := float32(0)
 	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
@@ -122,6 +85,9 @@ func runGame() {
 		runes)
 
 	text := atlas.Text("hello world")
+
+	fmt.Println(win.Bounds())
+	frame := glitch.NewFrame(win.Bounds())
 
 	camera := glitch.NewCameraOrtho()
 	start := time.Now()
@@ -165,16 +131,25 @@ func runGame() {
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
 		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
 
-		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+		glitch.Clear(frame, glitch.RGBA{1, 1, 1, 1})
 
 		pass.SetUniform("projection", camera.Projection)
 		pass.SetUniform("view", camera.View)
-		pass.Draw(win)
+		pass.Draw(frame)
 
+
+		windowPass.Clear()
+		windowPass.SetUniform("projection", glitch.Mat4Ident)
+		windowPass.SetUniform("view", glitch.Mat4Ident)
+		frame.Draw(windowPass, glitch.Mat4Ident)
+
+		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+		windowPass.Draw(win)
 		win.Update()
 
 		dt = time.Since(start)
 		// fmt.Println(dt.Seconds() * 1000)
+		// fmt.Println(win.Bounds())
 	}
 }
 
