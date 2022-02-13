@@ -145,7 +145,7 @@ func (w *Window) MousePosition() (float32, float32) {
 
 // // Returns true if the key was pressed in the last frame
 // func (w *Window) JustPressed(key Key) bool {
-	// TODO 
+	
 // }
 
 // Binds the window as the OpenGL render targe
