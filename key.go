@@ -10,7 +10,7 @@ import (
 type Key int
 
 const (
-	// KeyUnknown			= Key(glfw.KeyUnknown)
+	KeyUnknown			= Key(glfw.KeyUnknown)
 	KeySpace				= Key(glfw.KeySpace)
 	KeyApostrophe		= Key(glfw.KeyApostrophe)
 	KeyComma				= Key(glfw.KeyComma)
@@ -131,7 +131,7 @@ const (
 	KeyRightAlt			= Key(glfw.KeyRightAlt)
 	KeyRightSuper		= Key(glfw.KeyRightSuper)
 	KeyMenu					= Key(glfw.KeyMenu)
-	// KeyLast					= Key(glfw.KeyLast)
+	KeyLast					= Key(glfw.KeyLast)
 )
 
 const (

@@ -21,6 +21,8 @@ type Window struct {
 	width, height int
 
 	tmpInput, input struct {
+		justPressed [KeyLast + 1]bool
+		justReleased [KeyLast + 1]bool
 		scroll struct {
 			X, Y float64
 		}
@@ -93,6 +95,31 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			win.tmpInput.scroll.Y += yoff
 		})
 
+		win.window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+			switch action {
+			case glfw.Press:
+				win.tmpInput.justPressed[Key(button)] = true
+			case glfw.Release:
+				win.tmpInput.justReleased[Key(button)] = true
+			}
+		})
+
+		win.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+			if key == glfw.KeyUnknown {
+				return
+			}
+
+			switch action {
+			case glfw.Press:
+				win.tmpInput.justPressed[Key(key)] = true
+			case glfw.Release:
+				win.tmpInput.justReleased[Key(key)] = true
+			// TODO - Handle repeat events
+			// case glfw.Repeat:
+			// 	win.tempInp.repeat[Button(key)] = true
+			}
+		})
+
 		// TODO - other callbacks?
 
 		return nil
@@ -115,6 +142,9 @@ func (w *Window) Update() {
 	w.input = w.tmpInput
 	w.tmpInput.scroll.X = 0
 	w.tmpInput.scroll.Y = 0
+
+	w.tmpInput.justPressed = [KeyLast + 1]bool{}
+	w.tmpInput.justReleased = [KeyLast + 1]bool{}
 }
 
 func (w *Window) Close() {
@@ -144,9 +174,9 @@ func (w *Window) MousePosition() (float32, float32) {
 }
 
 // // Returns true if the key was pressed in the last frame
-// func (w *Window) JustPressed(key Key) bool {
-	
-// }
+func (w *Window) JustPressed(key Key) bool {
+	return w.input.justPressed[key]
+}
 
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {

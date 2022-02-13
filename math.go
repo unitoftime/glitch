@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	// "fmt"
 	"math"
 	"github.com/go-gl/mathgl/mgl32"
 )
@@ -75,12 +74,13 @@ var Mat4Ident Mat4 = Mat4{
 	0.0, 0.0, 0.0, 1.0,
 }
 
-func (m *Mat3) Scale(x, y, z float32) *Mat3 {
-	m[i3_0_0] = m[i3_0_0] * x
-	m[i3_1_1] = m[i3_1_1] * y
-	m[i3_2_2] = m[i3_2_2] * z
-	return m
-}
+// TODO - This is wrong, need to rewrite from Mat4
+// func (m *Mat3) Scale(x, y, z float32) *Mat3 {
+// 	m[i3_0_0] = m[i3_0_0] * x
+// 	m[i3_1_1] = m[i3_1_1] * y
+// 	m[i3_2_2] = m[i3_2_2] * z
+// 	return m
+// }
 
 func (m *Mat3) Translate(x, y float32) *Mat3 {
 	m[i3_2_0] = m[i3_2_0] + x
@@ -88,10 +88,23 @@ func (m *Mat3) Translate(x, y float32) *Mat3 {
 	return m
 }
 
+// Note: Scales around 0,0
 func (m *Mat4) Scale(x, y, z float32) *Mat4 {
 	m[i4_0_0] = m[i4_0_0] * x
+	m[i4_1_0] = m[i4_1_0] * x
+	m[i4_2_0] = m[i4_2_0] * x
+	m[i4_3_0] = m[i4_3_0] * x
+
+	m[i4_0_1] = m[i4_0_1] * y
 	m[i4_1_1] = m[i4_1_1] * y
+	m[i4_2_1] = m[i4_2_1] * y
+	m[i4_3_1] = m[i4_3_1] * y
+
+	m[i4_0_2] = m[i4_0_2] * z
+	m[i4_1_2] = m[i4_1_2] * z
 	m[i4_2_2] = m[i4_2_2] * z
+	m[i4_3_2] = m[i4_3_2] * z
+
 	return m
 }
 
@@ -288,30 +301,36 @@ func (m *Mat3) Apply( v Vec2) Vec2 {
 	}
 }
 
-
 type CameraOrtho struct {
 	Projection Mat4
 	View Mat4
-
-	position Vec3
+	bounds Rect
 }
 
 func NewCameraOrtho() *CameraOrtho {
 	return &CameraOrtho{
 		Projection: Mat4Ident,
 		View: Mat4Ident,
+		bounds: R(0,0,1,1),
 	}
 }
 
 func (c *CameraOrtho) SetOrtho2D(win *Window) {
-	bounds := win.Bounds()
-	// c.Projection = Mat4(mgl32.Ortho2D(0, bounds.W(), 0, bounds.H()))
-	c.Projection = Mat4(mgl32.Ortho(0, bounds.W(), 0, bounds.H(), -1, 1))
+	c.bounds = win.Bounds()
+	c.Projection = Mat4(mgl32.Ortho2D(0, c.bounds.W(), 0, c.bounds.H()))
+	// c.Projection = Mat4(mgl32.Ortho(0, c.bounds.W(), 0, c.bounds.H(), -1, 1))
 }
 
 func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {
 	c.View = Mat4Ident
-	c.View.Scale(scaleX, scaleY, 1.0).Translate(-x, -y, 0)
+	cameraCenter := c.bounds.Center()
+	c.View.
+		// Translate by x, y of the camera
+		Translate(-x, -y, 0).
+		// Scale around the center of the camera
+		Translate(-cameraCenter[0], -cameraCenter[1], 0).
+		Scale(scaleX, scaleY, 1.0).
+		Translate(cameraCenter[0], cameraCenter[1], 0)
 }
 
 type Camera struct {
