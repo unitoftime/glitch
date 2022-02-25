@@ -34,6 +34,15 @@ func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 	pass.Add(s.mesh, matrix, mask, s.material)
 }
 
+func (s *Sprite) RectDraw(pass *RenderPass, bounds Rect) {
+	// pass.SetTexture(0, s.texture)
+	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+
+	matrix := Mat4Ident
+	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+}
+
 func (s *Sprite) Bounds() Rect {
 	return s.bounds
 }
