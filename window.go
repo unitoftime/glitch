@@ -10,6 +10,7 @@ import (
 
 
 type WindowConfig struct {
+	Fullscreen bool
 	Vsync bool
 	// Resizable bool
 	Samples int
@@ -47,10 +48,11 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True) // Compatibility - For Mac only?
 
-		// TODO - For fullscreen: glfw.GetPrimaryMonitor()
-		// monitor := glfw.GetPrimaryMonitor()
-		// win.window, err = glfw.CreateWindow(width, height, title, monitor, nil)
-		win.window, err = glfw.CreateWindow(width, height, title, nil, nil)
+		var monitor *glfw.Monitor
+		if config.Fullscreen {
+			monitor = glfw.GetPrimaryMonitor()
+		}
+		win.window, err = glfw.CreateWindow(width, height, title, monitor, nil)
 		if err != nil {
 			return err
 		}
@@ -181,6 +183,8 @@ func (w *Window) JustPressed(key Key) bool {
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
 	mainthread.Call(func() {
+		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
+		gl.Viewport(0, 0, int(w.width), int(w.height))
 		// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
 		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
 	})

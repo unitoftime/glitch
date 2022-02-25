@@ -38,12 +38,26 @@ func (s *Sprite) Bounds() Rect {
 	return s.bounds
 }
 
+// // // Add another sprite on top of this sprite
+// // // TODO - Include matrix transformation
+// func (s *Sprite) DrawToSprite(baseSprite *Sprite) {
+// 	if baseSprite.texture != s.texture { panic("Error DrawToSprite, textures must match!") }
+// 	if baseSprite.material != s.material { panic("Error DrawToSprite, materials must match!") }
+
+// 	baseSprite.bounds = baseSprite.bounds.Union(s)
+// 	baseSprite.mesh.Append(s.mesh)
+// }
+
 type NinePanelSprite struct {
 	sprites []*Sprite
 	border Rect
 	bounds Rect
 	Mask RGBA // This represents the default color mask to draw with (unless one is passed in via a draw function, Example: *Mask)
 	Scale float32
+}
+
+func SpriteToNinePanel(sprite *Sprite, border Rect) *NinePanelSprite {
+	return NewNinePanelSprite(sprite.texture, sprite.bounds, border)
 }
 
 func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {

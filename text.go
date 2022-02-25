@@ -29,6 +29,8 @@ type Atlas struct {
 }
 
 func NewAtlas(face font.Face, runes []rune) *Atlas {
+	smooth := false // TODO - Should fonts always be smoothed?
+
 	metrics := face.Metrics()
 	atlas := &Atlas{
 		face: face,
@@ -99,7 +101,7 @@ func NewAtlas(face font.Face, runes []rune) *Atlas {
 	// png.Encode(outputFile, img)
 	// outputFile.Close()
 
-	atlas.texture = NewTexture(img)
+	atlas.texture = NewTexture(img, smooth)
 	fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
 }

@@ -23,7 +23,7 @@ func WhiteTexture() *Texture {
 		}
 	}
 
-	whiteTexture = NewTexture(img)
+	whiteTexture = NewTexture(img, true) // TODO - Should this texture always be smooth?
 
 	return whiteTexture
 }
@@ -33,7 +33,7 @@ type Texture struct {
 	width, height int
 }
 
-func NewTexture(img image.Image) *Texture {
+func NewTexture(img image.Image, smooth bool) *Texture {
 // func NewTexture(width, height int, pixels []uint8) *Texture {
 	nrgba := image.NewNRGBA(img.Bounds())
 	draw.Draw(nrgba, nrgba.Bounds(), img, img.Bounds().Min, draw.Src)
@@ -63,7 +63,6 @@ func NewTexture(img image.Image) *Texture {
 		// gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
 		// TODO - pass smooth in as a parameter
-		smooth := true
 		if smooth {
 			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)

@@ -13,16 +13,18 @@ type Frame struct {
 	tex *Texture
 	mesh *Mesh
 	material Material
+	bounds Rect
 }
 
 // Type? Color, depth, stencil?
-func NewFrame(bounds Rect) *Frame {
+func NewFrame(bounds Rect, smooth bool) *Frame {
 	var frame Frame
+	frame.bounds = bounds
 
 	// Create texture
 	// TODO - Note: I'm passing actual data to the texture object, rather than null. That might be suboptimal. This fills the GPU memory, whereas if I pass null I can just allocate it.
 	img := image.NewNRGBA(image.Rect(int(bounds.Min[0]), int(bounds.Min[1]), int(bounds.Max[0]), int(bounds.Max[1])))
-	frame.tex = NewTexture(img)
+	frame.tex = NewTexture(img, smooth)
 
 	// Create mesh (in case we want to draw the fbo to another target)
 	frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))
@@ -59,12 +61,14 @@ func (f *Frame) delete() {
 
 func (f *Frame) Bind() {
 	mainthread.Call(func() {
+		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
+		gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 	})
 }
 
-func (f *Frame) Clear() {
-	mainthread.Call(func() {
-		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-	})
-}
+// func (f *Frame) Clear() {
+// 	mainthread.Call(func() {
+// 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+// 	})
+// }

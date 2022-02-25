@@ -46,7 +46,7 @@ func (g *Group) Clear() {
 }
 
 func (g *Group) Draw() {
-	g.camera.SetOrtho2D(g.win)
+	g.camera.SetOrtho2D(g.win.Bounds())
 	g.camera.SetView2D(0, 0, 1.0, 1.0)
 
 	g.pass.SetUniform("projection", g.camera.Projection)

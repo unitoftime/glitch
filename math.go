@@ -116,9 +116,9 @@ func (m *Mat4) Translate(x, y, z float32) *Mat4 {
 }
 
 // Note: Does not modify in place
-func (m *Mat4) Mul(n *Mat4) Mat4 {
+func (m *Mat4) Mul(n *Mat4) *Mat4 {
 	// This is in column major order
-	return Mat4{
+	return &Mat4{
 		// Column 0
 		m[i4_0_0] * n[i4_0_0] + m[i4_1_0] * n[i4_0_1] + m[i4_2_0] * n[i4_0_2] + m[i4_3_0] * n[i4_0_3],
 		m[i4_0_1] * n[i4_0_0] + m[i4_1_1] * n[i4_0_1] + m[i4_2_1] * n[i4_0_2] + m[i4_3_1] * n[i4_0_3],
@@ -189,17 +189,28 @@ func R(minX, minY, maxX, maxY float32) Rect {
 	}
 }
 
-func (r *Rect) W() float32 {
+func (r Rect) W() float32 {
 	return r.Max[0] - r.Min[0]
 }
 
-func (r *Rect) H() float32 {
+func (r Rect) H() float32 {
 	return r.Max[1] - r.Min[1]
 }
 
 func (r Rect) Center() Vec2 {
 	return Vec2{r.Min[0] + (r.W()/2), r.Min[1] + (r.H()/2)}
 }
+
+// TODO - Untested
+// func (r Rect) Union(s Rect) Rect {
+// 	r = r.Norm()
+// 	s = s.Norm()
+// 	x1, _ := minMax(r.Min[0], s.Min[0])
+// 	_, x2 := minMax(r.Max[0], s.Max[0])
+// 	y1, _ := minMax(r.Min[1], s.Min[1])
+// 	_, y2 := minMax(r.Max[1], s.Max[1])
+// 	return R(x1, y1, x2, y2)
+// }
 
 func (r Rect) Norm() Rect {
 	x1, x2 := minMax(r.Min[0], r.Max[0])
@@ -301,6 +312,12 @@ func (m *Mat3) Apply( v Vec2) Vec2 {
 	}
 }
 
+// Note: Returns a new Mat4
+func (m *Mat4) Inv() *Mat4 {
+	retMat := Mat4(mgl32.Mat4(*m).Inv())
+	return &retMat
+}
+
 type CameraOrtho struct {
 	Projection Mat4
 	View Mat4
@@ -315,8 +332,8 @@ func NewCameraOrtho() *CameraOrtho {
 	}
 }
 
-func (c *CameraOrtho) SetOrtho2D(win *Window) {
-	c.bounds = win.Bounds()
+func (c *CameraOrtho) SetOrtho2D(bounds Rect) {
+	c.bounds = bounds
 	c.Projection = Mat4(mgl32.Ortho2D(0, c.bounds.W(), 0, c.bounds.H()))
 	// c.Projection = Mat4(mgl32.Ortho(0, c.bounds.W(), 0, c.bounds.H(), -1, 1))
 }
@@ -331,6 +348,36 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {
 		Translate(-cameraCenter[0], -cameraCenter[1], 0).
 		Scale(scaleX, scaleY, 1.0).
 		Translate(cameraCenter[0], cameraCenter[1], 0)
+}
+
+func (c *CameraOrtho) Project(point Vec3) Vec3 {
+	p := c.View.Apply(point)
+	return p
+}
+
+func (c *CameraOrtho) Unproject(point Vec3) Vec3 {
+	p := c.View.Inv().Apply(point)
+	return p
+
+	// return c.Projection.Mul(&c.View).Inv().Apply(point)
+	// point[0] /= 1920
+	// point[1] /= 1080
+
+	// p := c.Projection.Mul(&c.View).Inv().Apply(point)
+	// return p
+	// return Vec3{
+	// 	p[0] / 1920,
+	// 	p[1] / 1080,
+	// 	p[2] / 1,
+	// }
+
+	// m := c.Projection.Mul(&c.View)
+	// det := m[i4_0_0]*m[i4_1_1] - m[i4_1_0]*m[i4_0_1]
+	// return Vec3{
+	// 	(m[i4_1_1]*(point[0] - m[i4_3_0]) - m[2]*(point[1] - m[i4_3_1])) / det,
+	// 	(-m[i4_0_1]*(point[0] - m[i4_3_0]) + m[0]*(point[1] - m[i4_3_1])) / det,
+	// 	0,
+	// }
 }
 
 type Camera struct {

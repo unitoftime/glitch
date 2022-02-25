@@ -72,7 +72,6 @@ func (r *RenderPass) Draw(target Target) {
 	// Bind render target
 	target.Bind()
 
-
 	// TODO - Hardware depth testing
 	// mainthread.Call(func() {
 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
