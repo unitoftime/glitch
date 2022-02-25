@@ -212,6 +212,13 @@ func (r Rect) Center() Vec2 {
 // 	return R(x1, y1, x2, y2)
 // }
 
+func (r Rect) Moved(v Vec2) Rect {
+	return Rect{
+		Min: r.Min.Add(v),
+		Max: r.Max.Add(v),
+	}
+}
+
 func (r Rect) Norm() Rect {
 	x1, x2 := minMax(r.Min[0], r.Max[0])
 	y1, y2 := minMax(r.Min[1], r.Max[1])

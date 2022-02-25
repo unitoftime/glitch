@@ -63,9 +63,8 @@ func SpriteToNinePanel(sprite *Sprite, border Rect) *NinePanelSprite {
 func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {
 	fullBounds := bounds
 
-	// TODO - Textures are upside down, so we cut the texture up upside down as well
-	top := bounds.CutBottom(border.Min[1])
-	bot := bounds.CutTop(border.Max[1])
+	top := bounds.CutBottom(border.Max[1])
+	bot := bounds.CutTop(border.Min[1])
 
 	topLeft := top.CutLeft(border.Min[0])
 	topRight := top.CutRight(border.Max[0])
@@ -122,9 +121,10 @@ func (s *NinePanelSprite) RectDraw(pass *RenderPass, bounds Rect) {
 		s.Scale * s.border.Max[1])
 
 	top := bounds.CutTop(border.Max[1])
+	bot := bounds.CutBottom(border.Min[1])
+
 	topLeft := top.CutLeft(border.Min[0])
 	topRight := top.CutRight(border.Max[0])
-	bot := bounds.CutBottom(border.Min[1])
 	botLeft := bot.CutLeft(border.Min[0])
 	botRight := bot.CutRight(border.Max[0])
 	left := bounds.CutLeft(border.Min[0])
