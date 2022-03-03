@@ -15,7 +15,7 @@ type Group struct {
 	pass *glitch.RenderPass
 	camera *glitch.CameraOrtho
 	atlas *glitch.Atlas
-	// unionBounds *Rect // A union of all drawn object's bounds
+	unionBounds *glitch.Rect // A union of all drawn object's bounds
 	Debug bool
 	geomDraw glitch.GeomDraw
 }
@@ -30,19 +30,29 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 		camera: glitch.NewCameraOrtho(),
 		pass: pass,
 		atlas: atlas,
-		// unionBounds: nil,
+		unionBounds: nil,
 		Debug: false,
 	}
 }
 
-// func (g *Group) ContainsMouse() bool {
-// 	if g.unionBounds == nil { return false }
-// 	return g.unionBounds.Contains(g.win.MousePosition())
-// }
+func (g *Group) ContainsMouse() bool {
+	if g.unionBounds == nil { return false }
+	return g.unionBounds.Contains(g.win.MousePosition())
+}
+
+// TODO - Should this be a list of rects that we loop through?
+func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
+	if g.unionBounds == nil {
+		g.unionBounds = &newBounds
+	} else {
+		newUnion := g.unionBounds.Union(newBounds)
+		g.unionBounds = &newUnion
+	}
+}
 
 func (g *Group) Clear() {
 	g.pass.Clear()
-	// g.unionBounds = nil
+	g.unionBounds = nil
 }
 
 func (g *Group) Draw() {
@@ -52,19 +62,19 @@ func (g *Group) Draw() {
 	g.pass.SetUniform("projection", g.camera.Projection)
 	g.pass.SetUniform("view", g.camera.View)
 
-	g.pass.Draw(g.win)
+	// Draw the union rect
+	if g.Debug {
+		if g.unionBounds != nil {
+			g.debugRect(*g.unionBounds)
+		}
+	}
 
-	// if g.Debug {
-	// 	if g.unionBounds != nil {
-	// 		g.debugImd.Color = pixel.RGB(0, 0, 1)
-	// 		g.DebugRect(*g.unionBounds)
-	// 	}
-	// 	g.debugImd.Draw(g.win)
-	// }
+	g.pass.Draw(g.win)
 }
 
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
 	sprite.RectDraw(g.pass, rect)
+	g.appendUnionBounds(rect)
 	g.debugRect(rect)
 }
 
@@ -100,6 +110,7 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.atlas.Text(str)
 	r := rect.Anchor(text.Bounds(), anchor)
 	text.DrawRect(g.pass, r, glitch.RGBA{0, 0, 0, 1.0})
+	g.appendUnionBounds(rect)
 	g.debugRect(rect)
 }
 

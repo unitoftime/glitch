@@ -63,6 +63,7 @@ func (r *RenderPass) Clear() {
 	}
 }
 
+// TODO - I think I could use a linked list of layers and just use an int here
 func (r *RenderPass) SetLayer(layer uint8) {
 	r.currentLayer = layer
 }

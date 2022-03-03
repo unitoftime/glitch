@@ -201,16 +201,15 @@ func (r Rect) Center() Vec2 {
 	return Vec2{r.Min[0] + (r.W()/2), r.Min[1] + (r.H()/2)}
 }
 
-// TODO - Untested
-// func (r Rect) Union(s Rect) Rect {
-// 	r = r.Norm()
-// 	s = s.Norm()
-// 	x1, _ := minMax(r.Min[0], s.Min[0])
-// 	_, x2 := minMax(r.Max[0], s.Max[0])
-// 	y1, _ := minMax(r.Min[1], s.Min[1])
-// 	_, y2 := minMax(r.Max[1], s.Max[1])
-// 	return R(x1, y1, x2, y2)
-// }
+func (r Rect) Union(s Rect) Rect {
+	r = r.Norm()
+	s = s.Norm()
+	x1, _ := minMax(r.Min[0], s.Min[0])
+	_, x2 := minMax(r.Max[0], s.Max[0])
+	y1, _ := minMax(r.Min[1], s.Min[1])
+	_, y2 := minMax(r.Max[1], s.Max[1])
+	return R(x1, y1, x2, y2)
+}
 
 func (r Rect) Moved(v Vec2) Rect {
 	return Rect{
