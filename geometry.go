@@ -1,5 +1,9 @@
 package glitch
 
+import (
+	"math"
+)
+
 // TODO - Rename
 // type Geometry struct {
 // 	mesh *Mesh
@@ -58,7 +62,7 @@ func (g *GeomDraw) SetColor(color RGBA) {
 // if width == 0, then fill the rect
 func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 	if width <= 0 {
-		panic("TODO - FILL Rect")
+		panic("TODO - Fill Rect")
 	}
 
 	points := []Vec3{
@@ -68,6 +72,29 @@ func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 		Vec3{rect.Max[0], rect.Min[1], 0},
 		Vec3{rect.Min[0], rect.Min[1], 0},
 	}
+
+	return g.LineStrip(points, width)
+}
+
+// TODO - Should I pass in number of divisions?
+func (g *GeomDraw) Circle(center Vec3, radius float32, width float32) *Mesh {
+	if width <= 0 {
+		panic("TODO - Fill Circle")
+	}
+
+	maxDivisions := 100
+	points := make([]Vec3, maxDivisions, maxDivisions)
+	radians := 0.0
+	for i := range points {
+		points[i] = center.Add(Vec3{
+			radius * float32(math.Cos(radians)),
+			radius * float32(math.Sin(radians)),
+			0,
+		})
+		radians += 2 * math.Pi / float64(maxDivisions)
+	}
+	// Append last point
+	points = append(points, center.Add(Vec3{radius, 0, 0}))
 
 	return g.LineStrip(points, width)
 }
