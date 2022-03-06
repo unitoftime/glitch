@@ -78,23 +78,65 @@ func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 
 // TODO - Should I pass in number of divisions?
 func (g *GeomDraw) Circle(center Vec3, radius float32, width float32) *Mesh {
+	return g.Ellipse(center, Vec2{radius, radius}, 0, width)
+	// return g.Ellipse(center, radius, width)
+}
+
+// TODO - Should I pass in number of divisions?
+func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float32) *Mesh {
 	if width <= 0 {
-		panic("TODO - Fill Circle")
+		panic("TODO - Fill Ellipse")
 	}
+
+	alpha := float64(rotation)
+
+	a := math.Max(float64(size[0]), float64(size[1])) // SemiMajorAxis
+	b := math.Min(float64(size[0]), float64(size[1])) // SemiMinorAxis
+	// TODO - Rotate pi/2 if width < height?
+	e := math.Sqrt(1 - (b*b)/(a*a)) // Eccintricity
 
 	maxDivisions := 100
 	points := make([]Vec3, maxDivisions, maxDivisions)
 	radians := 0.0
 	for i := range points {
+		eCos := (e * math.Cos(radians))
+		r := b / (math.Sqrt(1 - (eCos * eCos)))
+
 		points[i] = center.Add(Vec3{
-			radius * float32(math.Cos(radians)),
-			radius * float32(math.Sin(radians)),
-			0,
+		float32(r * math.Cos(radians - alpha)),
+		float32(r * math.Sin(radians - alpha)),
+		0,
 		})
 		radians += 2 * math.Pi / float64(maxDivisions)
 	}
 	// Append last point
-	points = append(points, center.Add(Vec3{radius, 0, 0}))
+	{
+		eCos := (e * math.Cos(radians))
+		r := b / (math.Sqrt(1 - (eCos * eCos)))
+		// r := a * (1 - e * e) / (1 + (e * math.Cos(radians - alpha)))
+		// r := l / (1 + (e * math.Cos(radians - alpha)))
+		lastPoint := center.Add(Vec3{
+		float32(r * math.Cos(radians - alpha)),
+		float32(r * math.Sin(radians - alpha)),
+		0,
+		})
+		points = append(points, lastPoint)
+	}
+
+	// // Circle only
+	// maxDivisions := 100
+	// points := make([]Vec3, maxDivisions, maxDivisions)
+	// radians := 0.0
+	// for i := range points {
+	// 	points[i] = center.Add(Vec3{
+	// 		radius * float32(math.Cos(radians)),
+	// 		(22.0/32.0) * radius * float32(math.Sin(radians)),
+	// 		0,
+	// 	})
+	// 	radians += 2 * math.Pi / float64(maxDivisions)
+	// }
+	// // Append last point
+	// points = append(points, center.Add(Vec3{radius, 0, 0}))
 
 	return g.LineStrip(points, width)
 }
