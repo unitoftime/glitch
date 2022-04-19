@@ -114,6 +114,23 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	g.debugRect(rect)
 }
 
+// TODO - tooltips only seem to work for single lines
+func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitch.Vec2) {
+	mX, mY := g.win.MousePosition()
+	if !rect.Contains(mX, mY) {
+		return // If mouse not contained by rect, then don't draw
+	}
+
+	text := g.atlas.Text(tip)
+	tipRect := rect.Anchor(text.Bounds(), anchor)
+
+	g.Panel(panel, tipRect)
+
+	text.DrawRect(g.pass, tipRect, glitch.RGBA{1, 1, 1, 1.0})
+	g.appendUnionBounds(tipRect)
+	g.debugRect(tipRect)
+}
+
 func (g *Group) debugRect(rect glitch.Rect) {
 	if !g.Debug { return }
 
