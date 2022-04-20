@@ -18,6 +18,7 @@ type Group struct {
 	unionBounds *glitch.Rect // A union of all drawn object's bounds
 	Debug bool
 	geomDraw glitch.GeomDraw
+	color glitch.RGBA
 }
 
 func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
@@ -32,6 +33,7 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 		atlas: atlas,
 		unionBounds: nil,
 		Debug: false,
+		color: glitch.RGBA{1, 1, 1, 1},
 	}
 }
 
@@ -72,6 +74,10 @@ func (g *Group) Draw() {
 	g.pass.Draw(g.win)
 }
 
+func (g *Group) SetColor(color glitch.RGBA) {
+	g.color = color
+}
+
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
 	sprite.RectDraw(g.pass, rect)
 	g.appendUnionBounds(rect)
@@ -109,7 +115,7 @@ func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.atlas.Text(str)
 	r := rect.Anchor(text.Bounds(), anchor)
-	text.DrawRect(g.pass, r, glitch.RGBA{0, 0, 0, 1.0})
+	text.DrawRect(g.pass, r, g.color)
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
 }
@@ -126,7 +132,7 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitc
 
 	g.Panel(panel, tipRect)
 
-	text.DrawRect(g.pass, tipRect, glitch.RGBA{1, 1, 1, 1.0})
+	text.DrawRect(g.pass, tipRect, g.color)
 	g.appendUnionBounds(tipRect)
 	g.debugRect(tipRect)
 }
