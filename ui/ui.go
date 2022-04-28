@@ -21,14 +21,14 @@ type Group struct {
 	color glitch.RGBA
 }
 
-func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
+func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
 	shader, err := glitch.NewShader(shaders.SpriteShader)
 	if err != nil { panic(err) }
 	pass := glitch.NewRenderPass(shader)
 
 	return &Group{
 		win: win,
-		camera: glitch.NewCameraOrtho(),
+		camera: camera,
 		pass: pass,
 		atlas: atlas,
 		unionBounds: nil,
@@ -39,7 +39,13 @@ func NewGroup(win *glitch.Window, atlas *glitch.Atlas) *Group {
 
 func (g *Group) ContainsMouse() bool {
 	if g.unionBounds == nil { return false }
-	return g.unionBounds.Contains(g.win.MousePosition())
+	return g.unionBounds.Contains(g.mousePosition())
+}
+
+func (g *Group) mousePosition() (float32, float32) {
+	x, y := g.win.MousePosition()
+	worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
+	return worldSpaceMouse[0], worldSpaceMouse[1]
 }
 
 // TODO - Should this be a list of rects that we loop through?
@@ -57,10 +63,8 @@ func (g *Group) Clear() {
 	g.unionBounds = nil
 }
 
+// Performs a draw of the UI Group
 func (g *Group) Draw() {
-	g.camera.SetOrtho2D(g.win.Bounds())
-	g.camera.SetView2D(0, 0, 1.0, 1.0)
-
 	g.pass.SetUniform("projection", g.camera.Projection)
 	g.pass.SetUniform("view", g.camera.View)
 
@@ -85,7 +89,7 @@ func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
 }
 
 func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
-	mX, mY := g.win.MousePosition()
+	mX, mY := g.mousePosition()
 	if rect.Contains(mX, mY) {
 		g.Panel(hovered, rect)
 		return true
@@ -96,7 +100,7 @@ func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
 }
 
 func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
-	mX, mY := g.win.MousePosition()
+	mX, mY := g.mousePosition()
 	if !rect.Contains(mX, mY) {
 		g.Panel(normal, rect)
 		return false
@@ -122,7 +126,7 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 
 // TODO - tooltips only seem to work for single lines
 func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitch.Vec2) {
-	mX, mY := g.win.MousePosition()
+	mX, mY := g.mousePosition()
 	if !rect.Contains(mX, mY) {
 		return // If mouse not contained by rect, then don't draw
 	}
@@ -175,7 +179,8 @@ func (g *Group) debugRect(rect glitch.Rect) {
 // }
 
 // func (c *Context) HoverLambda(bounds Rect, ifLambda, elseLambda func()) Rect {
-// 	mousePos := c.win.MousePosition()
+	// mX, mY := g.mousePosition()
+// // 	mousePos := c.win.MousePosition()
 // 	if bounds.Contains(mousePos) {
 // 		ifLambda()
 // 	} else {

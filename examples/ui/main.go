@@ -58,23 +58,23 @@ func runGame() {
 	if err != nil { panic(err) }
 
 
-	texture := glitch.NewTexture(buttonImage)
+	texture := glitch.NewTexture(buttonImage, false)
 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
 	buttonSprite.Scale = 10
 
-	texture2 := glitch.NewTexture(buttonPressImage)
+	texture2 := glitch.NewTexture(buttonPressImage, false)
 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(1, 1, 1, 1))
 	buttonPressSprite.Scale = 10
 
-	texture3 := glitch.NewTexture(buttonHoverImage)
+	texture3 := glitch.NewTexture(buttonHoverImage, false)
 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glitch.R(1, 1, 1, 1))
 	buttonHoverSprite.Scale = 10
 
-	texture4 := glitch.NewTexture(panelImage)
+	texture4 := glitch.NewTexture(panelImage, false)
 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
 	panelSprite.Scale = 10
 
-	panelInnerTex := glitch.NewTexture(panelInnerImage)
+	panelInnerTex := glitch.NewTexture(panelInnerImage, false)
 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glitch.R(2, 2, 2, 2))
 	panelInnerSprite.Scale = 10
 	panelInnerSprite.Mask = glitch.RGBA{1, 0, 0, 1}
@@ -93,7 +93,11 @@ func runGame() {
 		}),
 		runes)
 
-	group := ui.NewGroup(win, atlas)
+	// A screenspace camera
+	camera := glitch.NewCameraOrtho()
+	camera.SetOrtho2D(win.Bounds())
+	camera.SetView2D(0, 0, 1.0, 1.0)
+	group := ui.NewGroup(win, camera, atlas)
 	// group.Debug = true
 
 	for !win.ShouldClose() {

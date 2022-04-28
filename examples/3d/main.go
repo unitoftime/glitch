@@ -94,7 +94,7 @@ func runGame() {
 		panic(err)
 	}
 	// texture := glitch.NewTexture(160, 200, manImage.Pix)
-	texture := glitch.NewTexture(manImage)
+	texture := glitch.NewTexture(manImage, false)
 	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
 
 	// mesh := glitch.NewQuadMesh()
@@ -133,7 +133,7 @@ func runGame() {
 		pass.Clear()
 		diffusePass.Clear()
 
-		camera.SetOrtho2D(win)
+		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
 		pCam.SetPerspective(win)

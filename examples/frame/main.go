@@ -55,7 +55,7 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
-	texture := glitch.NewTexture(manImage)
+	texture := glitch.NewTexture(manImage, false)
 
 	x := float32(0)
 	y := float32(0)
@@ -87,7 +87,7 @@ func runGame() {
 	text := atlas.Text("hello world")
 
 	fmt.Println(win.Bounds())
-	frame := glitch.NewFrame(win.Bounds())
+	frame := glitch.NewFrame(win.Bounds(), false)
 
 	camera := glitch.NewCameraOrtho()
 	start := time.Now()
@@ -111,7 +111,7 @@ func runGame() {
 
 		pass.Clear()
 
-		camera.SetOrtho2D(win)
+		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
 		for i := range man {

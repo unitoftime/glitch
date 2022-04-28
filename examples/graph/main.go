@@ -62,9 +62,9 @@ func runGame() {
 		graph.Line(dat)
 		graph.DrawColorMask(pass, mat, glitch.RGBA{0, 1, 1, 1})
 
-		glitch.Clear(glitch.RGBA{0, 0, 0, 1.0})
+		glitch.Clear(win, glitch.RGBA{0, 0, 0, 1.0})
 
-		camera.SetOrtho2D(win)
+		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1, 1)
 		pass.SetUniform("projection", camera.Projection)
 		pass.SetUniform("view", camera.View)
