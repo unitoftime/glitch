@@ -16,7 +16,9 @@ type Group struct {
 	camera *glitch.CameraOrtho
 	atlas *glitch.Atlas
 	unionBounds *glitch.Rect // A union of all drawn object's bounds
+	allBounds []glitch.Rect
 	Debug bool
+	OnlyCheckUnion bool
 	geomDraw glitch.GeomDraw
 	color glitch.RGBA
 }
@@ -32,14 +34,27 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		pass: pass,
 		atlas: atlas,
 		unionBounds: nil,
+		allBounds: make([]glitch.Rect, 0),
 		Debug: false,
+		OnlyCheckUnion: true,
 		color: glitch.RGBA{1, 1, 1, 1},
 	}
 }
 
+// onlyCheckUnion is an optimization if the ui elements are tightly packed (it doesn't loop through each rect
 func (g *Group) ContainsMouse() bool {
-	if g.unionBounds == nil { return false }
-	return g.unionBounds.Contains(g.mousePosition())
+	if g.OnlyCheckUnion {
+		if g.unionBounds == nil { return false }
+		return g.unionBounds.Contains(g.mousePosition())
+	} else {
+		x, y := g.mousePosition()
+		for i := range g.allBounds {
+			if g.allBounds[i].Contains(x, y) {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (g *Group) mousePosition() (float32, float32) {
@@ -50,6 +65,8 @@ func (g *Group) mousePosition() (float32, float32) {
 
 // TODO - Should this be a list of rects that we loop through?
 func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
+	g.allBounds = append(g.allBounds, newBounds)
+
 	if g.unionBounds == nil {
 		g.unionBounds = &newBounds
 	} else {
@@ -61,6 +78,7 @@ func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 func (g *Group) Clear() {
 	g.pass.Clear()
 	g.unionBounds = nil
+	g.allBounds = g.allBounds[:0]
 }
 
 // Performs a draw of the UI Group
