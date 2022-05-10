@@ -5,6 +5,44 @@ import (
 	"github.com/unitoftime/glitch/shaders"
 )
 
+// Element that needs to be drawn
+type uiElement struct {
+	drawer Drawer
+}
+
+type uiPass struct {
+	elements [][]uiElement
+}
+
+type uiGlobals struct {
+	mouseCaught bool
+}
+var global uiGlobals
+
+// Must be called every frame before any UI draws happen
+func Clear() {
+	global.mouseCaught = false
+}
+
+func Contains(point glitch.Vec2) bool {
+	return global.mouseCaught
+}
+
+func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
+	if global.mouseCaught {
+		return false
+	}
+	if rect.Contains(point[0], point[1]) {
+		global.mouseCaught = true
+		return true
+	}
+	return false
+}
+
+// TODO do I need an end funtion?
+// func End() {
+// }
+
 type Drawer interface {
 	Bounds() glitch.Rect
 	RectDraw(*glitch.RenderPass, glitch.Rect)
@@ -108,7 +146,7 @@ func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
 
 func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
 	mX, mY := g.mousePosition()
-	if rect.Contains(mX, mY) {
+	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
 		g.Panel(hovered, rect)
 		return true
 	}
@@ -119,13 +157,13 @@ func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
 
 func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 	mX, mY := g.mousePosition()
-	if !rect.Contains(mX, mY) {
+	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
 		g.Panel(normal, rect)
 		return false
 	}
 
 	// If we are here, then we know we are at least hovering
-	if g.win.Pressed(glitch.MouseButtonLeft) {
+	if g.win.JustPressed(glitch.MouseButtonLeft) {
 		g.Panel(pressed, rect)
 		return true
 	}
@@ -145,7 +183,7 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 // TODO - tooltips only seem to work for single lines
 func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitch.Vec2) {
 	mX, mY := g.mousePosition()
-	if !rect.Contains(mX, mY) {
+	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
 		return // If mouse not contained by rect, then don't draw
 	}
 
