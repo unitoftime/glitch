@@ -190,6 +190,16 @@ func (w *Window) Bind() {
 	})
 }
 
+func (w *Window) ReadFrame(rect Rect, dst []byte) {
+	mainthread.Call(func() {
+		// gl.ReadPixels(dst []byte, x, y, width, height int, format, ty Enum)
+		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
+		// TODO Where should I get format and type enums from?
+		// gl.ReadPixels(dst, int(rect.Min[0]), int(rect.Min[1]), int(rect.W()), int(rect.H()), gl.RGBA, gl.FLOAT)
+		gl.ReadPixels(dst, int(rect.Min[0]), int(rect.Min[1]), int(rect.W()), int(rect.H()), gl.RGBA, gl.UNSIGNED_BYTE)
+	})
+}
+
 func (w *Window) Pressed(key Key) bool {
 	var action glfw.Action
 	mainthread.Call(func() {
