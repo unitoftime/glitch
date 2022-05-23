@@ -399,7 +399,8 @@ func NewCamera() *Camera {
 		Projection: Mat4Ident,
 		View: Mat4Ident,
 		position: Vec3{0, 0, 0},
-		target: Vec3{0, 0, 0},
+		// target: Vec3{0, 0, 0},
+		target: Vec3{200, 200, 200}, // TODO just for testing
 	}
 }
 
@@ -413,8 +414,8 @@ func (c *Camera) SetPerspective(win *Window) {
 
 func (c *Camera) SetViewLookAt(win *Window) {
 	c.View = Mat4(mgl32.LookAt(
-		c.position[0], c.position[1], c.position[2],
-		200, 200, 0, // target
+		c.position[0], c.position[1], c.position[2], // position
+		c.target[0], c.target[1], c.target[2], // target
 		0, 0, 1,
 	))
 }

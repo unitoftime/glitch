@@ -42,22 +42,28 @@ var PixelArtShader = glitch.ShaderConfig{
 	},
 }
 
-//go:embed sprite.vs
+//go:embed mesh.vs
 var DiffuseVertexShader string;
 
-//go:embed diffuse.fs
+//go:embed flat.fs
 var DiffuseFragmentShader string;
 
 var DiffuseShader = glitch.ShaderConfig{
 	VertexShader: DiffuseVertexShader,
 	FragmentShader: DiffuseFragmentShader,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"aPos", glitch.AttrVec3},
-		glitch.Attrib{"aColor", glitch.AttrVec4},
-		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
+		glitch.Attrib{"position", glitch.AttrVec3},
+		// glitch.Attrib{"normal", glitch.AttrVec3},
+		glitch.Attrib{"color", glitch.AttrVec4},
+		glitch.Attrib{"texture", glitch.AttrVec2},
 	},
 	UniformFormat: glitch.UniformFormat{
-		glitch.Attrib{"projection", glitch.AttrMat4},
+		glitch.Attrib{"model", glitch.AttrMat4},
 		glitch.Attrib{"view", glitch.AttrMat4},
+		glitch.Attrib{"projection", glitch.AttrMat4},
+		// glitch.Attrib{"dirlight.direction", glitch.AttrVec3},
+		// glitch.Attrib{"dirlight.ambient", glitch.AttrVec3},
+		// glitch.Attrib{"dirlight.diffuse", glitch.AttrVec3},
+		// glitch.Attrib{"dirlight.specular", glitch.AttrVec3},
 	},
 }

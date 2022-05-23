@@ -54,6 +54,16 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 	if err != nil {
 		return nil, err
 	}
+
+	// Loop through and set all matrices to identity matrices
+	shader.Bind()
+	for _, uniform := range uniformFmt {
+		if uniform.Size == AttrMat4 {
+			// Setting uniform
+			shader.SetUniform(uniform.Name, Mat4Ident)
+		}
+	}
+
 	return shader, nil
 }
 

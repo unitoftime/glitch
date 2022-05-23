@@ -118,7 +118,7 @@ func runGame() {
 
 	text := atlas.Text("hello world")
 
-	cube := glitch.NewModel(glitch.NewCubeMesh(100), nil)
+	cube := glitch.NewModel(glitch.NewCubeMesh(100), glitch.DefaultMaterial())
 
 	camera := glitch.NewCameraOrtho()
 	pCam := glitch.NewCamera()
@@ -146,7 +146,7 @@ func runGame() {
 		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
 
 		mat = glitch.Mat4Ident
-		mat.Translate(200, 200, 0)
+		mat.Translate(200, 200, 200)
 		cube.Draw(diffusePass, mat)
 
 		mat = glitch.Mat4Ident
@@ -162,11 +162,15 @@ func runGame() {
 
 		diffusePass.SetUniform("projection", pCam.Projection)
 		diffusePass.SetUniform("view", pCam.View)
+		// diffusePass.SetUniform("dirLight.direction", glitch.Vec3{1, 1, 1})
+		// diffusePass.SetUniform("dirLight.ambient", glitch.Vec3{1, 1, 1})
+		// diffusePass.SetUniform("dirLight.diffuse", glitch.Vec3{-1, -1, -1})
+		// diffusePass.SetUniform("dirLight.specular", glitch.Vec3{-1, -1, -1})
 		diffusePass.Draw(win)
 
 		win.Update()
 
 		dt = time.Since(start)
-		fmt.Println(dt.Seconds() * 1000)
+		// fmt.Println(dt.Seconds() * 1000)
 	}
 }

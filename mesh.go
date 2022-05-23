@@ -2,6 +2,7 @@ package glitch
 
 type Mesh struct {
 	positions []Vec3
+	// normals []Vec3
 	colors []Vec4
 	texCoords []Vec2
 	indices []uint32
@@ -10,6 +11,7 @@ type Mesh struct {
 func NewMesh() *Mesh {
 	return &Mesh{
 		positions: make([]Vec3, 0),
+		// normals: make([]Vec3, 0),
 		colors: make([]Vec4, 0),
 		texCoords: make([]Vec2, 0),
 		indices: make([]uint32, 0),
@@ -19,6 +21,7 @@ func NewMesh() *Mesh {
 // TODO - clear function? Should append be more like draw?
 func (m *Mesh) Clear() {
 	m.positions = m.positions[:0]
+	// m.normals = m.normals[:0]
 	m.colors = m.colors[:0]
 	m.texCoords = m.texCoords[:0]
 	m.indices = m.indices[:0]
@@ -41,6 +44,7 @@ func (m *Mesh) Append(m2 *Mesh) {
 	}
 
 	m.positions = append(m.positions, m2.positions...)
+	// m.normals = append(m.normals, m2.normals...)
 	m.colors = append(m.colors, m2.colors...)
 	m.texCoords = append(m.texCoords, m2.texCoords...)
 }
@@ -70,6 +74,7 @@ func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 		Vec3{bounds.Min[0], bounds.Min[1], 0.0},
 		Vec3{bounds.Min[0], bounds.Max[1], 0.0},
 	}
+	// TODO normals
 	colors := []Vec4{
 		Vec4{color.R, color.G, color.B, color.A},
 		Vec4{color.R, color.G, color.B, color.A},
@@ -141,6 +146,7 @@ func NewCubeMesh(size float32) *Mesh {
 		col, col, col, col,
 	}
 
+	// TODO normals
 	// normals := []float32{
 	// 	// Front face
 	// 	-0, -0,  0,
@@ -174,6 +180,7 @@ func NewCubeMesh(size float32) *Mesh {
 	// 	-0,  0, -0,
 	// }
 
+	// TODO texCoords
 	texCoords := []Vec2{
 		// Front face
 		Vec2{-0, -0},

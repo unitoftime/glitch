@@ -1,6 +1,7 @@
 package glitch
 
 import (
+	"fmt"
 	// "github.com/faiface/mainthread"
 	// "github.com/unitoftime/gl"
 	// "sort"
@@ -70,6 +71,7 @@ func (r *RenderPass) SetLayer(layer uint8) {
 
 // TODO - Mat?
 func (r *RenderPass) Draw(target Target) {
+	fmt.Println("Starting RenderPass.Draw")
 	// Bind render target
 	target.Bind()
 
@@ -105,11 +107,13 @@ func (r *RenderPass) Draw(target Target) {
 		destBuffs[2] = &[]Vec2{}
 		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for _, c := range r.commands[l] {
+				fmt.Println("Command", c)
 				// for _, c := range r.commands {
 				numVerts := len(c.mesh.positions)
 
 				r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 
+				// TODO If large enough mesh, then don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
 				// work and append
 				posBuf := *(destBuffs[0]).(*[]Vec3)
 				for i := range c.mesh.positions {

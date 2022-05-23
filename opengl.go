@@ -16,7 +16,7 @@ type UniformFormat []Attrib
 
 type Attrib struct {
 	Name string
-	Size AttribSize
+	Size AttribSize // TODO this shouldn't be sizes they should be types
 }
 type AttribSize int
 
