@@ -15,9 +15,9 @@ var SpriteShader = glitch.ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SpriteFragmentShader,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"aPos", glitch.AttrVec3},
-		glitch.Attrib{"aColor", glitch.AttrVec4},
-		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
+		glitch.Attrib{"positionIn", glitch.AttrVec3},
+		glitch.Attrib{"colorIn", glitch.AttrVec4},
+		glitch.Attrib{"texCoordIn", glitch.AttrVec2},
 	},
 	UniformFormat: glitch.UniformFormat{
 		glitch.Attrib{"projection", glitch.AttrMat4},
@@ -32,9 +32,9 @@ var PixelArtShader = glitch.ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SubPixelAntiAliased,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"aPos", glitch.AttrVec3},
-		glitch.Attrib{"aColor", glitch.AttrVec4},
-		glitch.Attrib{"aTexCoord", glitch.AttrVec2},
+		glitch.Attrib{"positionIn", glitch.AttrVec3},
+		glitch.Attrib{"colorIn", glitch.AttrVec4},
+		glitch.Attrib{"texCoordIn", glitch.AttrVec2},
 	},
 	UniformFormat: glitch.UniformFormat{
 		glitch.Attrib{"projection", glitch.AttrMat4},
@@ -52,10 +52,10 @@ var DiffuseShader = glitch.ShaderConfig{
 	VertexShader: DiffuseVertexShader,
 	FragmentShader: DiffuseFragmentShader,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"position", glitch.AttrVec3},
+		glitch.Attrib{"positionIn", glitch.AttrVec3},
 		// glitch.Attrib{"normal", glitch.AttrVec3},
-		glitch.Attrib{"color", glitch.AttrVec4},
-		glitch.Attrib{"texture", glitch.AttrVec2},
+		glitch.Attrib{"colorIn", glitch.AttrVec4},
+		glitch.Attrib{"texCoordIn", glitch.AttrVec2},
 	},
 	UniformFormat: glitch.UniformFormat{
 		glitch.Attrib{"model", glitch.AttrMat4},

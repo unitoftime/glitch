@@ -1,8 +1,8 @@
 #version 300 es
 
-layout (location = 0) in vec3 aPos;
-layout (location = 1) in vec4 aColor;
-layout (location = 2) in vec2 aTexCoord;
+layout (location = 0) in vec3 positionIn;
+layout (location = 1) in vec4 colorIn;
+layout (location = 2) in vec2 texCoordIn;
 
 out vec4 ourColor;
 out vec2 TexCoord;
@@ -13,10 +13,10 @@ uniform mat4 view;
 
 void main()
 {
-  gl_Position = projection * view * vec4(aPos, 1.0);
+  gl_Position = projection * view * vec4(positionIn, 1.0);
   //	gl_Position = projection * transform * vec4(aPos, 1.0);
   //	gl_Position = vec4(aPos, 1.0);
-  ourColor = aColor;
+  ourColor = colorIn;
 
-  TexCoord = vec2(aTexCoord.x, aTexCoord.y);
+  TexCoord = vec2(texCoordIn.x, texCoordIn.y);
 }

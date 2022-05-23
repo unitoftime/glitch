@@ -21,7 +21,7 @@ precision highp float;
 
 out vec4 FragColor;
 
-/* in vec3 FragPos; */
+in vec3 FragPos;
 /* in vec3 Normal; */
 in vec2 TexCoord;
 /* in vec4 FragPosLightSpace; */
@@ -36,6 +36,6 @@ uniform sampler2D tex;
 
 void main()
 {
-    /* FragColor = texture(tex, TexCoord); */
-  FragColor = vec4(1.0, 0.0, 0.0, 1.0);
+  FragColor = texture(tex, TexCoord);
+  /* FragColor = vec4(1.0, 0.0, 0.0, 1.0); */
 }

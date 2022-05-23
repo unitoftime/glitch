@@ -35,12 +35,15 @@ func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 }
 
 func (s *Sprite) RectDraw(pass *RenderPass, bounds Rect) {
+	s.RectDrawColorMask(pass, bounds, RGBA{1, 1, 1, 1})
+}
+func (s *Sprite) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
 	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
-	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+	pass.Add(s.mesh, matrix, mask, s.material)
 }
 
 func (s *Sprite) Bounds() Rect {
@@ -116,10 +119,12 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 // func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
 // 	s.DrawColorMask(pass, bounds, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
 // }
-// Should I inlude this?
-// func (s *NinePanelSprite) RectDrawMask(pass *RenderPass, bounds Rect) { }
 
 func (s *NinePanelSprite) RectDraw(pass *RenderPass, bounds Rect) {
+	s.RectDrawColorMask(pass, bounds, RGBA{1,1,1,1})
+}
+
+func (s *NinePanelSprite) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	// fmt.Println("here")
 	// fmt.Println(bounds.W(), bounds.H())
 

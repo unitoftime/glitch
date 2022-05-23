@@ -2,7 +2,7 @@ package glitch
 
 type Mesh struct {
 	positions []Vec3
-	// normals []Vec3
+	normals []Vec3
 	colors []Vec4
 	texCoords []Vec2
 	indices []uint32
@@ -11,7 +11,7 @@ type Mesh struct {
 func NewMesh() *Mesh {
 	return &Mesh{
 		positions: make([]Vec3, 0),
-		// normals: make([]Vec3, 0),
+		normals: make([]Vec3, 0),
 		colors: make([]Vec4, 0),
 		texCoords: make([]Vec2, 0),
 		indices: make([]uint32, 0),
@@ -21,7 +21,7 @@ func NewMesh() *Mesh {
 // TODO - clear function? Should append be more like draw?
 func (m *Mesh) Clear() {
 	m.positions = m.positions[:0]
-	// m.normals = m.normals[:0]
+	m.normals = m.normals[:0]
 	m.colors = m.colors[:0]
 	m.texCoords = m.texCoords[:0]
 	m.indices = m.indices[:0]
@@ -44,7 +44,7 @@ func (m *Mesh) Append(m2 *Mesh) {
 	}
 
 	m.positions = append(m.positions, m2.positions...)
-	// m.normals = append(m.normals, m2.normals...)
+	m.normals = append(m.normals, m2.normals...)
 	m.colors = append(m.colors, m2.colors...)
 	m.texCoords = append(m.texCoords, m2.texCoords...)
 }
@@ -147,38 +147,38 @@ func NewCubeMesh(size float32) *Mesh {
 	}
 
 	// TODO normals
-	// normals := []float32{
-	// 	// Front face
-	// 	-0, -0,  0,
-	// 	0, -0,  0,
-	// 	0,  0,  0,
-	// 	-0,  0,  0,
-	// 	// Back face
-	// 	-0, -0, -0,
-	// 	-0,  0, -0,
-	// 	0,  0, -0,
-	// 	0, -0, -0,
-	// 	// Top face
-	// 	-0,  0, -0,
-	// 	-0,  0,  0,
-	// 	0,  0,  0,
-	// 	0,  0, -0,
-	// 	// Bottom face
-	// 	-0, -0, -0,
-	// 	0, -0, -0,
-	// 	0, -0,  0,
-	// 	-0, -0,  0,
-	// 	// Right face
-	// 	0, -0, -0,
-	// 	0,  0, -0,
-	// 	0,  0,  0,
-	// 	0, -0,  0,
-	// 	// Left face
-	// 	-0, -0, -0,
-	// 	-0, -0,  0,
-	// 	-0,  0,  0,
-	// 	-0,  0, -0,
-	// }
+	normals := []Vec3{
+		// Front face
+		Vec3{0, 0, -1},
+		Vec3{0, 0, -1},
+		Vec3{0, 0, -1},
+		Vec3{0, 0, -1},
+		// Back face
+		Vec3{0, 0, 1},
+		Vec3{0, 0, 1},
+		Vec3{0, 0, 1},
+		Vec3{0, 0, 1},
+		// Top face
+		Vec3{0,  1, 0},
+		Vec3{0,  1, 0},
+		Vec3{0,  1, 0},
+		Vec3{0,  1, 0},
+		// Bottom face
+		Vec3{0, -1, 0},
+		Vec3{0, -1, 0},
+		Vec3{0, -1, 0},
+		Vec3{0, -1, 0},
+		// Right face
+		Vec3{1, 0, 0},
+		Vec3{1, 0, 0},
+		Vec3{1, 0, 0},
+		Vec3{1, 0, 0},
+		// Left face
+		Vec3{-1, 0, 0},
+		Vec3{-1, 0, 0},
+		Vec3{-1, 0, 0},
+		Vec3{-1, 0, 0},
+	}
 
 	// TODO texCoords
 	texCoords := []Vec2{
@@ -225,6 +225,7 @@ func NewCubeMesh(size float32) *Mesh {
 
 	return &Mesh{
 		positions: positions,
+		normals: normals,
 		colors: colors,
 		texCoords: texCoords,
 		indices: indices,

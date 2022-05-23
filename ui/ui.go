@@ -46,6 +46,7 @@ func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
 type Drawer interface {
 	Bounds() glitch.Rect
 	RectDraw(*glitch.RenderPass, glitch.Rect)
+	RectDrawColorMask(*glitch.RenderPass, glitch.Rect, glitch.RGBA)
 }
 
 type Group struct {
@@ -139,9 +140,19 @@ func (g *Group) SetColor(color glitch.RGBA) {
 }
 
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
-	sprite.RectDraw(g.pass, rect)
+	sprite.RectDrawColorMask(g.pass, rect, g.color)
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
+}
+
+// Addds a panel with padding to the current bounds of the group
+func (g *Group) PanelizeBounds(sprite Drawer, padding glitch.Rect) {
+	if g.unionBounds == nil { return }
+	rect := *g.unionBounds
+	rect = rect.Pad(padding)
+	g.pass.SetLayer(128) // Panel layer
+	g.Panel(sprite, rect)
+	g.pass.SetLayer(glitch.DefaultLayer)
 }
 
 func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
@@ -202,7 +213,7 @@ func (g *Group) debugRect(rect glitch.Rect) {
 
 	lineWidth := float32(2.0)
 
-	g.pass.SetLayer(126)
+	g.pass.SetLayer(126) // debug layer
 
 	g.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
 	m := g.geomDraw.Rectangle(rect, lineWidth)

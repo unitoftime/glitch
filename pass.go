@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	"fmt"
 	// "github.com/faiface/mainthread"
 	// "github.com/unitoftime/gl"
 	// "sort"
@@ -71,7 +70,6 @@ func (r *RenderPass) SetLayer(layer uint8) {
 
 // TODO - Mat?
 func (r *RenderPass) Draw(target Target) {
-	fmt.Println("Starting RenderPass.Draw")
 	// Bind render target
 	target.Bind()
 
@@ -101,13 +99,13 @@ func (r *RenderPass) Draw(target Target) {
 	if r.dirty {
 		r.dirty = false
 
+		// TODO - Can you generate this from the shader?
 		destBuffs := make([]interface{}, 3) // TODO - hardcoded
 		destBuffs[0] = &[]Vec3{}
 		destBuffs[1] = &[]Vec4{}
 		destBuffs[2] = &[]Vec2{}
 		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for _, c := range r.commands[l] {
-				fmt.Println("Command", c)
 				// for _, c := range r.commands {
 				numVerts := len(c.mesh.positions)
 
