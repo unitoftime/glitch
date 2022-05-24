@@ -218,6 +218,20 @@ func (r Rect) Moved(v Vec2) Rect {
 	}
 }
 
+// Scales rect r uniformly to fit inside rect r2
+// TODO This only scales around {0, 0}
+func (r Rect) ScaledToFit(r2 Rect) Rect {
+	scaleX := r2.W() / r.W()
+	scaleY := r2.H() / r.H()
+
+	min, _ := minMax(scaleX, scaleY)
+	return Rect{
+		Min: r.Min.Scaled(min),
+		Max: r.Max.Scaled(min),
+	}
+}
+
+
 func (r Rect) Norm() Rect {
 	x1, x2 := minMax(r.Min[0], r.Max[0])
 	y1, y2 := minMax(r.Min[1], r.Max[1])

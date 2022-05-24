@@ -185,10 +185,10 @@ func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 
 func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.atlas.Text(str)
-	r := rect.Anchor(text.Bounds(), anchor)
-	text.DrawRect(g.pass, r, g.color)
-	g.appendUnionBounds(rect)
-	g.debugRect(rect)
+	r := rect.Anchor(text.Bounds().ScaledToFit(rect), anchor)
+	text.RectDrawColorMask(g.pass, r, g.color)
+	g.appendUnionBounds(r)
+	g.debugRect(r)
 }
 
 // TODO - tooltips only seem to work for single lines

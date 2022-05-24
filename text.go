@@ -202,3 +202,12 @@ func (t *Text) DrawRect(pass *RenderPass, rect Rect, color RGBA) {
 	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
 	pass.Add(t.mesh, mat, color, t.material)
 }
+
+func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
+	mat := Mat4Ident
+	// TODO why shouldn't I be shifting to the middle?
+	// mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	// mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
+	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
+	pass.Add(t.mesh, mat, mask, t.material)
+}
