@@ -98,7 +98,7 @@ func runGame() {
 	y := float32(0)
 	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
 
-	length := 100000
+	length := 1000000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()

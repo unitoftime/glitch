@@ -4,40 +4,12 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
-	// "syscall/js"
 
 	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
 )
 
-// TODO - right now we only support floats (for simplicity)
-type VertexFormat []Attrib
-type UniformFormat []Attrib
-
-type Attrib struct {
-	Name string
-	Size AttribSize // TODO this shouldn't be sizes they should be types
-}
-type AttribSize int
-
 const sof int = 4 // SizeOf(Float)
-const (
-	// TODO - others
-	AttrInt AttribSize = AttribSize(1)
-	AttrFloat AttribSize = AttribSize(1)
-	AttrVec2 AttribSize = AttribSize(2)
-	AttrVec3 AttribSize = AttribSize(3)
-	AttrVec4 AttribSize = AttribSize(4)
-	AttrMat2 AttribSize = AttribSize(2 * 2)
-	AttrMat23 AttribSize = AttribSize(2 * 3)
-	AttrMat24 AttribSize = AttribSize(2 * 4)
-	AttrMat3 AttribSize = AttribSize(3 * 3)
-	AttrMat32 AttribSize = AttribSize(3 * 2)
-	AttrMat34 AttribSize = AttribSize(3 * 4)
-	AttrMat4 AttribSize = AttribSize(4 * 4)
-	AttrMat42 AttribSize = AttribSize(4 * 2)
-	AttrMat43 AttribSize = AttribSize(4 * 3)
-)
 
 type VertexBuffer struct {
 	vao, vbo, ebo gl.Buffer
@@ -67,8 +39,9 @@ type SupportedSubBuffers interface {
 }
 
 type SubBuffer[T SupportedSubBuffers] struct {
-	name string
-	attrSize AttribSize
+	attr Attr
+	// name string
+	// attrSize AttribSize
 	maxVerts int
 	offset int
 	vertexCount int
@@ -145,7 +118,7 @@ func (b *SubBuffer[T]) Buffer() []byte {
 // }
 
 func (b *SubBuffer[T]) Offset() int {
-	return sof * int(b.attrSize) * b.maxVerts
+	return sof * int(b.attr.Size()) * b.maxVerts
 }
 
 func ReserveSubBuffer[T SupportedSubBuffers](b *SubBuffer[T], count int) []T {
@@ -168,39 +141,43 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	b.stride = 0
 	offset := 0
 	for i := range format {
-		b.stride += (int(format[i].Size) * sof)
+		b.stride += (int(format[i].Size()) * sof)
 
-		if format[i].Size == AttrVec4 {
+		if format[i].Type == AttrVec4 {
 			b.buffers[i] = &SubBuffer[Vec4]{
-				name: format[i].Name,
-				attrSize: format[i].Size,
+				attr: format[i].Attr,
+				// name: format[i].Name,
+				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]Vec4, numVerts),
 			}
-		} else if format[i].Size == AttrVec3 {
+		} else if format[i].Type == AttrVec3 {
 			b.buffers[i] = &SubBuffer[Vec3]{
-				name: format[i].Name,
-				attrSize: format[i].Size,
+				attr: format[i].Attr,
+				// name: format[i].Name,
+				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]Vec3, numVerts),
 			}
-		} else if format[i].Size == AttrVec2 {
+		} else if format[i].Type == AttrVec2 {
 			b.buffers[i] = &SubBuffer[Vec2]{
-				name: format[i].Name,
-				attrSize: format[i].Size,
+				attr: format[i].Attr,
+				// name: format[i].Name,
+				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]Vec2, numVerts),
 			}
-		} else if format[i].Size == AttrFloat {
+		} else if format[i].Type == AttrFloat {
 			b.buffers[i] = &SubBuffer[float32]{
-				name: format[i].Name,
-				attrSize: format[i].Size,
+				attr: format[i].Attr,
+				// name: format[i].Name,
+				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
@@ -210,7 +187,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 			panic(fmt.Sprintf("Unknown format: %v", format[i]))
 		}
 
-		offset += sof * int(format[i].Size) * numVerts
+		offset += sof * int(format[i].Size()) * numVerts
 	}
 
 	// vertices := make([]float32, 8 * sof * numVerts)
@@ -218,7 +195,6 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 	mainthread.Call(func() {
 		b.vao = gl.GenVertexArrays()
-		// fmt.Printf("%v\n", js.ValueOf(b.vao.Value))
 		b.vbo = gl.GenBuffers()
 		b.ebo = gl.GenBuffers()
 
@@ -235,20 +211,24 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		for i := range b.buffers {
 			switch subBuffer := b.buffers[i].(type) {
 			case *SubBuffer[float32]:
-				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
-				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
+				size := int(subBuffer.attr.Size())
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			case *SubBuffer[Vec2]:
-				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
-				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
+				size := int(subBuffer.attr.Size())
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			case *SubBuffer[Vec3]:
-				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
-				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
+				size := int(subBuffer.attr.Size())
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			case *SubBuffer[Vec4]:
-				loc := gl.GetAttribLocation(shader.program, subBuffer.name)
-				gl.VertexAttribPointer(loc, int(subBuffer.attrSize), gl.FLOAT, false, int(subBuffer.attrSize) * sof, subBuffer.offset)
+				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
+				size := int(subBuffer.attr.Size())
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			default:
 				panic("Unknown!")

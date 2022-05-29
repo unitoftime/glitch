@@ -5,6 +5,16 @@ import (
 	_ "embed"
 )
 
+func VertexAttribute(name string, Type glitch.AttrType, swizzle glitch.SwizzleType) glitch.VertexAttr {
+	return glitch.VertexAttr{
+		Attr: glitch.Attr{
+			Name: name,
+			Type: Type,
+		},
+		Swizzle: swizzle,
+	}
+}
+
 //go:embed sprite.vs
 var SpriteVertexShader string;
 
@@ -15,13 +25,13 @@ var SpriteShader = glitch.ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SpriteFragmentShader,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"positionIn", glitch.AttrVec3},
-		glitch.Attrib{"colorIn", glitch.AttrVec4},
-		glitch.Attrib{"texCoordIn", glitch.AttrVec2},
+		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
-		glitch.Attrib{"projection", glitch.AttrMat4},
-		glitch.Attrib{"view", glitch.AttrMat4},
+		glitch.Attr{"projection", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
 	},
 }
 
@@ -32,13 +42,13 @@ var PixelArtShader = glitch.ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SubPixelAntiAliased,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"positionIn", glitch.AttrVec3},
-		glitch.Attrib{"colorIn", glitch.AttrVec4},
-		glitch.Attrib{"texCoordIn", glitch.AttrVec2},
+		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
-		glitch.Attrib{"projection", glitch.AttrMat4},
-		glitch.Attrib{"view", glitch.AttrMat4},
+		glitch.Attr{"projection", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
 	},
 }
 
@@ -52,18 +62,18 @@ var DiffuseShader = glitch.ShaderConfig{
 	VertexShader: DiffuseVertexShader,
 	FragmentShader: DiffuseFragmentShader,
 	VertexFormat: glitch.VertexFormat{
-		glitch.Attrib{"positionIn", glitch.AttrVec3},
-		// glitch.Attrib{"normal", glitch.AttrVec3},
-		glitch.Attrib{"colorIn", glitch.AttrVec4},
-		glitch.Attrib{"texCoordIn", glitch.AttrVec2},
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
+		// glitch.Attr{"normal", glitch.AttrVec3},
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
-		glitch.Attrib{"model", glitch.AttrMat4},
-		glitch.Attrib{"view", glitch.AttrMat4},
-		glitch.Attrib{"projection", glitch.AttrMat4},
-		// glitch.Attrib{"dirlight.direction", glitch.AttrVec3},
-		// glitch.Attrib{"dirlight.ambient", glitch.AttrVec3},
-		// glitch.Attrib{"dirlight.diffuse", glitch.AttrVec3},
-		// glitch.Attrib{"dirlight.specular", glitch.AttrVec3},
+		glitch.Attr{"model", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
+		glitch.Attr{"projection", glitch.AttrMat4},
+		// glitch.Attr{"dirlight.direction", glitch.AttrVec3},
+		// glitch.Attr{"dirlight.ambient", glitch.AttrVec3},
+		// glitch.Attr{"dirlight.diffuse", glitch.AttrVec3},
+		// glitch.Attr{"dirlight.specular", glitch.AttrVec3},
 	},
 }

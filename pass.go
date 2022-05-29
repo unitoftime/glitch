@@ -46,7 +46,6 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		texture: nil,
 		uniforms: make(map[string]interface{}),
 		buffer: NewBufferPool(shader, defaultBatchSize),
-		// commands: make([]drawCommand, 0),
 		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
 		currentLayer: DefaultLayer,
 		dirty: true,
@@ -99,40 +98,109 @@ func (r *RenderPass) Draw(target Target) {
 	if r.dirty {
 		r.dirty = false
 
-		// TODO - Can you generate this from the shader?
-		destBuffs := make([]interface{}, 3) // TODO - hardcoded
-		destBuffs[0] = &[]Vec3{}
-		destBuffs[1] = &[]Vec4{}
-		destBuffs[2] = &[]Vec2{}
+		destBuffs := make([]any, len(r.shader.attrFmt))
+		for i, attr := range r.shader.attrFmt {
+			destBuffs[i] = attr.GetBuffer()
+		}
+
 		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for _, c := range r.commands[l] {
-				// for _, c := range r.commands {
 				numVerts := len(c.mesh.positions)
 
 				r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 
 				// TODO If large enough mesh, then don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
-				// work and append
-				posBuf := *(destBuffs[0]).(*[]Vec3)
-				for i := range c.mesh.positions {
-					vec := c.matrix.Apply(c.mesh.positions[i])
-					posBuf[i] = vec
-				}
 
-				colBuf := *(destBuffs[1]).(*[]Vec4)
-				for i := range c.mesh.colors {
-					colBuf[i] = Vec4{
-						c.mesh.colors[i][0] * c.mask.R,
-						c.mesh.colors[i][1] * c.mask.G,
-						c.mesh.colors[i][2] * c.mask.B,
-						c.mesh.colors[i][3] * c.mask.A,
+				// Append all mesh buffers to shader buffers
+				for bufIdx, attr := range r.shader.attrFmt {
+					// TODO - I'm not sure of a good way to break up this switch statement
+					switch attr.Swizzle {
+						// Positions
+					case PositionXY:
+						posBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+						for i := range c.mesh.positions {
+							vec := c.matrix.Apply(c.mesh.positions[i])
+							posBuf[i] = *(*Vec2)(vec[:2])
+						}
+
+					case PositionXYZ:
+						posBuf := *(destBuffs[bufIdx]).(*[]Vec3)
+						for i := range c.mesh.positions {
+							vec := c.matrix.Apply(c.mesh.positions[i])
+							posBuf[i] = vec
+						}
+
+						// Colors
+					case ColorR:
+						colBuf := *(destBuffs[bufIdx]).(*[]float32)
+						for i := range c.mesh.colors {
+							colBuf[i] = c.mesh.colors[i][0] * c.mask.R
+						}
+					case ColorRG:
+						colBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+						for i := range c.mesh.colors {
+							colBuf[i] = Vec2{
+								c.mesh.colors[i][0] * c.mask.R,
+								c.mesh.colors[i][1] * c.mask.G,
+							}
+						}
+					case ColorRGB:
+						colBuf := *(destBuffs[bufIdx]).(*[]Vec3)
+						for i := range c.mesh.colors {
+							colBuf[i] = Vec3{
+								c.mesh.colors[i][0] * c.mask.R,
+								c.mesh.colors[i][1] * c.mask.G,
+								c.mesh.colors[i][2] * c.mask.B,
+							}
+						}
+					case ColorRGBA:
+						colBuf := *(destBuffs[bufIdx]).(*[]Vec4)
+						for i := range c.mesh.colors {
+							colBuf[i] = Vec4{
+								c.mesh.colors[i][0] * c.mask.R,
+								c.mesh.colors[i][1] * c.mask.G,
+								c.mesh.colors[i][2] * c.mask.B,
+								c.mesh.colors[i][3] * c.mask.A,
+							}
+						}
+
+					case TexCoordXY:
+						texBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+						for i := range c.mesh.texCoords {
+							texBuf[i] = c.mesh.texCoords[i]
+						}
 					}
 				}
 
-				texBuf := *(destBuffs[2]).(*[]Vec2)
-				for i := range c.mesh.texCoords {
-					texBuf[i] = c.mesh.texCoords[i]
-				}
+				//================================================================================
+				// TODO The hardcoding is a bit slower. Keeping it around in case I want to do some performance analysis
+				// Notes: Ran gophermark with 1000000 gophers.
+				// - Hardcoded: ~ 120 to 125 ms range
+				// - Switch Statement: ~ 125 to 130 ms range
+				// - Switch Statement (with shader changed to use vec2s for position): ~ 122 to 127 ms range
+				// work and append
+				// 	posBuf := *(destBuffs[0]).(*[]Vec3)
+				// 	for i := range c.mesh.positions {
+				// 		vec := c.matrix.Apply(c.mesh.positions[i])
+				// 		posBuf[i] = vec
+				// 	}
+
+				// 	colBuf := *(destBuffs[1]).(*[]Vec4)
+				// 	for i := range c.mesh.colors {
+				// 		colBuf[i] = Vec4{
+				// 			c.mesh.colors[i][0] * c.mask.R,
+				// 			c.mesh.colors[i][1] * c.mask.G,
+				// 			c.mesh.colors[i][2] * c.mask.B,
+				// 			c.mesh.colors[i][3] * c.mask.A,
+				// 		}
+				// 	}
+
+				// 	texBuf := *(destBuffs[2]).(*[]Vec2)
+				// 	for i := range c.mesh.texCoords {
+				// 		texBuf[i] = c.mesh.texCoords[i]
+				// 	}
+				//================================================================================
+
 			}
 		}
 	}
