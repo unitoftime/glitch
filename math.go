@@ -115,6 +115,17 @@ func (m *Mat4) Translate(x, y, z float32) *Mat4 {
 	return m
 }
 
+// TODO this doesn't modify the underlying matrix: https://github.com/go-gl/mathgl/blob/v1.0.0/mgl32/transform.go#L159
+func (m *Mat4) Rotate(angle float32, axis Vec3) *Mat4 {
+	// quat := mgl32.Mat4ToQuat(mgl32.Mat4(*m))
+	// return &retMat
+	rotation := Mat4(mgl32.HomogRotate3D(angle, mgl32.Vec3(axis)))
+	// retMat := Mat4(mgl32.Mat4(*m).)
+	// return &retMat
+	return m.Mul(&rotation)
+}
+
+// TODO should this modify in place?
 // Note: Does not modify in place
 func (m *Mat4) Mul(n *Mat4) *Mat4 {
 	// This is in column major order
@@ -338,6 +349,11 @@ func (m *Mat4) Inv() *Mat4 {
 	return &retMat
 }
 
+func (m *Mat4) Transpose() *Mat4 {
+	retMat := Mat4(mgl32.Mat4(*m).Transpose())
+	return &retMat
+}
+
 type CameraOrtho struct {
 	Projection Mat4
 	View Mat4
@@ -404,17 +420,16 @@ type Camera struct {
 	Projection Mat4
 	View Mat4
 
-	position Vec3
-	target Vec3
+	Position Vec3
+	Target Vec3
 }
 
 func NewCamera() *Camera {
 	return &Camera{
 		Projection: Mat4Ident,
 		View: Mat4Ident,
-		position: Vec3{0, 0, 0},
-		// target: Vec3{0, 0, 0},
-		target: Vec3{200, 200, 200}, // TODO just for testing
+		Position: Vec3{0, 0, 0},
+		Target: Vec3{0, 0, 0},
 	}
 }
 
@@ -428,8 +443,8 @@ func (c *Camera) SetPerspective(win *Window) {
 
 func (c *Camera) SetViewLookAt(win *Window) {
 	c.View = Mat4(mgl32.LookAt(
-		c.position[0], c.position[1], c.position[2], // position
-		c.target[0], c.target[1], c.target[2], // target
+		c.Position[0], c.Position[1], c.Position[2],
+		c.Target[0], c.Target[1], c.Target[2],
 		0, 0, 1,
 	))
 }

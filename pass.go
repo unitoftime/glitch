@@ -130,6 +130,23 @@ func (r *RenderPass) Draw(target Target) {
 							posBuf[i] = vec
 						}
 
+						// Normals
+						// TODO - Renormalize if batching
+					// case NormalXY:
+					// 	normBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+					// 	for i := range c.mesh.normals {
+					// 		vec := c.mesh.normals[i]
+					// 		normBuf[i] = *(*Vec2)(vec[:2])
+					// 	}
+
+					case NormalXYZ:
+						renormalizeMat := c.matrix.Inv().Transpose()
+						normBuf := *(destBuffs[bufIdx]).(*[]Vec3)
+						for i := range c.mesh.normals {
+							vec := renormalizeMat.Apply(c.mesh.normals[i])
+							normBuf[i] = vec
+						}
+
 						// Colors
 					case ColorR:
 						colBuf := *(destBuffs[bufIdx]).(*[]float32)

@@ -12,6 +12,7 @@ import (
 	"runtime/pprof"
 	"flag"
 	"os"
+	"math"
 
 	"unicode"
 
@@ -77,6 +78,7 @@ func main() {
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
 		Vsync: true,
+		Samples: 8,
 	})
 	if err != nil { panic(err) }
 
@@ -118,11 +120,13 @@ func runGame() {
 
 	text := atlas.Text("hello world")
 
-	cube := glitch.NewModel(glitch.NewCubeMesh(100), glitch.DefaultMaterial())
+	cube := glitch.NewModel(glitch.NewCubeMesh(50), glitch.DefaultMaterial())
 
 	camera := glitch.NewCameraOrtho()
 	pCam := glitch.NewCamera()
 	start := time.Now()
+
+	tt := 0.0
 	var dt time.Duration
 	for !win.ShouldClose() {
 		if win.Pressed(glitch.KeyBackspace) {
@@ -136,6 +140,11 @@ func runGame() {
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
+		tt += dt.Seconds()
+		// pCam.Position = glitch.Vec3{float32(100 * math.Cos(tt)), float32(100 * math.Sin(tt)), 50}
+		pCam.Position = glitch.Vec3{float32(100 * math.Cos(0)), float32(100 * math.Sin(0)), 50}
+		pCam.Target = glitch.Vec3{0, 0, 0}
+
 		pCam.SetPerspective(win)
 		pCam.SetViewLookAt(win)
 
@@ -145,9 +154,10 @@ func runGame() {
 		pass.SetLayer(glitch.DefaultLayer)
 		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
 
-		mat = glitch.Mat4Ident
-		mat.Translate(200, 200, 200)
-		cube.Draw(diffusePass, mat)
+		cubeMat := glitch.Mat4Ident
+		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float32(tt), glitch.Vec3{0, 1, 1})
+
+		cube.Draw(diffusePass, cubeMat)
 
 		mat = glitch.Mat4Ident
 		mat.Translate(0, 0, 0)
@@ -162,10 +172,19 @@ func runGame() {
 
 		diffusePass.SetUniform("projection", pCam.Projection)
 		diffusePass.SetUniform("view", pCam.View)
-		// diffusePass.SetUniform("dirLight.direction", glitch.Vec3{1, 1, 1})
-		// diffusePass.SetUniform("dirLight.ambient", glitch.Vec3{1, 1, 1})
-		// diffusePass.SetUniform("dirLight.diffuse", glitch.Vec3{-1, -1, -1})
-		// diffusePass.SetUniform("dirLight.specular", glitch.Vec3{-1, -1, -1})
+		// diffusePass.SetUniform("model", cubeMat)
+
+		diffusePass.SetUniform("viewPos", pCam.Position);
+
+		diffusePass.SetUniform("material.ambient", glitch.Vec3{1, 0.5, 0.31})
+		diffusePass.SetUniform("material.diffuse", glitch.Vec3{1, 0.5, 0.31})
+		diffusePass.SetUniform("material.specular", glitch.Vec3{1, 0.5, 0.31})
+		diffusePass.SetUniform("material.shininess", float32(32.0))
+
+		diffusePass.SetUniform("dirLight.direction", glitch.Vec3{0, 1, 0})
+		diffusePass.SetUniform("dirLight.ambient", glitch.Vec3{0.5, 0.5, 0.5})
+		diffusePass.SetUniform("dirLight.diffuse", glitch.Vec3{0.5, 0.5, 0.5})
+		diffusePass.SetUniform("dirLight.specular", glitch.Vec3{0.5, 0.5, 0.5})
 		diffusePass.Draw(win)
 
 		win.Update()

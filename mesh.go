@@ -149,20 +149,20 @@ func NewCubeMesh(size float32) *Mesh {
 	// TODO normals
 	normals := []Vec3{
 		// Front face
-		Vec3{0, 0, -1},
-		Vec3{0, 0, -1},
-		Vec3{0, 0, -1},
-		Vec3{0, 0, -1},
+		Vec3{0, 0, 1},
+		Vec3{0, 0, 1},
+		Vec3{0, 0, 1},
+		Vec3{0, 0, 1},
 		// Back face
-		Vec3{0, 0, 1},
-		Vec3{0, 0, 1},
-		Vec3{0, 0, 1},
-		Vec3{0, 0, 1},
+		Vec3{0, 0, -1},
+		Vec3{0, 0, -1},
+		Vec3{0, 0, -1},
+		Vec3{0, 0, -1},
 		// Top face
-		Vec3{0,  1, 0},
-		Vec3{0,  1, 0},
-		Vec3{0,  1, 0},
-		Vec3{0,  1, 0},
+		Vec3{0, 1, 0},
+		Vec3{0, 1, 0},
+		Vec3{0, 1, 0},
+		Vec3{0, 1, 0},
 		// Bottom face
 		Vec3{0, -1, 0},
 		Vec3{0, -1, 0},

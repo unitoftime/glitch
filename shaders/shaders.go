@@ -63,17 +63,25 @@ var DiffuseShader = glitch.ShaderConfig{
 	FragmentShader: DiffuseFragmentShader,
 	VertexFormat: glitch.VertexFormat{
 		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		// glitch.Attr{"normal", glitch.AttrVec3},
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("normalIn", glitch.AttrVec3, glitch.NormalXYZ),
+		// VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
 		glitch.Attr{"model", glitch.AttrMat4},
 		glitch.Attr{"view", glitch.AttrMat4},
 		glitch.Attr{"projection", glitch.AttrMat4},
-		// glitch.Attr{"dirlight.direction", glitch.AttrVec3},
-		// glitch.Attr{"dirlight.ambient", glitch.AttrVec3},
-		// glitch.Attr{"dirlight.diffuse", glitch.AttrVec3},
-		// glitch.Attr{"dirlight.specular", glitch.AttrVec3},
+
+		glitch.Attr{"viewPos", glitch.AttrVec3},
+
+		glitch.Attr{"material.ambient", glitch.AttrVec3},
+		glitch.Attr{"material.diffuse", glitch.AttrVec3},
+		glitch.Attr{"material.specular", glitch.AttrVec3},
+		glitch.Attr{"material.shininess", glitch.AttrFloat},
+
+		glitch.Attr{"dirLight.direction", glitch.AttrVec3},
+		glitch.Attr{"dirLight.ambient", glitch.AttrVec3},
+		glitch.Attr{"dirLight.diffuse", glitch.AttrVec3},
+		glitch.Attr{"dirLight.specular", glitch.AttrVec3},
 	},
 }
