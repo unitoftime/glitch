@@ -1,8 +1,8 @@
 package glitch
 
 import (
-	// "github.com/faiface/mainthread"
-	// "github.com/unitoftime/gl"
+	"github.com/faiface/mainthread"
+	"github.com/unitoftime/gl"
 	// "sort"
 )
 
@@ -35,6 +35,7 @@ type RenderPass struct {
 	currentLayer uint8
 
 	dirty bool // Indicates if we need to re-draw to the buffers
+	DepthTest bool
 }
 
 const DefaultLayer uint8 = 127
@@ -86,6 +87,14 @@ func (r *RenderPass) Draw(target Target) {
 	// 	// return r.commands[i].matrix[i4_3_2] < r.commands[j].matrix[i4_3_2] // Sort by z
 	// 	return r.commands[i].command < r.commands[j].command
 	// })
+
+	mainthread.Call(func() {
+		if r.DepthTest {
+			gl.Enable(gl.DEPTH_TEST)
+		} else {
+			gl.Disable(gl.DEPTH_TEST)
+		}
+	})
 
 	r.shader.Bind()
 	for k,v := range r.uniforms {

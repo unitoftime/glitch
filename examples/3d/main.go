@@ -90,6 +90,7 @@ func runGame() {
 	diffuseShader, err := glitch.NewShader(shaders.DiffuseShader)
 	if err != nil { panic(err) }
 	diffusePass := glitch.NewRenderPass(diffuseShader)
+	diffusePass.DepthTest = true
 
 	manImage, err := loadImage("gopher.png")
 	if err != nil {
@@ -155,7 +156,7 @@ func runGame() {
 		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
 
 		cubeMat := glitch.Mat4Ident
-		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float32(tt), glitch.Vec3{0, 1, 1})
+		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float32(tt), glitch.Vec3{0, 0, 1})
 
 		cube.Draw(diffusePass, cubeMat)
 

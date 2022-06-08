@@ -67,7 +67,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			gl.Enable(gl.MULTISAMPLE)
 		}
 
-		gl.Enable(gl.DEPTH_TEST)
+		// gl.Enable(gl.DEPTH_TEST)
 		// gl.Enable(gl.CULL_FACE)
 		// gl.CullFace(gl.BACK)
 		// gl.FrontFace(gl.CCW) // Default
