@@ -59,21 +59,59 @@ func (g *GeomDraw) SetColor(color RGBA) {
 	g.color = color
 }
 
+func (g *GeomDraw) FillRect(rect Rect) *Mesh {
+	positions := []Vec3{
+		Vec3{rect.Min[0], rect.Max[1], 0},
+		Vec3{rect.Min[0], rect.Min[1], 0},
+		Vec3{rect.Max[0], rect.Min[1], 0},
+		Vec3{rect.Max[0], rect.Max[1], 0},
+	}
+	colors := []Vec4{
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+	}
+
+	// TODO - Finalize what these should be
+	texCoords := []Vec2{
+		Vec2{1, 0},
+		Vec2{1, 1},
+		Vec2{0, 1},
+		Vec2{0, 0},
+	}
+
+	inds := []uint32{
+		0, 1, 3,
+		1, 2, 3,
+	}
+
+	return &Mesh{
+		positions: positions,
+		colors: colors,
+		texCoords: texCoords,
+		indices: inds,
+	}
+}
+
 // if width == 0, then fill the rect
 func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 	if width <= 0 {
-		panic("TODO - Fill Rect")
+		return g.FillRect(rect)
 	}
 
-	points := []Vec3{
-		Vec3{rect.Min[0], rect.Min[1], 0},
-		Vec3{rect.Min[0], rect.Max[1], 0},
-		Vec3{rect.Max[0], rect.Max[1], 0},
-		Vec3{rect.Max[0], rect.Min[1], 0},
-		Vec3{rect.Min[0], rect.Min[1], 0},
-	}
+	t := rect.CutTop(width)
+	b := rect.CutBottom(width)
+	l := rect.CutLeft(width)
+	r := rect.CutRight(width)
 
-	return g.LineStrip(points, width)
+	m := NewMesh()
+	m.Append(g.FillRect(t))
+	m.Append(g.FillRect(b))
+	m.Append(g.FillRect(l))
+	m.Append(g.FillRect(r))
+
+	return m
 }
 
 // TODO - Should I pass in number of divisions?
@@ -199,3 +237,4 @@ func (g *GeomDraw) Line(a, b Vec3, width float32) *Mesh {
 		indices: inds,
 	}
 }
+

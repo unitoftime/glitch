@@ -25,6 +25,11 @@ func (v Vec2) Scaled(s float32) Vec2 {
 	return Vec2{s * v[0], s * v[1]}
 }
 
+func (v Vec2) Vec3() Vec3 {
+	return Vec3{v[0], v[1], 0}
+}
+
+
 func (v Vec3) Add(u Vec3) Vec3 {
 	return Vec3{v[0] + u[0], v[1] + u[1], v[2] + u[2]}
 }
