@@ -46,6 +46,10 @@ func (v Vec3) Len() float32 {
 	return float32(math.Sqrt((a * a) + (b * b) + (c * c)))
 }
 
+func (v Vec3) Vec2() Vec2 {
+	return Vec2{v[0], v[1]}
+}
+
 func (v Vec3) Unit() Vec3 {
 	len := v.Len()
 	return Vec3{v[0]/len, v[1]/len, v[2]/len}

@@ -133,7 +133,7 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32
 	scaleY := scale * float32(a.texture.height)
 
 	glyph, ok := a.mapping[r]
-	if !ok { panic("Missing Rune!") }
+	if !ok { panic(fmt.Sprintf("Missing Rune: %v", r)) }
 
 	//	log.Println(glyph.Bearing)
 

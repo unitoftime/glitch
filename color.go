@@ -11,3 +11,11 @@ type RGBA struct {
 }
 
 // TODO - conversion from golang colors
+func FromUint8(r, g, b, a uint8) RGBA {
+	return RGBA{
+		float32(r)/255.0,
+		float32(g)/255.0,
+		float32(b)/255.0,
+		float32(a)/255.0,
+	}
+}
