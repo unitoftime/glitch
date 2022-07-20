@@ -190,12 +190,12 @@ func (w *Window) Bind() {
 	})
 }
 
+// Reads a rectangle of the window's frame as a collection of bytes
 func (w *Window) ReadFrame(rect Rect, dst []byte) {
 	mainthread.Call(func() {
-		// gl.ReadPixels(dst []byte, x, y, width, height int, format, ty Enum)
 		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
-		// TODO Where should I get format and type enums from?
-		// gl.ReadPixels(dst, int(rect.Min[0]), int(rect.Min[1]), int(rect.W()), int(rect.H()), gl.RGBA, gl.FLOAT)
+		// TODO Note: https://docs.gl/es3/glReadPixels#:~:text=glReadPixels%20returns%20pixel%20data%20from,parameters%20are%20set%20with%20glPixelStorei.
+		// Format and Type Enums define the expected pixel format and type to return to the byte buffer. Right now I have that hardcoded to gl.RGBA and gl.UNSIGNED_BYTE, respectively
 		gl.ReadPixels(dst, int(rect.Min[0]), int(rect.Min[1]), int(rect.W()), int(rect.H()), gl.RGBA, gl.UNSIGNED_BYTE)
 	})
 }

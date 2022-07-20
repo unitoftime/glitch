@@ -33,7 +33,6 @@ type Texture struct {
 }
 
 func NewTexture(img image.Image, smooth bool) *Texture {
-// func NewTexture(width, height int, pixels []uint8) *Texture {
 	nrgba := image.NewNRGBA(img.Bounds())
 	draw.Draw(nrgba, nrgba.Bounds(), img, img.Bounds().Min, draw.Src)
 
