@@ -11,7 +11,29 @@ import (
 	"golang.org/x/image/font"
 
 	"golang.org/x/image/math/fixed"
+
+	"unicode"
+	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font/gofont/goregular"
 )
+
+func DefaultAtlas() (*Atlas, error) {
+	runes := make([]rune, unicode.MaxASCII - 32)
+	for i := range runes {
+		runes[i] = rune(32 + i)
+	}
+
+	font, err := truetype.Parse(goregular.TTF)
+	if err != nil {
+		return nil, err
+	}
+	fontFace := truetype.NewFace(font, &truetype.Options{
+		Size: 64,
+		GlyphCacheEntries: 1,
+	})
+	atlas := NewAtlas(fontFace, runes, true)
+	return atlas, nil
+}
 
 type Glyph struct {
 	Advance float32
@@ -28,9 +50,7 @@ type Atlas struct {
 	texture *Texture
 }
 
-func NewAtlas(face font.Face, runes []rune) *Atlas {
-	smooth := false // TODO - Should fonts always be smoothed?
-
+func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	metrics := face.Metrics()
 	atlas := &Atlas{
 		face: face,

@@ -7,13 +7,8 @@ import (
 	"image/draw"
 	_ "image/png"
 
-	"unicode"
-
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/ui"
-
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font/gofont/goregular"
 )
 
 //go:embed button.png button_hover.png button_press.png panel.png panel_inner.png
@@ -80,18 +75,8 @@ func runGame() {
 	panelInnerSprite.Mask = glitch.RGBA{1, 0, 0, 1}
 
 	// Text
-	// TODO - use this instead of hardcoding
-	runes := make([]rune, unicode.MaxASCII - 32)
-	for i := range runes {
-		runes[i] = rune(32 + i)
-	}
-	font, err := truetype.Parse(goregular.TTF)
-	atlas := glitch.NewAtlas(
-		truetype.NewFace(font, &truetype.Options{
-			Size: 64,
-			GlyphCacheEntries: 1,
-		}),
-		runes)
+	atlas, err := glitch.DefaultAtlas()
+	if err != nil { panic(err) }
 
 	// A screenspace camera
 	camera := glitch.NewCameraOrtho()

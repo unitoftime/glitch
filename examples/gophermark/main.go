@@ -14,13 +14,8 @@ import (
 	"flag"
 	"os"
 
-	"unicode"
-
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
-
-	"github.com/golang/freetype/truetype"
-	"golang.org/x/image/font/gofont/goregular"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
@@ -108,18 +103,8 @@ func runGame() {
 	h := float32(200.0)/4
 
 	// Text
-	// TODO - use this instead of hardcoding
-	runes := make([]rune, unicode.MaxASCII - 32)
-	for i := range runes {
-		runes[i] = rune(32 + i)
-	}
-	font, err := truetype.Parse(goregular.TTF)
-	atlas := glitch.NewAtlas(
-		truetype.NewFace(font, &truetype.Options{
-			Size: 64,
-			GlyphCacheEntries: 1,
-		}),
-		runes)
+	atlas, err := glitch.DefaultAtlas()
+	if err != nil { panic(err) }
 
 	text := atlas.Text("hello world")
 
