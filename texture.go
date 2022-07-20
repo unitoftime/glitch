@@ -23,8 +23,7 @@ func WhiteTexture() *Texture {
 		}
 	}
 
-	whiteTexture = NewTexture(img, true) // TODO - Should this texture always be smooth?
-
+	whiteTexture = NewTexture(img, true)
 	return whiteTexture
 }
 

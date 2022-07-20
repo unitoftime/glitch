@@ -4,54 +4,15 @@ import (
 	"math"
 )
 
-// TODO - Rename
-// type Geometry struct {
-// 	mesh *Mesh
-// 	bound Rect
-// 	// texture *Texture // Possible?
-// 	material Material
-// }
-
-// func NewGeometry() {
-// 	// uvBounds := R(
-// 	// 	bounds.Min[0] / float32(texture.width),
-// 	// 	bounds.Min[1] / float32(texture.height),
-// 	// 	bounds.Max[0] / float32(texture.width),
-// 	// 	bounds.Max[1] / float32(texture.height),
-// 	// )
-
-// 	return &Geometry{
-// 		mesh: NewMesh(),
-// 		bounds: R(0,0,0,0),
-// 		// texture: texture,
-// 		material: NewSpriteMaterial(nil),
-// 	}
-// }
-
-// func (g *Geometry) Rectangle(r Rect) {
-// 	g.mesh.Append(NewQuadMesh(r, R(0,0,1,1))) // Fill
-// 	// g.mesh.AddTriangle(
-// }
-
-// type Geometry struct {
-// 	mesh *Mesh
-// }
-
-// func NewGeometry() *Geometry {
-// 	return &Geometry{
-// 		mesh: NewMesh(),
-// 	}
-// }
-
-
-// TODO - Can I just pass meshes into these functions to have them get drawn to?
 type GeomDraw struct {
 	color RGBA
+	Divisions int
 }
 
 func NewGeomDraw() *GeomDraw {
 	return &GeomDraw{
 		color: RGBA{1, 1, 1, 1},
+		Divisions: 100,
 	}
 }
 
@@ -73,7 +34,6 @@ func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
 	}
 
-	// TODO - Finalize what these should be
 	texCoords := []Vec2{
 		Vec2{1, 0},
 		Vec2{1, 1},
@@ -114,13 +74,10 @@ func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 	return m
 }
 
-// TODO - Should I pass in number of divisions?
 func (g *GeomDraw) Circle(center Vec3, radius float32, width float32) *Mesh {
 	return g.Ellipse(center, Vec2{radius, radius}, 0, width)
-	// return g.Ellipse(center, radius, width)
 }
 
-// TODO - Should I pass in number of divisions?
 func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float32) *Mesh {
 	if width <= 0 {
 		panic("TODO - Fill Ellipse")
@@ -133,8 +90,7 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 	// TODO - Rotate pi/2 if width < height?
 	e := math.Sqrt(1 - (b*b)/(a*a)) // Eccintricity
 
-	maxDivisions := 100
-	points := make([]Vec3, maxDivisions, maxDivisions)
+	points := make([]Vec3, g.Divisions, g.Divisions)
 	radians := 0.0
 	for i := range points {
 		eCos := (e * math.Cos(radians))
@@ -145,7 +101,7 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 		float32(r * math.Sin(radians - alpha)),
 		0,
 		})
-		radians += 2 * math.Pi / float64(maxDivisions)
+		radians += 2 * math.Pi / float64(g.Divisions)
 	}
 	// Append last point
 	{
@@ -162,8 +118,7 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 	}
 
 	// // Circle only
-	// maxDivisions := 100
-	// points := make([]Vec3, maxDivisions, maxDivisions)
+	// points := make([]Vec3, g.Divisions, g.Divisions)
 	// radians := 0.0
 	// for i := range points {
 	// 	points[i] = center.Add(Vec3{
@@ -171,7 +126,7 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 	// 		(22.0/32.0) * radius * float32(math.Sin(radians)),
 	// 		0,
 	// 	})
-	// 	radians += 2 * math.Pi / float64(maxDivisions)
+	// 	radians += 2 * math.Pi / float64(g.Divisions)
 	// }
 	// // Append last point
 	// points = append(points, center.Add(Vec3{radius, 0, 0}))

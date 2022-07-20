@@ -112,6 +112,10 @@ func runGame() {
 	pCam := glitch.NewCamera()
 	start := time.Now()
 
+	geom := glitch.NewGeomDraw()
+	quad := geom.FillRect(glitch.R(0, 0, 100, 100))
+	quadModel := glitch.NewModel(quad, glitch.NewSpriteMaterial(texture))
+
 	tt := 0.0
 	var dt time.Duration
 	for !win.ShouldClose() {
@@ -139,6 +143,7 @@ func runGame() {
 
 		pass.SetLayer(glitch.DefaultLayer)
 		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
+		quadModel.Draw(pass, glitch.Mat4Ident)
 
 		cubeMat := glitch.Mat4Ident
 		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float32(tt), glitch.Vec3{0, 0, 1})
