@@ -20,6 +20,7 @@ type uiGlobals struct {
 var global uiGlobals
 
 // Must be called every frame before any UI draws happen
+// TODO - This is hard to remember to do
 func Clear() {
 	global.mouseCaught = false
 }
@@ -168,6 +169,7 @@ func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
 
 func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 	mX, mY := g.mousePosition()
+
 	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
 		g.Panel(normal, rect)
 		return false

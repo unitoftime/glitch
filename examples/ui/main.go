@@ -110,11 +110,13 @@ func runGame() {
 
 		glitch.Clear(win, glitch.Black)
 
+		ui.Clear()
 		group.Clear()
 		menuRect := win.Bounds().SliceHorizontal(500).SliceVertical(500)
 		group.Panel(panelSprite, menuRect)
 
 		// basicHover := ui.BasicHover{buttonSprite, buttonPressSprite}
+		paddingRect := glitch.R(-20,-20,-20,-20)
 
 		menuRect.CutLeft(20)
 		menuRect.CutRight(20)
@@ -126,13 +128,14 @@ func runGame() {
 		{
 			r := menuRect.CutTop(100)
 			group.Button(buttonSprite, buttonHoverSprite, buttonPressSprite, r)
-			group.Text("Button 0", r, glitch.Vec2{0.5, 0.5})
+			group.SetColor(glitch.RGBA{0, 0, 0, 1})
+			group.Text("Button 0", r.Pad(paddingRect), glitch.Vec2{0.5, 0.5})
 		}
 		menuRect.CutTop(10) // Padding
 		{
 			r := menuRect.CutTop(100)
 			group.Button(buttonSprite, buttonHoverSprite, buttonPressSprite, r)
-			group.Text("Button 1", r, glitch.Vec2{0.5, 0.5})
+			group.Text("Button 1", r.Pad(paddingRect), glitch.Vec2{0.5, 0.5})
 		}
 		// group.Sprite(buttonSprite, glitch.R(0, 0, 200, 75))
 
