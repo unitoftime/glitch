@@ -8,7 +8,7 @@ require (
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/unitoftime/gl v0.0.0-20220419140725-98e3994f0517
 	github.com/unitoftime/glfw v0.0.0-20220419140736-97f7f8b3927b
-	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9
+	golang.org/x/image v0.0.0-20220617043117-41969df76e82
 )
 
 require (
