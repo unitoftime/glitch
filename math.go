@@ -302,11 +302,8 @@ func (r Rect) SliceVertical(amount float32) Rect {
 	return r.CutRight(amount)
 }
 
-// Adds padding to a rectangle (or removes if padding is negative
-// TODO - Rethink Function API does rect make sense here?
+// Adds padding to a rectangle (pads inward if padding is negative)
 func (r Rect) Pad(pad Rect) Rect {
-	// if r.W() * r.H() == 0 { return Rect{r.ResizedMin(pixel.V(2*x, 2*y))} }
-	// return Rect{r.Resized(r.Center(), r.Size().Add(pixel.V(2*x, 2*y)))}
 	return R(r.Min[0] - pad.Min[0], r.Min[1] - pad.Min[1], r.Max[0] + pad.Max[0], r.Max[1] + pad.Max[1])
 }
 

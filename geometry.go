@@ -142,6 +142,7 @@ func (g *GeomDraw) LineStrip(points []Vec3, width float32) *Mesh {
 	return m
 }
 
+// TODO different line endings
 func (g *GeomDraw) Line(a, b Vec3, width float32) *Mesh {
 	line := a.Sub(b).Unit()
 

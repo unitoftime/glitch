@@ -60,7 +60,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		lineHeight: metrics.Height,
 	}
 
-	size := 512
+	size := 1024
 	fixedSize := fixed.I(size)
 	fSize := float32(size)
 
