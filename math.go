@@ -221,6 +221,7 @@ func (r Rect) Center() Vec2 {
 	return Vec2{r.Min[0] + (r.W()/2), r.Min[1] + (r.H()/2)}
 }
 
+// Returns the smallest rect which contains both input rects
 func (r Rect) Union(s Rect) Rect {
 	r = r.Norm()
 	s = s.Norm()
@@ -245,9 +246,13 @@ func (r Rect) ScaledToFit(r2 Rect) Rect {
 	scaleY := r2.H() / r.H()
 
 	min, _ := minMax(scaleX, scaleY)
+	return r.Scaled(min)
+}
+
+func (r Rect) Scaled(scale float32) Rect {
 	return Rect{
-		Min: r.Min.Scaled(min),
-		Max: r.Max.Scaled(min),
+		Min: r.Min.Scaled(scale),
+		Max: r.Max.Scaled(scale),
 	}
 }
 

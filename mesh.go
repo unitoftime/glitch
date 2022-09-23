@@ -49,6 +49,14 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.texCoords = append(m.texCoords, m2.texCoords...)
 }
 
+// Sets the color of every vertex
+func (m *Mesh) SetColor(col RGBA) {
+	v4Color := Vec4{col.R, col.G, col.B, col.A}
+	for i := range m.colors {
+		m.colors[i] = v4Color
+	}
+}
+
 // TODO - Maybe this is faster in some scenarios?
 // func (m *Mesh) AddTriangle(a, b, c Vec3, uv1, uv2, uv3 Vec2) {
 // 	currentElement := uint32(len(m.positions))

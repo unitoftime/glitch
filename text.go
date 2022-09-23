@@ -50,6 +50,13 @@ type Atlas struct {
 	texture *Texture
 }
 
+func fixedToFloat(val fixed.Int26_6) float32 {
+	// Shift to the left by 6 then convert to an int, then to a float, then shift right by 6
+	// TODO - How to handle overruns?
+	intVal := val.Mul(fixed.I(1_000_000)).Floor()
+	return float32(intVal) / 1_000_000.0
+}
+
 func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	metrics := face.Metrics()
 	atlas := &Atlas{
@@ -128,23 +135,32 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	return atlas
 }
 
-func (a *Atlas) StringVerts(text string, size float32) (*Mesh, Rect) {
-	initialDot := Vec2{0, 0}
-	dot := initialDot
+// TODO - this function probably should belong in the Text type
+func (a *Atlas) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, size float32) (*Mesh, Rect) {
+	maxAscent := float32(0) // Tracks the maximum y point of the text block
 
-	maxAscent := float32(0)
+	initialDot := *dot
 
 	mesh := NewMesh()
 	for _,r := range text {
-		runeMesh, newDot, ascent := a.RuneVerts(r, dot, size)
+		// If the rune is a newline, then we need to reset the dot for the next line
+		if r == '\n' {
+			// TODO - I'm not sure why, but I have to multiply by 2 here
+			dot[1] += 2 * fixedToFloat(a.lineHeight) * size // TODO - size?
+			dot[0] = orig[0]
+			continue
+		}
+
+		runeMesh, newDot, ascent := a.RuneVerts(r, *dot, size)
+		runeMesh.SetColor(color)
 		mesh.Append(runeMesh)
-		dot = newDot
+		*dot = newDot
 
 		if maxAscent < ascent {
-			maxAscent = ascent
+			maxAscent = dot[1] + ascent
 		}
 	}
-	return mesh, R(initialDot[0], initialDot[1], dot[0], maxAscent)
+	return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
 }
 
 func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32) {
@@ -183,6 +199,9 @@ func (a *Atlas) Text(str string) *Text {
 		texture: a.texture,
 		material: NewSpriteMaterial(a.texture),
 		scale: 1.0,
+		LineHeight: fixedToFloat(a.lineHeight),
+
+		Color: RGBA{1, 1, 1, 1},
 	}
 
 	t.Set(str)
@@ -198,17 +217,41 @@ type Text struct {
 	texture *Texture
 	material Material
 	scale float32
+	LineHeight float32
+
+	Orig Vec2 // The baseline starting point from which to draw the text
+	Dot Vec2 // The location of the next rune to draw
+	Color RGBA // The color with which to draw the next text
 }
 
 func (t *Text) Bounds() Rect {
 	return t.bounds
 }
 
+// This resets the text and sets it to the passed in string (if the passed in string is different!)
+// TODO - I need to deprecate this in favor of a better interface
 func (t *Text) Set(str string) {
 	if t.currentString != str {
 		t.currentString = str
-		t.mesh, t.bounds = t.atlas.StringVerts(str, t.scale)
+		t.mesh, t.bounds = t.atlas.StringVerts(&t.Orig, &t.Dot, str, t.Color, t.scale)
 	}
+}
+
+// This appends the list of bytes onto the end of the string
+// Note: implements io.Writer interface
+func (t *Text) Write(p []byte) (n int, err error) {
+	appendedStr := string(p)
+
+	if t.mesh == nil {
+		t.Set(appendedStr)
+		return len(p), nil
+	}
+
+	t.currentString = t.currentString + appendedStr
+	newMesh, newBounds := t.atlas.StringVerts(&t.Orig, &t.Dot, appendedStr, t.Color, t.scale)
+	t.mesh.Append(newMesh)
+	t.bounds = t.bounds.Union(newBounds)
+	return len(p), nil
 }
 
 func (t *Text) Draw(pass *RenderPass, matrix Mat4) {

@@ -193,6 +193,16 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	g.debugRect(r)
 }
 
+// Text, but doesn't automatically scale to fill the rect
+// TODO maybe I should call the other text "AutoText"? or something
+func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scale float32) {
+	text := g.atlas.Text(str)
+	r := rect.Anchor(text.Bounds().Scaled(scale), anchor)
+	text.RectDrawColorMask(g.pass, r, g.color)
+	g.appendUnionBounds(r)
+	g.debugRect(r)
+}
+
 // TODO - tooltips only seem to work for single lines
 func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitch.Vec2) {
 	mX, mY := g.mousePosition()

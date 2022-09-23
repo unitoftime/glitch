@@ -114,6 +114,7 @@ func (r *RenderPass) Draw(target Target) {
 
 		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for _, c := range r.commands[l] {
+				if c.mesh == nil { continue } // Skip nil meshes
 				numVerts := len(c.mesh.positions)
 
 				r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
