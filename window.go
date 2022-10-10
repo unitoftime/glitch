@@ -124,6 +124,14 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 
 		// TODO - other callbacks?
 
+		// TODO - A hack for wasm - where the framebuffer doesn't trigger until the view gets resized once, we just set the size based on what the browser window says
+		{
+			w, h := win.window.GetFramebufferSize()
+			win.width = w
+			win.height = h
+			gl.Viewport(0, 0, w, h)
+		}
+
 		return nil
 	})
 
@@ -132,6 +140,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 	}
 
 	win.Update()
+
 	return win, nil
 }
 

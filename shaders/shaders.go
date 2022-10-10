@@ -15,6 +15,27 @@ func VertexAttribute(name string, Type glitch.AttrType, swizzle glitch.SwizzleTy
 	}
 }
 
+// Commented out: This was for webgl1 mode
+// //go:embed sprite_100.vs
+// var SpriteVertexShaderWebGL1 string;
+
+// //go:embed sprite_100.fs
+// var SpriteFragmentShaderWebGL1 string;
+
+// var SpriteShader = glitch.ShaderConfig{
+// 	VertexShader: SpriteVertexShaderWebGL1,
+// 	FragmentShader: SpriteFragmentShaderWebGL1,
+// 	VertexFormat: glitch.VertexFormat{
+// 		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+// 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+// 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+// 	},
+// 	UniformFormat: glitch.UniformFormat{
+// 		glitch.Attr{"projection", glitch.AttrMat4},
+// 		glitch.Attr{"view", glitch.AttrMat4},
+// 	},
+// }
+
 //go:embed sprite.vs
 var SpriteVertexShader string;
 
