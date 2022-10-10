@@ -6,14 +6,14 @@ require (
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/go-gl/mathgl v1.0.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	github.com/unitoftime/gl v0.0.0-20220419140725-98e3994f0517
-	github.com/unitoftime/glfw v0.0.0-20220419140736-97f7f8b3927b
-	golang.org/x/image v0.0.0-20220617043117-41969df76e82
+	github.com/unitoftime/gl v0.0.0-20221010144157-ddeda43df375
+	github.com/unitoftime/glfw v0.0.0-20221010190425-a86025250074
+	golang.org/x/image v0.0.0-20220902085622-e7cb96979f69
 )
 
 require (
 	github.com/go-gl/gl v0.0.0-20211210172815-726fda9656d6 // indirect
-	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220320163800-277f93cfa958 // indirect
-	github.com/gopherjs/gopherjs v0.0.0-20220419150520-fcf8e05a6f4f // indirect
-	honnef.co/go/js/dom v0.0.0-20210725211120-f030747120f2 // indirect
+	github.com/go-gl/glfw/v3.3/glfw v0.0.0-20220806181222-55e207c401ad // indirect
+	github.com/gopherjs/gopherjs v1.17.2 // indirect
+	honnef.co/go/js/dom v0.0.0-20221001195520-26252dedbe70 // indirect
 )

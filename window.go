@@ -178,10 +178,18 @@ func (w *Window) Bounds() Rect {
 
 func (w *Window) MousePosition() (float32, float32) {
 	var x, y float64
+	var sx, sy float32
 	mainthread.Call(func() {
 		x, y = w.window.GetCursorPos()
+
+		// TODO - Use callback to get contentScale. There is a function available in glfw library. In javascript though, I'm not sure if there's a way to detect content scale (other than maybe in the framebuffer size callback) But if a window is dragged to another monitor which has a different content scale, then the framebuffer size callback may not trigger, but the content scale will be updated.
+		sx, sy = w.window.GetContentScale()
 	})
-	return float32(x), float32(float64(w.height) - y) // This flips the coordinate to quadrant 1
+
+	// We scale the mouse position (which is in window pixel coords) into framebuffer pixel coords by multiplying it by the content scale.
+	xPos := float32(x) * sx
+	yPos := float32(float32(w.height) - (float32(y) * sy)) // This flips the coordinate to quadrant 1
+	return xPos, yPos
 }
 
 // // Returns true if the key was pressed in the last frame
