@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
 )
@@ -185,6 +187,7 @@ func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 	return false
 }
 
+// TODO! - text masking around rect?
 func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.atlas.Text(str)
 	r := rect.Anchor(text.Bounds().ScaledToFit(rect), anchor)
@@ -201,6 +204,42 @@ func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scal
 	text.RectDrawColorMask(g.pass, r, g.color)
 	g.appendUnionBounds(r)
 	g.debugRect(r)
+}
+
+func (g *Group) TextInput(panel Drawer, str *string, rect glitch.Rect, anchor glitch.Vec2, scale float32) {
+	if str == nil { return }
+
+	runes := g.win.Typed()
+	*str = *str + string(runes)
+
+	tStr := *str
+	if g.win.JustPressed(glitch.KeyBackspace) {
+		if g.win.Pressed(glitch.KeyLeftControl) || g.win.Pressed(glitch.KeyRightControl) {
+			// Delete whole word
+			lastIndex := strings.LastIndex(strings.TrimRight(tStr, " "), " ")
+			if lastIndex < 0 {
+				// Means there were no spaces, delete everything
+				lastIndex = 0
+			}
+
+			tStr = tStr[:lastIndex]
+		} else {
+			if len(tStr) > 0 {
+				tStr = tStr[:len(tStr)-1]
+			}
+		}
+	}
+
+	// ret := false
+	// if g.win.JustPressed(glitch.KeyEnter) {
+	// 	ret = true
+	// }
+	*str = tStr
+
+	g.Panel(panel, rect)
+
+	g.FixedText(*str, rect, anchor, scale)
+	// return ret
 }
 
 // TODO - tooltips only seem to work for single lines

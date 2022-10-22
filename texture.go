@@ -75,6 +75,44 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 	return t
 }
 
+// Sets the texture to be this image.
+// Texture size must match img size or this will panic!
+// TODO - Should I just try and set it? or do nothing?
+func (t *Texture) SetImage(img image.Image) {
+	if t.width != img.Bounds().Dx() || t.height != img.Bounds().Dy() {
+		panic("SetImage: img bounds are not equal to texture bounds!")
+	}
+
+	// TODO - skip this if already an NRGBA
+	nrgba := image.NewNRGBA(img.Bounds())
+	draw.Draw(nrgba, nrgba.Bounds(), img, img.Bounds().Min, draw.Src)
+
+	pixels := nrgba.Pix
+	t.SetPixels(0, 0, t.width, t.height, pixels)
+}
+
+// Sets the pixels of a section of a texture
+func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
+	if len(pixels) != w*h*4 {
+		panic("set pixels: wrong number of pixels")
+	}
+	t.Bind(0)
+
+	mainthread.Call(func() {
+		gl.TexSubImage2D(
+			gl.TEXTURE_2D,
+			0,
+			x,
+			y,
+			w,
+			h,
+			gl.RGBA,
+			gl.UNSIGNED_BYTE,
+			pixels,
+		)
+	})
+}
+
 func (t *Texture) Bounds() Rect {
 	return R(0, 0, float32(t.width), float32(t.height))
 }

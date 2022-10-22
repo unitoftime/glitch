@@ -24,10 +24,15 @@ type Window struct {
 	tmpInput, input struct {
 		justPressed [KeyLast + 1]bool
 		justReleased [KeyLast + 1]bool
+		repeated [KeyLast + 1]bool
+
 		scroll struct {
 			X, Y float64
 		}
 	}
+
+	// The back and front buffers for tracking typed characters
+	typedBack, typedFront []rune
 }
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
@@ -116,10 +121,13 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 				win.tmpInput.justPressed[Key(key)] = true
 			case glfw.Release:
 				win.tmpInput.justReleased[Key(key)] = true
-			// TODO - Handle repeat events
-			// case glfw.Repeat:
-			// 	win.tempInp.repeat[Button(key)] = true
+			case glfw.Repeat:
+				win.tmpInput.repeated[Key(key)] = true
 			}
+		})
+
+		win.window.SetCharCallback(func(w *glfw.Window, char rune) {
+			win.typedBack = append(win.typedBack, char)
 		})
 
 		// TODO - other callbacks?
@@ -156,6 +164,14 @@ func (w *Window) Update() {
 
 	w.tmpInput.justPressed = [KeyLast + 1]bool{}
 	w.tmpInput.justReleased = [KeyLast + 1]bool{}
+	w.tmpInput.repeated = [KeyLast + 1]bool{}
+
+	// Swap the typed buffers
+	{
+		backBuf := w.typedBack
+		w.typedBack = w.typedFront[:0]
+		w.typedFront = backBuf
+	}
 }
 
 func (w *Window) Close() {
@@ -231,6 +247,12 @@ func (w *Window) Pressed(key Key) bool {
 		return true
 	}
 	return false
+}
+
+// Don't cache the returned buffer because it gets overwritten
+func (w *Window) Typed() []rune {
+	// TODO - should I copy just to be safe?
+	return w.typedFront
 }
 
 func (w *Window) MouseScroll() (float64, float64) {

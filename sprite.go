@@ -1,7 +1,5 @@
 package glitch
 
-// import "fmt"
-
 type Sprite struct {
 	mesh *Mesh
 	bounds Rect

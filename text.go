@@ -216,7 +216,7 @@ type Text struct {
 	bounds Rect
 	texture *Texture
 	material Material
-	scale float32
+	scale float32 // TODO - is this useful? Play around with different scaling methods.
 	LineHeight float32
 
 	Orig Vec2 // The baseline starting point from which to draw the text
