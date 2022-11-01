@@ -3,8 +3,13 @@ package glitch
 import (
 	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
-	// "sort"
+	"sort"
 )
+
+type BatchTarget interface {
+	Add(*Mesh, Mat4, RGBA, Material)
+	
+}
 
 type Target interface {
 	// TODO - Should this be differentiated from being a source Vs a target binding. For example, I'm using this now to bind the target that we draw to. But If I want to have another function on frambuffers to use them as image texture inputs, what would that API be called?
@@ -35,10 +40,20 @@ type RenderPass struct {
 	currentLayer uint8
 
 	dirty bool // Indicates if we need to re-draw to the buffers
-	DepthTest bool
+	DepthTest bool // If set true, enable hardware depth testing
+	SoftwareSort SoftwareSortMode
 }
 
-const DefaultLayer uint8 = 127
+type SoftwareSortMode uint8
+const (
+	SoftwareSortNone SoftwareSortMode = iota
+	SoftwareSortX // Sort based on the X position
+	SoftwareSortY // Sort based on the Y position
+	SoftwareSortZ // Sort based on the Z position
+	SoftwareSortCommand // Sort by the computed drawCommand.command
+)
+
+const DefaultLayer uint8 = 127/2
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 100000
@@ -73,22 +88,11 @@ func (r *RenderPass) Draw(target Target) {
 	// Bind render target
 	target.Bind()
 
-	// TODO - Hardware depth testing
-	// mainthread.Call(func() {
-	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
-	// 	// Do I need? glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.9f); - maybe prevents "discard;" in frag shader
-	// 	gl.Enable(gl.DEPTH_TEST)
-	// })
-
-	// TODO - Software sorting
-	// sort.Slice(r.commands, func(i, j int) bool {
-	// 	// return r.commands[i].matrix[i4_3_0] < r.commands[j].matrix[i4_3_0] // Sort by x
-	// 	// return r.commands[i].matrix[i4_3_1] < r.commands[j].matrix[i4_3_1] // Sort by y
-	// 	// return r.commands[i].matrix[i4_3_2] < r.commands[j].matrix[i4_3_2] // Sort by z
-	// 	return r.commands[i].command < r.commands[j].command
-	// })
+	r.SortInSoftware()
 
 	mainthread.Call(func() {
+		// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
+		// 	// Do I need? glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.9f); - maybe prevents "discard;" in frag shader
 		if r.DepthTest {
 			gl.Enable(gl.DEPTH_TEST)
 		} else {
@@ -244,9 +248,42 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 	r.uniforms[name] = value
 }
 
+// Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
+// Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
+// Option 3: I can batch together these sprites into a single thing that is then rendered
 func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 	r.dirty = true
 	r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
 		0, mesh, mat, mask, material,
 	})
+}
+
+func (r *RenderPass) SortInSoftware() {
+	if r.SoftwareSort == SoftwareSortNone { return } // Skip if sorting disabled
+
+	if r.SoftwareSort == SoftwareSortX {
+		for c := range r.commands {
+			sort.Slice(r.commands[c], func(i, j int) bool {
+				return r.commands[c][i].matrix[i4_3_0] > r.commands[c][j].matrix[i4_3_0] // sort by x
+			})
+		}
+	} else if r.SoftwareSort == SoftwareSortY {
+		for c := range r.commands {
+			sort.Slice(r.commands[c], func(i, j int) bool {
+				return r.commands[c][i].matrix[i4_3_1] > r.commands[c][j].matrix[i4_3_1] // Sort by y
+			})
+		}
+	} else if r.SoftwareSort == SoftwareSortZ {
+		for c := range r.commands {
+			sort.Slice(r.commands[c], func(i, j int) bool {
+				return r.commands[c][i].matrix[i4_3_2] > r.commands[c][j].matrix[i4_3_2] // Sort by z
+			})
+		}
+	} else if r.SoftwareSort == SoftwareSortCommand {
+		for c := range r.commands {
+			sort.Slice(r.commands[c], func(i, j int) bool {
+				return r.commands[c][i].command > r.commands[c][j].command // Sort by command
+			})
+		}
+	}
 }

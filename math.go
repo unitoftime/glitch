@@ -198,6 +198,23 @@ const (
 	i3_2_2 = 8
 )
 
+type Box struct {
+	Min, Max Vec3
+}
+
+func (a Box) Union(b Box) Box {
+	x1, _ := minMax(a.Min[0], b.Min[0])
+	_, x2 := minMax(a.Max[0], b.Max[0])
+	y1, _ := minMax(a.Min[1], b.Min[1])
+	_, y2 := minMax(a.Max[1], b.Max[1])
+	z1, _ := minMax(a.Min[2], b.Min[2])
+	_, z2 := minMax(a.Max[2], b.Max[2])
+	return Box{
+		Min: Vec3{x1, y1, z1},
+		Max: Vec3{x2, y2, z2},
+	}
+}
+
 type Rect struct {
 	Min, Max Vec2
 }
@@ -206,6 +223,14 @@ func R(minX, minY, maxX, maxY float32) Rect {
 	return Rect{
 		Min: Vec2{minX, minY},
 		Max: Vec2{maxX, maxY},
+	}
+}
+
+// Returns a box that holds this rect. The Z axis is 0
+func (r Rect) ToBox() Box {
+	return Box{
+		Min: Vec3{r.Min[0], r.Min[1], 0},
+		Max: Vec3{r.Max[0], r.Max[1], 0},
 	}
 }
 

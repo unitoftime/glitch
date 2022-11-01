@@ -1,11 +1,90 @@
 package glitch
 
+// For batching multiple sprites into one
+type Batch struct {
+	mesh *Mesh
+	material Material
+}
+
+func NewBatch() *Batch {
+	return &Batch{
+		mesh: NewMesh(),
+		material: nil,
+	}
+}
+
+// TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
+func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
+	if b.material == nil {
+		b.material = material
+	} else {
+		if b.material != material {
+			panic("Materials must match inside a batch!")
+		}
+	}
+
+	posBuf := make([]Vec3, len(mesh.positions))
+	for i := range mesh.positions {
+		posBuf[i] = matrix.Apply(mesh.positions[i])
+	}
+
+	renormalizeMat := matrix.Inv().Transpose()
+	normBuf := make([]Vec3, len(mesh.normals))
+	for i := range mesh.normals {
+		normBuf[i] = renormalizeMat.Apply(mesh.normals[i])
+	}
+
+	colBuf := make([]Vec4, len(mesh.colors))
+	for i := range mesh.colors {
+		// TODO - vec4 mult function
+		colBuf[i] = Vec4{
+			mesh.colors[i][0] * mask.R,
+			mesh.colors[i][1] * mask.G,
+			mesh.colors[i][2] * mask.B,
+			mesh.colors[i][3] * mask.A,
+		}
+	}
+
+	// TODO - is a copy faster?
+	texBuf := make([]Vec2, len(mesh.texCoords))
+	for i := range mesh.texCoords {
+		texBuf[i] = mesh.texCoords[i]
+	}
+
+	indices := make([]uint32, len(mesh.indices))
+	for i := range mesh.indices {
+		indices[i] = mesh.indices[i]
+	}
+
+	m2 := &Mesh{
+		positions: posBuf,
+		normals: normBuf,
+		colors: colBuf,
+		texCoords: texBuf,
+		indices: indices,
+		//bounds: todo,
+	}
+
+	b.mesh.Append(m2)
+}
+
+func (b *Batch) Clear() {
+	b.mesh.Clear()
+	b.material = nil
+}
+
+func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
+	target.Add(b.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, b.material)
+}
+
 type Mesh struct {
 	positions []Vec3
 	normals []Vec3
 	colors []Vec4
 	texCoords []Vec2
 	indices []uint32
+	bounds Box
+	// translation Vec3
 }
 
 func NewMesh() *Mesh {
@@ -25,6 +104,7 @@ func (m *Mesh) Clear() {
 	m.colors = m.colors[:0]
 	m.texCoords = m.texCoords[:0]
 	m.indices = m.indices[:0]
+	m.bounds = Box{}
 }
 
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
@@ -34,6 +114,10 @@ func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 	pass.Add(m, matrix, mask, DefaultMaterial())
+}
+
+func (m *Mesh) Bounds() Box {
+	return m.bounds
 }
 
 // TODO - should this be more like draw?
@@ -47,7 +131,23 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.normals = append(m.normals, m2.normals...)
 	m.colors = append(m.colors, m2.colors...)
 	m.texCoords = append(m.texCoords, m2.texCoords...)
+
+	m.bounds = m.bounds.Union(m2.bounds)
 }
+
+// func (m *Mesh) SetTranslation(pos Vec3) {
+// 	if m.translation == pos { return } // Skip if we've already translated this amount
+// 	delta := pos.Sub(m.translation)
+// 	// delta := m.translation.Sub(pos)
+
+// 	for i := range m.positions {
+// 		m.positions[i] = delta.Add(m.positions[i])
+// 	}
+
+// 	m.translation = pos
+
+// 	// TODO - recalculate mesh bounds/box
+// }
 
 // Sets the color of every vertex
 func (m *Mesh) SetColor(col RGBA) {
@@ -106,6 +206,7 @@ func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 		colors: colors,
 		texCoords: texCoords,
 		indices: inds,
+		bounds: bounds.ToBox(),
 	}
 }
 
@@ -237,5 +338,9 @@ func NewCubeMesh(size float32) *Mesh {
 		colors: colors,
 		texCoords: texCoords,
 		indices: indices,
+		bounds: Box{
+			Min: Vec3{-size, -size, -size},
+			Max: Vec3{size, size, size},
+		},
 	}
 }

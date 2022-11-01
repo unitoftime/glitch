@@ -270,6 +270,7 @@ func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int
 		return false
 	}
 
+	// fmt.Println("Establishing Buffer", material)
 	v.materialSet = true
 	v.material = material
 
@@ -387,6 +388,7 @@ func (b *BufferPool) Draw() {
 		if lastMaterial != b.buffers[i].material {
 			lastMaterial = b.buffers[i].material
 			if lastMaterial != nil {
+				// fmt.Println("Binding New Material", lastMaterial)
 				lastMaterial.Bind()
 			}
 		}

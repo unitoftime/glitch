@@ -79,6 +79,8 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 // Texture size must match img size or this will panic!
 // TODO - Should I just try and set it? or do nothing?
 func (t *Texture) SetImage(img image.Image) {
+	if img == nil { return }
+
 	if t.width != img.Bounds().Dx() || t.height != img.Bounds().Dy() {
 		panic("SetImage: img bounds are not equal to texture bounds!")
 	}

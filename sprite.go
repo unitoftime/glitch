@@ -5,6 +5,7 @@ type Sprite struct {
 	bounds Rect
 	texture *Texture
 	material Material
+	// origin Vec3 // This is used to skew the center of the sprite (which helps with sorting sprites who shouldn't be sorted based on their center points.
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
@@ -23,25 +24,31 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	}
 }
 
-func (s *Sprite) Draw(pass *RenderPass, matrix Mat4) {
+// Translates the underlying geometry by the requested position
+// func (s *Sprite) SetTranslation(pos Vec3) {
+// 	// TODO - push logic to mesh?
+// 	s.mesh.SetTranslation(pos)
+// }
+
+func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
 	// pass.SetTexture(0, s.texture)
-	pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+	target.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 }
-func (s *Sprite) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
+func (s *Sprite) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	pass.Add(s.mesh, matrix, mask, s.material)
+	target.Add(s.mesh, matrix, mask, s.material)
 }
 
-func (s *Sprite) RectDraw(pass *RenderPass, bounds Rect) {
-	s.RectDrawColorMask(pass, bounds, RGBA{1, 1, 1, 1})
+func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
+	s.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
 }
-func (s *Sprite) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
+func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
 	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
-	pass.Add(s.mesh, matrix, mask, s.material)
+	target.Add(s.mesh, matrix, mask, s.material)
 }
 
 func (s *Sprite) Bounds() Rect {
@@ -50,11 +57,12 @@ func (s *Sprite) Bounds() Rect {
 
 // // // Add another sprite on top of this sprite
 // // // TODO - Include matrix transformation
-// func (s *Sprite) DrawToSprite(baseSprite *Sprite) {
-// 	if baseSprite.texture != s.texture { panic("Error DrawToSprite, textures must match!") }
-// 	if baseSprite.material != s.material { panic("Error DrawToSprite, materials must match!") }
+// func (s *Sprite) DrawToSprite(destSprite *Sprite, mat Mat4) {
+// 	if destSprite.texture != s.texture { panic("Error DrawToSprite, textures must match!") }
+// 	if destSprite.material != s.material { panic("Error DrawToSprite, materials must match!") }
 
 // 	baseSprite.bounds = baseSprite.bounds.Union(s)
+
 // 	baseSprite.mesh.Append(s.mesh)
 // }
 
