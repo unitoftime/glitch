@@ -60,8 +60,28 @@ var SpriteShader = glitch.ShaderConfig{
 var SubPixelAntiAliased string;
 
 var PixelArtShader = glitch.ShaderConfig{
-	VertexShader: SpriteVertexShader,
+	VertexShader: PixelArtVert,
 	FragmentShader: SubPixelAntiAliased,
+	// FragmentShader: SubPixelAntiAliased,
+	VertexFormat: glitch.VertexFormat{
+		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	},
+	UniformFormat: glitch.UniformFormat{
+		glitch.Attr{"projection", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
+	},
+}
+
+//go:embed pixel.vs
+var PixelArtVert string;
+//go:embed pixel.fs
+var PixelArtFrag string;
+
+var PixelArtShader2 = glitch.ShaderConfig{
+	VertexShader: PixelArtVert,
+	FragmentShader: PixelArtFrag,
 	VertexFormat: glitch.VertexFormat{
 		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),

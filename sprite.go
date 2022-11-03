@@ -15,6 +15,13 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		bounds.Max[0] / float32(texture.width),
 		bounds.Max[1] / float32(texture.height),
 	)
+	// Note: I tried biasing this for tilemaps, but it doesn't seem to work very well.
+	// uvBounds := R(
+	// 	(1./2. + bounds.Min[0]) / float32(texture.width),
+	// 	(1./2. + bounds.Min[1]) / float32(texture.height),
+	// 	(-1./2. + bounds.Max[0]) / float32(texture.width),
+	// 	(-1./2. + bounds.Max[1]) / float32(texture.height),
+	// )
 
 	return &Sprite{
 		mesh: NewSpriteMesh(bounds.W(), bounds.H(), uvBounds),

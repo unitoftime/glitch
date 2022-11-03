@@ -420,6 +420,34 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {
 		Translate(-cameraCenter[0], -cameraCenter[1], 0).
 		Scale(scaleX, scaleY, 1.0).
 		Translate(cameraCenter[0], cameraCenter[1], 0)
+
+	// centerX := float32(math.Round(float64(cameraCenter[0])))
+	// centerY := float32(math.Round(float64(cameraCenter[1])))
+	// pX := float32(math.Round(float64(x)))
+	// pY := float32(math.Round(float64(y)))
+	// c.View.
+	// 	Translate(-pX - centerX, -pY - centerY, 0).
+	// 	Scale(scaleX, scaleY, 1.0).
+	// 	Translate(centerX, centerY, 0)
+
+	// centerX := float64(cameraCenter[0])
+	// centerY := float64(cameraCenter[1])
+	// pX := float64(x)
+	// pY := float64(y)
+	// c.View.
+	// 	Translate(float32(-pX - centerX), float32(-pY - centerY), 0).
+	// 	Scale(scaleX, scaleY, 1.0).
+	// 	Translate(float32(centerX), float32(centerY), 0)
+
+
+
+	// c.View.
+	// 	// Translate by x, y of the camera
+	// 	Translate(-float32(math.Round(float64(x))), -float32(math.Round(float64(y))), 0).
+	// 	// Scale around the center of the camera
+	// 	Translate(-float32(math.Round(float64(cameraCenter[0]))), -float32(math.Round(float64(cameraCenter[1]))), 0).
+	// 	Scale(scaleX, scaleY, 1.0).
+	// 	Translate(float32(math.Round(float64(cameraCenter[0]))), float32(math.Round(float64(cameraCenter[1]))), 0)
 }
 
 func (c *CameraOrtho) Project(point Vec3) Vec3 {

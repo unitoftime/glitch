@@ -122,7 +122,6 @@ func runGame() {
 		pass.SetUniform("view", camera.View)
 		pass.Draw(frame)
 
-
 		windowPass.Clear()
 		windowPass.SetUniform("projection", glitch.Mat4Ident)
 		windowPass.SetUniform("view", glitch.Mat4Ident)

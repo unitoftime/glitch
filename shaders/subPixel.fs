@@ -33,14 +33,17 @@ void main()
   /* float scale = 1.0; */
   vec2 scale = vec2(length(vec3(view[0][0], view[0][1], view[0][2])), length(vec3(view[1][0], view[1][1], view[1][2])));
 
+  /* vec2 scale = vec2(5.0 * view[0][0], 5.0 * view[0][0]); */
+  /* vec2 scale = vec2(10.0 * view[0][0], 10.0 * view[0][0]); */
+
+
   /* scale = scale * 0.5; // TODO - Magic number, this just seems to look good */
 
   // emulate point sampling
   vec2 uv = floor(pixel) + 0.5;
   // subpixel aa algorithm (COMMENT OUT TO COMPARE WITH POINT SAMPLING)
   // TODO - This is shimmering, I'm not sure why, I think the scale is wrong
-  /* uv += 1.0 - clamp((1.0 - fract(pixel)) * scale, 0.0, 1.0); */
-
+  uv += 1.0 - clamp((1.0 - fract(pixel)) * scale, 0.0, 1.0);
 
   // output
   vec4 color = texture(texture1, uv / textureSize2d.xy);
