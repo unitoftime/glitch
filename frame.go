@@ -41,6 +41,10 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 	return &frame
 }
 
+func (f *Frame) Bounds() Rect {
+	return f.bounds
+}
+
 func (f *Frame) Texture() *Texture {
 	return f.tex
 }

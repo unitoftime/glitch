@@ -394,6 +394,7 @@ func (m *Mat4) Transpose() *Mat4 {
 	return &retMat
 }
 
+// TODO - I feel like camera should be a higher-up abstraction and not held here
 type CameraOrtho struct {
 	Projection Mat4
 	View, ViewSnapped Mat4
