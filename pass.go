@@ -8,7 +8,6 @@ import (
 
 type BatchTarget interface {
 	Add(*Mesh, Mat4, RGBA, Material)
-	
 }
 
 type Target interface {

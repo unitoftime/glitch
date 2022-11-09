@@ -27,7 +27,8 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 	frame.tex = NewTexture(img, smooth)
 
 	// Create mesh (in case we want to draw the fbo to another target)
-	frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))
+	// frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))
+	frame.mesh = NewQuadMesh(bounds, R(0, 1, 1, 0))
 	frame.material = NewSpriteMaterial(frame.tex)
 
 	// frame.tex.Bind(0)///??????
