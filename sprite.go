@@ -184,6 +184,12 @@ func (s *NinePanelSprite) Bounds() Rect {
 	return s.bounds
 }
 
+// The bounds of the borders rect
+func (s *NinePanelSprite) Border() Rect {
+	return s.border.Scaled(s.Scale)
+	// return s.bounds.Pad(s.border.Scaled(-1))
+}
+
 // // type Geometry struct {
 // // 	format []GeomFormat
 // // }

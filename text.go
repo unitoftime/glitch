@@ -53,8 +53,9 @@ type Atlas struct {
 func fixedToFloat(val fixed.Int26_6) float32 {
 	// Shift to the left by 6 then convert to an int, then to a float, then shift right by 6
 	// TODO - How to handle overruns?
-	intVal := val.Mul(fixed.I(1_000_000)).Floor()
-	return float32(intVal) / 1_000_000.0
+	// intVal := val.Mul(fixed.I(1_000_000)).Floor()
+	// return float32(intVal) / 1_000_000.0
+	return float32(val) / (1 << 6)
 }
 
 func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
@@ -176,8 +177,25 @@ func (a *Atlas) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, scal
 	// fmt.Println(maxAscent)
 	// fmt.Println(scale)
 	// bounds := R(initialDot[0], initialDot[1], dot[0], dot[1] - a.LineHeight())
-	bounds := R(initialDot[0], initialDot[1] - (2*fixedToFloat(a.ascent)), dot[0], dot[1] - (2*fixedToFloat(a.descent))).Norm()
+
+	// bounds := R(initialDot[0],
+	// 	initialDot[1] - (2 * fixedToFloat(a.ascent)),
+	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	dot[1] - (2 * fixedToFloat(a.descent)))
+
+	// TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
+	bounds := R(initialDot[0],
+		initialDot[1] - (fixedToFloat(a.ascent)),
+		dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+		dot[1] - (fixedToFloat(a.descent))).
+			Norm().
+			Moved(Vec2{0, fixedToFloat(a.ascent)})
 	// fmt.Println(bounds)
+
+	// bounds := R(initialDot[0],
+	// 	initialDot[1] - (fixedToFloat(a.descent)),
+	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	dot[1] - (fixedToFloat(a.ascent))).Norm()
 	return mesh, bounds
 
 	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
@@ -209,7 +227,8 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32
 	x1 := dot[0] + (scaleX * glyph.Bearing[0])
 	x2 := x1 + (scaleX * (u2 - u1))
 
-	y1 := dot[1] + (scaleY * glyph.Bearing[1]) - (2*fixedToFloat(a.descent))
+	// Note: Commented out the downard shift here, and I'm doing it in the above func
+	y1 := dot[1] + (scaleY * glyph.Bearing[1])// - (2*fixedToFloat(a.descent))
 	y2 := y1 + (scaleY * (v2 - v1))
 
 	mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
@@ -253,6 +272,10 @@ type Text struct {
 
 func (t *Text) Bounds() Rect {
 	return t.bounds
+}
+
+func (t *Text) MeshBounds() Rect {
+	return t.mesh.Bounds().Rect()
 }
 
 // This resets the text and sets it to the passed in string (if the passed in string is different!)

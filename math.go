@@ -205,6 +205,13 @@ const (
 type Box struct {
 	Min, Max Vec3
 }
+func (b Box) Rect() Rect {
+	return Rect{
+		Min: Vec2{b.Min[0], b.Min[1]},
+		Max: Vec2{b.Max[0], b.Max[1]},
+	}
+}
+
 
 func (a Box) Union(b Box) Box {
 	x1, _ := minMax(a.Min[0], b.Min[0])
@@ -339,6 +346,11 @@ func (r Rect) SliceVertical(amount float32) Rect {
 // Adds padding to a rectangle (pads inward if padding is negative)
 func (r Rect) Pad(pad Rect) Rect {
 	return R(r.Min[0] - pad.Min[0], r.Min[1] - pad.Min[1], r.Max[0] + pad.Max[0], r.Max[1] + pad.Max[1])
+}
+
+// Removes padding from a rectangle (pads outward if padding is negative). Essentially calls pad but with negative values
+func (r Rect) Unpad(pad Rect) Rect {
+	return r.Pad(pad.Scaled(-1))
 }
 
 // Takes r2 and places it in r based on the alignment

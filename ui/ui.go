@@ -264,7 +264,7 @@ func (g *Group) debugRect(rect glitch.Rect) {
 
 	lineWidth := float32(2.0)
 
-	g.pass.SetLayer(126) // debug layer
+	g.pass.SetLayer(0) // debug layer
 
 	g.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
 	m := g.geomDraw.Rectangle(rect, lineWidth)
