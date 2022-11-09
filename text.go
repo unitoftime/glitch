@@ -44,9 +44,9 @@ type Glyph struct {
 type Atlas struct {
 	face font.Face
 	mapping map[rune]Glyph
-	ascent fixed.Int26_6
-	descent fixed.Int26_6
-	lineHeight fixed.Int26_6
+	ascent fixed.Int26_6 // Distance from top of line to baseline
+	descent fixed.Int26_6 // Distance from bottom of line to baseline
+	lineGap fixed.Int26_6 // The recommended gap between two lines
 	texture *Texture
 }
 
@@ -64,7 +64,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		mapping: make(map[rune]Glyph),
 		ascent: metrics.Ascent,
 		descent: metrics.Descent,
-		lineHeight: metrics.Height,
+		lineGap: metrics.Height,
 	}
 
 	size := 1024
@@ -131,13 +131,19 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	// outputFile.Close()
 
 	atlas.texture = NewTexture(img, smooth)
-	fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
+	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
 }
 
+func (a *Atlas) LineHeight() float32 {
+	// TODO - scale?
+	// TODO - I'm not sure why, but I have to multiply by 2 here
+	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap))
+}
+
 // TODO - this function probably should belong in the Text type
-func (a *Atlas) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, size float32) (*Mesh, Rect) {
-	maxAscent := float32(0) // Tracks the maximum y point of the text block
+func (a *Atlas) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, scale float32) (*Mesh, Rect) {
+	// maxAscent := float32(0) // Tracks the maximum y point of the text block
 
 	initialDot := *dot
 
@@ -145,22 +151,42 @@ func (a *Atlas) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, size
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			// TODO - I'm not sure why, but I have to multiply by 2 here
-			dot[1] += 2 * fixedToFloat(a.lineHeight) * size // TODO - size?
+			dot[1] -= a.LineHeight()
 			dot[0] = orig[0]
 			continue
 		}
 
-		runeMesh, newDot, ascent := a.RuneVerts(r, *dot, size)
+		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
+		// fmt.Println("dot", *dot)
+		runeMesh, newDot, _ := a.RuneVerts(r, *dot, scale)
 		runeMesh.SetColor(color)
 		mesh.Append(runeMesh)
 		*dot = newDot
 
-		if maxAscent < ascent {
-			maxAscent = dot[1] + ascent
-		}
+		// if maxAscent < ascent {
+		// 	maxAscent = dot[1] + ascent
+		// }
 	}
-	return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
+	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
+
+	// fmt.Println("-----")
+	// fmt.Println(fixedToFloat(a.ascent))
+	// fmt.Println(fixedToFloat(a.descent))
+	// fmt.Println(fixedToFloat(a.lineGap))
+	// fmt.Println(maxAscent)
+	// fmt.Println(scale)
+	// bounds := R(initialDot[0], initialDot[1], dot[0], dot[1] - a.LineHeight())
+	bounds := R(initialDot[0], initialDot[1] - (2*fixedToFloat(a.ascent)), dot[0], dot[1] - (2*fixedToFloat(a.descent))).Norm()
+	// fmt.Println(bounds)
+	return mesh, bounds
+
+	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
+	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] - (fixedToFloat(a.ascent) - fixedToFloat(a.descent)))
+	// return mesh, R(initialDot[0],
+	// 	initialDot[1] - fixedToFloat(a.descent)/1024,
+	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	dot[1] + fixedToFloat(a.ascent)/1024)
+
 }
 
 func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32) {
@@ -182,7 +208,8 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32
 	// Pixel coordinates of the quad (scaled by scale)
 	x1 := dot[0] + (scaleX * glyph.Bearing[0])
 	x2 := x1 + (scaleX * (u2 - u1))
-	y1 := dot[1] + (scaleY * glyph.Bearing[1])
+
+	y1 := dot[1] + (scaleY * glyph.Bearing[1]) - (2*fixedToFloat(a.descent))
 	y2 := y1 + (scaleY * (v2 - v1))
 
 	mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
@@ -199,7 +226,7 @@ func (a *Atlas) Text(str string) *Text {
 		texture: a.texture,
 		material: NewSpriteMaterial(a.texture),
 		scale: 1.0,
-		LineHeight: fixedToFloat(a.lineHeight),
+		LineHeight: a.LineHeight(),
 
 		Color: RGBA{1, 1, 1, 1},
 	}
