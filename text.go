@@ -29,7 +29,7 @@ func DefaultAtlas() (*Atlas, error) {
 	}
 	fontFace := truetype.NewFace(font, &truetype.Options{
 		Size: 64,
-		GlyphCacheEntries: 1,
+		// GlyphCacheEntries: 1,
 	})
 	atlas := NewAtlas(fontFace, runes, true)
 	return atlas, nil
@@ -71,7 +71,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	fixedSize := fixed.I(size)
 	fSize := float32(size)
 
-	img := image.NewNRGBA(image.Rect(0, 0, size, size))
+	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	draw.Draw(img, img.Bounds(), image.NewUniform(color.Alpha{0}), image.ZP, draw.Src)
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
