@@ -1,10 +1,12 @@
 package ui
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
+	"github.com/unitoftime/glitch/graph"
 )
 
 // Element that needs to be drawn
@@ -206,6 +208,15 @@ func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scal
 	g.debugRect(r)
 }
 
+// TODO - combine with fixedtext
+func (g *Group) FullFixedText(str string, rect glitch.Rect, anchor, anchor2 glitch.Vec2, scale float32) {
+	text := g.atlas.Text(str)
+	r := rect.FullAnchor(text.Bounds().Scaled(scale), anchor, anchor2)
+	text.RectDrawColorMask(g.pass, r, g.color)
+	g.appendUnionBounds(r)
+	g.debugRect(r)
+}
+
 func (g *Group) TextInput(panel Drawer, str *string, rect glitch.Rect, anchor glitch.Vec2, scale float32) {
 	if str == nil { return }
 
@@ -257,6 +268,21 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitc
 	text.DrawRect(g.pass, tipRect, g.color)
 	g.appendUnionBounds(tipRect)
 	g.debugRect(tipRect)
+}
+
+func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2) {
+	line := graph.NewGraph(rect)
+	line.Line(series)
+	line.Axes()
+	line.DrawColorMask(g.pass, glitch.Mat4Ident, g.color)
+
+	g.appendUnionBounds(rect)
+	g.debugRect(rect)
+
+	// Draw text around axes
+	axes := line.GetAxes()
+	g.FullFixedText(fmt.Sprintf("%.2f ms", axes.Min[1]), rect, glitch.Vec2{0, 0}, glitch.Vec2{1, 0.5}, 0.25)
+	g.FullFixedText(fmt.Sprintf("%.2f ms", axes.Max[1]), rect, glitch.Vec2{0, 1}, glitch.Vec2{1, 0.5}, 0.25)
 }
 
 func (g *Group) debugRect(rect glitch.Rect) {

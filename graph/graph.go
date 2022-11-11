@@ -10,14 +10,15 @@ import (
 type Graph struct {
 	geom *glitch.GeomDraw
 	mesh *glitch.Mesh
-	rect glitch.Rect
+	bounds glitch.Rect
+	axes glitch.Rect
 }
 
-func NewGraph(rect glitch.Rect) *Graph {
+func NewGraph(bounds glitch.Rect) *Graph {
 	g := &Graph{
 		geom: glitch.NewGeomDraw(),
 		mesh: glitch.NewMesh(),
-		rect: rect,
+		bounds: bounds,
 	}
 	return g
 }
@@ -44,17 +45,34 @@ func (g *Graph) Line(series []glitch.Vec2) {
 		maxRange = math.Max(maxRange, float64(p[1]))
 	}
 
-	dx := g.rect.W() / float32(maxDomain - minDomain)
-	dy := g.rect.H() / float32(maxRange - minRange)
+	g.axes = glitch.R(float32(minDomain), float32(minRange), float32(maxDomain), float32(maxRange))
+
+	dx := g.bounds.W() / float32(maxDomain - minDomain)
+	dy := g.bounds.H() / float32(maxRange - minRange)
 	// fmt.Println(dx, dy, rect.H(), maxDomain, minDomain, minRange, maxRange)
 	points := make([]glitch.Vec3, 0)
 	for _, p := range series {
 		points = append(points, glitch.Vec3{
-			g.rect.Min[0] + float32(p[0] - float32(minDomain)) * dx,
-			g.rect.Min[1] + float32(p[1] - float32(minRange)) * dy,
+			g.bounds.Min[0] + float32(p[0] - float32(minDomain)) * dx,
+			g.bounds.Min[1] + float32(p[1] - float32(minRange)) * dy,
 			0,
 		})
 	}
 
 	g.mesh.Append(g.geom.LineStrip(points, 1))
+}
+
+func (g *Graph) Axes() {
+	g.mesh.Append(g.geom.LineStrip(
+		[]glitch.Vec3{
+			glitch.Vec3{g.bounds.Min[0], g.bounds.Max[1], 0},
+			glitch.Vec3{g.bounds.Min[0], g.bounds.Min[1], 0},
+			glitch.Vec3{g.bounds.Max[0], g.bounds.Min[1], 0},
+		},
+		2,
+	))
+}
+
+func (g *Graph) GetAxes() glitch.Rect {
+	return g.axes
 }
