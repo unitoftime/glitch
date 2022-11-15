@@ -214,6 +214,10 @@ func (w *Window) JustPressed(key Key) bool {
 	return w.input.justPressed[key]
 }
 
+func (w *Window) Repeated(key Key) bool {
+	return w.input.repeated[key]
+}
+
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
 	mainthread.Call(func() {

@@ -239,6 +239,10 @@ func (g *Group) TextInput(panel Drawer, str *string, rect glitch.Rect, anchor gl
 				tStr = tStr[:len(tStr)-1]
 			}
 		}
+	} else if g.win.Repeated(glitch.KeyBackspace) {
+		if len(tStr) > 0 {
+			tStr = tStr[:len(tStr)-1]
+		}
 	}
 
 	// ret := false
