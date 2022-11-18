@@ -29,13 +29,36 @@ func (v Vec2) Vec3() Vec3 {
 	return Vec3{v[0], v[1], 0}
 }
 
-
 func (v Vec3) Add(u Vec3) Vec3 {
 	return Vec3{v[0] + u[0], v[1] + u[1], v[2] + u[2]}
 }
 
 func (v Vec3) Sub(u Vec3) Vec3 {
 	return Vec3{v[0] - u[0], v[1] - u[1], v[2] - u[2]}
+}
+
+// Finds the dot product of two vectors
+func (v Vec3) Dot(u Vec3) float32 {
+	return (v[0] * u[0]) + (v[1] * u[1]) + (v[2] * u[2])
+}
+
+// Finds the angle between two vectors
+func (v Vec3) Angle(u Vec3) float32 {
+	return  float32(math.Acos(float64(v.Dot(u) / (v.Len() * u.Len()))))
+}
+
+func (v Vec3) Theta() float32 {
+	return float32(math.Atan2(float64(v[1]), float64(v[0])))
+}
+
+// Rotates the vector by theta on the XY 2d plane
+func (v Vec3) Rotate2D(theta float32) Vec3 {
+	t := float64(theta)
+	x := float64(v[0])
+	y := float64(v[1])
+	x1 := float32(x * math.Cos(t) - y * math.Sin(t))
+	y1 := float32(x * math.Sin(t) + y * math.Cos(t))
+	return Vec3{x1, y1, v[2]}
 }
 
 func (v Vec3) Len() float32 {
