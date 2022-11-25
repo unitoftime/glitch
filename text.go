@@ -5,7 +5,7 @@ import (
 	// "image/png"
 	"fmt"
 	"image"
-	"image/color"
+	// "image/color"
 	"image/draw"
 
 	"golang.org/x/image/font"
@@ -73,7 +73,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	fSize := float32(size)
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
-	draw.Draw(img, img.Bounds(), image.NewUniform(color.Alpha{0}), image.ZP, draw.Src)
+	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Alpha{0}), image.ZP, draw.Src)
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
@@ -84,6 +84,15 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		bounds, mask, maskp, adv, ok := face.Glyph(dot, r)
 		if !ok { panic("Missing rune!") }
 		bearingRect, _, _ := face.GlyphBounds(r)
+
+		// if r == 'R' {
+		// 	fmt.Printf("%T\n", mask)
+		// 	// fmt.Println(mask)
+		// 	outputFile, err := os.Create("testR.png")
+		// 	if err != nil { panic(err) }
+		// 	png.Encode(outputFile, mask)
+		// 	outputFile.Close()
+		// }
 
 		// Instead of flooring we convert from fixed int to float manually (mult by 10^6 then floor, cast and divide by 10^6). I think this is slightly more accurate but it's hard to tell so I'll leave old code below
 		//		log.Println("Rune: ", string(r), " - BearingRect: ", bearingRect)
@@ -125,7 +134,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		dot = fixed.Point26_6{nextDotX, nextDotY}
 	}
 
-	// outputFile is a File type which satisfies Writer interface
+	// // outputFile is a File type which satisfies Writer interface
 	// outputFile, err := os.Create("test.png")
 	// if err != nil { panic(err) }
 	// png.Encode(outputFile, img)

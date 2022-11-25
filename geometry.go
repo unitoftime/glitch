@@ -135,8 +135,25 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 	return g.LineStrip(points, width)
 }
 
-// TODO - remake linestrip but don't have the looping indexes (ie modulo). This is technically for polygons
 func (g *GeomDraw) LineStrip(points []Vec3, width float32) *Mesh {
+	// fmt.Println("Points:", points)
+	m := NewMesh()
+	c := points[0]
+	for i := 0; i < len(points); i++ {
+		b := points[i]
+		if i+1 < len(points) {
+			c = points[i+1]
+		}
+
+		// Note: Divide by 2 because each connection spills over have the midpoint of the joint
+		m.Append(g.Line(b, c, 0, 0, width))
+	}
+
+	return m
+}
+
+// TODO - remake linestrip but don't have the looping indexes (ie modulo). This is technically for polygons
+func (g *GeomDraw) Polygon(points []Vec3, width float32) *Mesh {
 	// fmt.Println("Points:", points)
 	m := NewMesh()
 	// for i := 0; i < len(points)-1; i++ {
