@@ -263,3 +263,21 @@ func (w *Window) Typed() []rune {
 func (w *Window) MouseScroll() (float64, float64) {
 	return w.input.scroll.X, w.input.scroll.Y
 }
+
+type CursorMode uint8
+const (
+	CursorNormal CursorMode = iota // A normal cursor
+	CursorHidden // A normal cursor, but not rendered
+	CursorDisabled // Hides and locks the cursor
+)
+func (w *Window) SetCursor(mode CursorMode) {
+	mainthread.Call(func() {
+		if mode == CursorNormal {
+			w.window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
+		} else if mode == CursorHidden {
+			w.window.SetInputMode(glfw.CursorMode, glfw.CursorHidden)
+		} else if mode == CursorDisabled {
+			w.window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+		}
+	})
+}
