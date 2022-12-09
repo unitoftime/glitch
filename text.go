@@ -222,7 +222,17 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32
 	scaleY := scale * float32(a.texture.height)
 
 	glyph, ok := a.mapping[r]
-	if !ok { panic(fmt.Sprintf("Missing Rune: %v", r)) }
+	// if !ok { panic(fmt.Sprintf("Missing Rune: %v", r)) }
+	if !ok {
+		// fmt.Printf("Missing Rune: %v", r)
+		// Replace rune with '?'
+		oldR := r
+		r = '?' // TODO - Pick some other rune. TODO - require this rune to be in the atlas!
+		glyph, ok = a.mapping[r]
+		if !ok {
+			panic(fmt.Sprintf("Missing Rune: %v and replacement%v", oldR, r))
+		}
+	}
 
 	//	log.Println(glyph.Bearing)
 

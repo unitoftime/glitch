@@ -151,14 +151,16 @@ func (m *Mat4) GetTranslation() (float32, float32, float32) {
 	return m[i4_3_0], m[i4_3_1], m[i4_3_2]
 }
 
-// TODO this doesn't modify the underlying matrix: https://github.com/go-gl/mathgl/blob/v1.0.0/mgl32/transform.go#L159
+// https://github.com/go-gl/mathgl/blob/v1.0.0/mgl32/transform.go#L159
 func (m *Mat4) Rotate(angle float32, axis Vec3) *Mat4 {
 	// quat := mgl32.Mat4ToQuat(mgl32.Mat4(*m))
 	// return &retMat
 	rotation := Mat4(mgl32.HomogRotate3D(angle, mgl32.Vec3(axis)))
 	// retMat := Mat4(mgl32.Mat4(*m).)
 	// return &retMat
-	return m.Mul(&rotation)
+	mNew := m.Mul(&rotation)
+	*m = *mNew
+	return m
 }
 
 // TODO should this modify in place?
@@ -258,6 +260,11 @@ func R(minX, minY, maxX, maxY float32) Rect {
 		Min: Vec2{minX, minY},
 		Max: Vec2{maxX, maxY},
 	}
+}
+
+// Creates a quad mesh from this rect
+func (r Rect) ToMesh() *Mesh {
+	return NewQuadMesh(r, R(0, 0, 1, 1))
 }
 
 // Returns a box that holds this rect. The Z axis is 0
