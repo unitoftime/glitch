@@ -367,7 +367,7 @@ func (b *BufferPool) Reserve(material Material, indices []uint32, numVerts int, 
 		}
 	}
 
-	fmt.Printf("NEW BATCH: %d - index: %d\n", b.triangleCount, b.currentIndex)
+	// fmt.Printf("NEW BATCH: %d - index: %d\n", b.triangleCount, b.currentIndex)
 	newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
 	success := newBuff.Reserve(material, indices, numVerts, dests)
 	if !success {

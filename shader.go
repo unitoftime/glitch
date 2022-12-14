@@ -125,7 +125,8 @@ func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 		uniform, ok := s.uniforms[uniformName]
 		// TODO - detecting if uniform is invalid, because Valid() checks if it is 0, which is a valid location index
 		if !ok /* || !uniform.loc.Valid() */ {
-			fmt.Println("ERROR: Uniform not found! Or uniform location was invalid!", uniformName, uniform)
+			// TODO - panic or just return false? I feel like its bad if you think you're setting a uniform that doesn't exist.
+			panic(fmt.Sprintf("Uniform not found! Or uniform location was invalid: %s", uniformName))
 			ret = false
 		}
 
@@ -140,7 +141,7 @@ func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 		case Mat4:
 			gl.UniformMatrix4fv(uniform.loc, val[:])
 		default:
-			fmt.Println("ERROR", uniform)
+			// fmt.Println("ERROR", uniform)
 			panic("set uniform attr: invalid attribute type:")
 		}
 		ret = true
