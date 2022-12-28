@@ -322,7 +322,6 @@ func (r Rect) Scaled(scale float32) Rect {
 	}
 }
 
-
 func (r Rect) Norm() Rect {
 	x1, x2 := minMax(r.Min[0], r.Max[0])
 	y1, y2 := minMax(r.Min[1], r.Max[1])
@@ -508,7 +507,6 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {
 	// 	Translate(float32(-pX - centerX), float32(-pY - centerY), 0).
 	// 	Scale(scaleX, scaleY, 1.0).
 	// 	Translate(float32(centerX), float32(centerY), 0)
-
 
 
 	// c.View.

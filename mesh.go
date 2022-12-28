@@ -84,7 +84,8 @@ type Mesh struct {
 	texCoords []Vec2
 	indices []uint32
 	bounds Box
-	// translation Vec3
+
+	origin Vec3
 }
 
 func NewMesh() *Mesh {
@@ -135,19 +136,21 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.bounds = m.bounds.Union(m2.bounds)
 }
 
-// func (m *Mesh) SetTranslation(pos Vec3) {
-// 	if m.translation == pos { return } // Skip if we've already translated this amount
-// 	delta := pos.Sub(m.translation)
-// 	// delta := m.translation.Sub(pos)
+// Changes the origin point of the mesh by translating all the geometry to the new origin. This shouldn't be called frequently
+func (m *Mesh) SetOrigin(newOrigin Vec3) {
+	if m.origin == newOrigin { return } // Skip if we've already translated this amount
+	// delta := pos.Sub(m.translation)
 
-// 	for i := range m.positions {
-// 		m.positions[i] = delta.Add(m.positions[i])
-// 	}
+	// TODO - should I do this in a different order?
+	delta := m.origin.Sub(newOrigin)
+	for i := range m.positions {
+		m.positions[i] = delta.Add(m.positions[i])
+	}
 
-// 	m.translation = pos
+	m.origin = newOrigin
 
-// 	// TODO - recalculate mesh bounds/box
-// }
+	// TODO - recalculate mesh bounds/box
+}
 
 // Sets the color of every vertex
 func (m *Mesh) SetColor(col RGBA) {
