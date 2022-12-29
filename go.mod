@@ -6,9 +6,9 @@ require (
 	github.com/faiface/mainthread v0.0.0-20171120011319-8b78f0a41ae3
 	github.com/go-gl/mathgl v1.0.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
-	github.com/unitoftime/gl v0.0.0-20221010144157-ddeda43df375
-	github.com/unitoftime/glfw v0.0.0-20221010190425-a86025250074
-	golang.org/x/image v0.1.0
+	github.com/unitoftime/gl v0.0.0-20221229153206-ff6a1b3be1be
+	github.com/unitoftime/glfw v0.0.0-20221229144839-b8640ba1dc8e
+	golang.org/x/image v0.2.0
 )
 
 require (
