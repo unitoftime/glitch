@@ -50,8 +50,8 @@ func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
 
 type Drawer interface {
 	Bounds() glitch.Rect
-	RectDraw(*glitch.RenderPass, glitch.Rect)
-	RectDrawColorMask(*glitch.RenderPass, glitch.Rect, glitch.RGBA)
+	RectDraw(glitch.BatchTarget, glitch.Rect)
+	RectDrawColorMask(glitch.BatchTarget, glitch.Rect, glitch.RGBA)
 }
 
 type Group struct {
@@ -155,7 +155,7 @@ func (g *Group) PanelizeBounds(sprite Drawer, padding glitch.Rect) {
 	if g.unionBounds == nil { return }
 	rect := *g.unionBounds
 	rect = rect.Pad(padding)
-	g.pass.SetLayer(128) // Panel layer
+	g.pass.SetLayer(128) // TODO - Panel layer
 	g.Panel(sprite, rect)
 	g.pass.SetLayer(glitch.DefaultLayer)
 }

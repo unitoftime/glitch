@@ -133,11 +133,11 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 // 	s.DrawColorMask(pass, bounds, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
 // }
 
-func (s *NinePanelSprite) RectDraw(pass *RenderPass, bounds Rect) {
+func (s *NinePanelSprite) RectDraw(pass BatchTarget, bounds Rect) {
 	s.RectDrawColorMask(pass, bounds, RGBA{1,1,1,1})
 }
 
-func (s *NinePanelSprite) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
+func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, bounds Rect, mask RGBA) {
 	// fmt.Println("here")
 	// fmt.Println(bounds.W(), bounds.H())
 
