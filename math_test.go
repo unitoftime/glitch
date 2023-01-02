@@ -27,3 +27,23 @@ func TestRotate(t *testing.T) {
 	b := a.Rotate2D(3.14159/2)
 	fmt.Println(b)
 }
+
+func TestProjectUnproject(t *testing.T) {
+	data := []Vec3{
+		Vec3{},
+		Vec3{1, 2, 3},
+	}
+
+	// Arbitrary matrix
+	mat := Mat4Ident
+	mat.Translate(-100.2, -200.8, 0).
+		Scale(0.7, 0.4, 1.0).
+		Translate(200.9, 300.1, 0)
+
+	for i := range data {
+		intermediate := mat.Apply(data[i])
+		result := mat.Inv().Apply(intermediate)
+		fmt.Println("In:  ", data[i])
+		fmt.Println("Out: ", result)
+	}
+}

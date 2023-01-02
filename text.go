@@ -151,71 +151,6 @@ func (a *Atlas) LineHeight() float32 {
 	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap))
 }
 
-// TODO - this function probably should belong in the Text type
-func (a *Atlas) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, scale float32) (*Mesh, Rect) {
-	// maxAscent := float32(0) // Tracks the maximum y point of the text block
-
-	initialDot := *dot
-
-	mesh := NewMesh()
-	for _,r := range text {
-		// If the rune is a newline, then we need to reset the dot for the next line
-		if r == '\n' {
-			dot[1] -= a.LineHeight()
-			dot[0] = orig[0]
-			continue
-		}
-
-		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
-		// fmt.Println("dot", *dot)
-		runeMesh, newDot, _ := a.RuneVerts(r, *dot, scale)
-		runeMesh.SetColor(color)
-		mesh.Append(runeMesh)
-		*dot = newDot
-
-		// if maxAscent < ascent {
-		// 	maxAscent = dot[1] + ascent
-		// }
-	}
-	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
-
-	// fmt.Println("-----")
-	// fmt.Println(fixedToFloat(a.ascent))
-	// fmt.Println(fixedToFloat(a.descent))
-	// fmt.Println(fixedToFloat(a.lineGap))
-	// fmt.Println(maxAscent)
-	// fmt.Println(scale)
-	// bounds := R(initialDot[0], initialDot[1], dot[0], dot[1] - a.LineHeight())
-
-	// bounds := R(initialDot[0],
-	// 	initialDot[1] - (2 * fixedToFloat(a.ascent)),
-	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	dot[1] - (2 * fixedToFloat(a.descent)))
-
-	// TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
-	bounds := R(initialDot[0],
-		initialDot[1] - (fixedToFloat(a.ascent)),
-		dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-		dot[1] - (fixedToFloat(a.descent))).
-			Norm().
-			Moved(Vec2{0, fixedToFloat(a.ascent)})
-	// fmt.Println(bounds)
-
-	// bounds := R(initialDot[0],
-	// 	initialDot[1] - (fixedToFloat(a.descent)),
-	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	dot[1] - (fixedToFloat(a.ascent))).Norm()
-	return mesh, bounds
-
-	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
-	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] - (fixedToFloat(a.ascent) - fixedToFloat(a.descent)))
-	// return mesh, R(initialDot[0],
-	// 	initialDot[1] - fixedToFloat(a.descent)/1024,
-	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	dot[1] + fixedToFloat(a.ascent)/1024)
-
-}
-
 func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32) {
 	// multiplying by texture sizes converts from UV to pixel coords
 	scaleX := scale * float32(a.texture.width)
@@ -302,7 +237,7 @@ func (t *Text) MeshBounds() Rect {
 func (t *Text) Set(str string) {
 	if t.currentString != str {
 		t.currentString = str
-		t.mesh, t.bounds = t.atlas.StringVerts(&t.Orig, &t.Dot, str, t.Color, t.scale)
+		t.mesh, t.bounds = t.StringVerts(str)
 	}
 }
 
@@ -317,7 +252,7 @@ func (t *Text) Write(p []byte) (n int, err error) {
 	}
 
 	t.currentString = t.currentString + appendedStr
-	newMesh, newBounds := t.atlas.StringVerts(&t.Orig, &t.Dot, appendedStr, t.Color, t.scale)
+	newMesh, newBounds := t.StringVerts(appendedStr)
 	t.mesh.Append(newMesh)
 	t.bounds = t.bounds.Union(newBounds)
 	return len(p), nil
@@ -344,4 +279,70 @@ func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	// mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
 	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
 	pass.Add(t.mesh, mat, mask, t.material)
+}
+
+func (t *Text) StringVerts(text string) (*Mesh, Rect) {
+// func (t *Text) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, scale float32) (*Mesh, Rect) {
+	// maxAscent := float32(0) // Tracks the maximum y point of the text block
+
+	initialDot := t.Dot
+
+	mesh := NewMesh()
+	for _,r := range text {
+		// If the rune is a newline, then we need to reset the dot for the next line
+		if r == '\n' {
+			t.Dot[1] -= t.atlas.LineHeight()
+			t.Dot[0] = t.Orig[0]
+			continue
+		}
+
+		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
+		// fmt.Println("dot", *dot)
+		runeMesh, newDot, _ := t.atlas.RuneVerts(r, t.Dot, t.scale)
+		runeMesh.SetColor(t.Color)
+		mesh.Append(runeMesh)
+
+		t.Dot = newDot
+
+		// if maxAscent < ascent {
+		// 	maxAscent = dot[1] + ascent
+		// }
+	}
+	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
+
+	// fmt.Println("-----")
+	// fmt.Println(fixedToFloat(a.ascent))
+	// fmt.Println(fixedToFloat(a.descent))
+	// fmt.Println(fixedToFloat(a.lineGap))
+	// fmt.Println(maxAscent)
+	// fmt.Println(scale)
+	// bounds := R(initialDot[0], initialDot[1], dot[0], dot[1] - a.LineHeight())
+
+	// bounds := R(initialDot[0],
+	// 	initialDot[1] - (2 * fixedToFloat(a.ascent)),
+	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	dot[1] - (2 * fixedToFloat(a.descent)))
+
+	// TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
+	bounds := R(initialDot[0],
+		initialDot[1] - (fixedToFloat(t.atlas.ascent)),
+		t.Dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+		t.Dot[1] - (fixedToFloat(t.atlas.descent))).
+			Norm().
+			Moved(Vec2{0, fixedToFloat(t.atlas.ascent)})
+	// fmt.Println(bounds)
+
+	// bounds := R(initialDot[0],
+	// 	initialDot[1] - (fixedToFloat(a.descent)),
+	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	dot[1] - (fixedToFloat(a.ascent))).Norm()
+	return mesh, bounds
+
+	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
+	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] - (fixedToFloat(a.ascent) - fixedToFloat(a.descent)))
+	// return mesh, R(initialDot[0],
+	// 	initialDot[1] - fixedToFloat(a.descent)/1024,
+	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	dot[1] + fixedToFloat(a.ascent)/1024)
+
 }
