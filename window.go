@@ -281,3 +281,8 @@ func (w *Window) SetCursor(mode CursorMode) {
 		}
 	})
 }
+
+// Used to check if we are in browser and we are hidden. If not in a web browser this will always return false. Should be used to selectively disable code that shouldn't be run when the browser is hidden
+func (w *Window) BrowserHidden() bool {
+	return w.window.BrowserHidden()
+}
