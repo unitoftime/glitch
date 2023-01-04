@@ -5,7 +5,6 @@ import (
 
 	// "github.com/go-gl/mathgl/mgl32"
 
-	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
 )
 
@@ -36,7 +35,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 		uniforms: make(map[string]Uniform),
 		attrFmt: attrFmt,
 	}
-	err := mainthread.CallErr(func() error {
+	err := mainthreadCallErr(func() error {
 		var err error
 		shader.program, err = createProgram(vertexSource, fragmentSource)
 		if err != nil {
@@ -69,7 +68,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 }
 
 func (s *Shader) Bind() {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.UseProgram(s.program)
 	})
 }
@@ -121,7 +120,7 @@ func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 
 func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 	ret := false
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		uniform, ok := s.uniforms[uniformName]
 		// TODO - detecting if uniform is invalid, because Valid() checks if it is 0, which is a valid location index
 		if !ok /* || !uniform.loc.Valid() */ {

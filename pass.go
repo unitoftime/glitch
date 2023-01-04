@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
 	"sort"
 )
@@ -89,7 +88,7 @@ func (r *RenderPass) Draw(target Target) {
 
 	r.SortInSoftware()
 
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
 		// 	// Do I need? glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.9f); - maybe prevents "discard;" in frag shader
 		if r.DepthTest {

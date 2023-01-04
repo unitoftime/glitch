@@ -2,7 +2,6 @@ package glitch
 
 import (
 	"fmt"
-	"github.com/faiface/mainthread"
 
 	"github.com/unitoftime/glfw"
 	"github.com/unitoftime/gl"
@@ -38,7 +37,7 @@ type Window struct {
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
 	win := &Window{}
 
-	err := mainthread.CallErr(func() error {
+	err := mainthreadCallErr(func() error {
 		err := glfw.Init(gl.ContextWatcher)
 		if err != nil {
 			return err
@@ -154,7 +153,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 }
 
 func (w *Window) Update() {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		w.window.SwapBuffers()
 		glfw.PollEvents()
 	})
@@ -176,14 +175,14 @@ func (w *Window) Update() {
 }
 
 func (w *Window) Close() {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		w.window.SetShouldClose(true)
 	})
 }
 
 func (w *Window) ShouldClose() bool {
 	var value bool
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		value = w.window.ShouldClose()
 	})
 	return value
@@ -196,7 +195,7 @@ func (w *Window) Bounds() Rect {
 func (w *Window) MousePosition() (float32, float32) {
 	var x, y float64
 	var sx, sy float32
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		x, y = w.window.GetCursorPos()
 
 		// TODO - Use callback to get contentScale. There is a function available in glfw library. In javascript though, I'm not sure if there's a way to detect content scale (other than maybe in the framebuffer size callback) But if a window is dragged to another monitor which has a different content scale, then the framebuffer size callback may not trigger, but the content scale will be updated.
@@ -220,7 +219,7 @@ func (w *Window) Repeated(key Key) bool {
 
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
 		gl.Viewport(0, 0, int(w.width), int(w.height))
 		// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
@@ -230,7 +229,7 @@ func (w *Window) Bind() {
 
 // Reads a rectangle of the window's frame as a collection of bytes
 func (w *Window) ReadFrame(rect Rect, dst []byte) {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
 		// TODO Note: https://docs.gl/es3/glReadPixels#:~:text=glReadPixels%20returns%20pixel%20data%20from,parameters%20are%20set%20with%20glPixelStorei.
 		// Format and Type Enums define the expected pixel format and type to return to the byte buffer. Right now I have that hardcoded to gl.RGBA and gl.UNSIGNED_BYTE, respectively
@@ -240,7 +239,7 @@ func (w *Window) ReadFrame(rect Rect, dst []byte) {
 
 func (w *Window) Pressed(key Key) bool {
 	var action glfw.Action
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		if isMouseKey(key) {
 			action = w.window.GetMouseButton(glfw.MouseButton(key))
 		} else {
@@ -271,7 +270,7 @@ const (
 	CursorDisabled // Hides and locks the cursor
 )
 func (w *Window) SetCursor(mode CursorMode) {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		if mode == CursorNormal {
 			w.window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
 		} else if mode == CursorHidden {

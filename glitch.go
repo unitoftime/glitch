@@ -2,12 +2,11 @@ package glitch
 
 import (
 	"github.com/unitoftime/gl"
-	"github.com/faiface/mainthread"
 
 )
 
 func Run(function func()) {
-	mainthread.Run(function)
+	mainthreadRun(function)
 }
 
 // ***** Should these all be a part of the shader object?
@@ -91,7 +90,7 @@ func SetTarget(win *Window) {
 // }
 func Clear(target Target, color RGBA) {
 	target.Bind()
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.ClearColor(color.R, color.G, color.B, color.A)
 		// gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)

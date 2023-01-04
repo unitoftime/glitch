@@ -6,7 +6,7 @@ import (
 	"image/draw"
 	"image/color"
 	"runtime"
-	"github.com/faiface/mainthread"
+
 	"github.com/unitoftime/gl"
 )
 
@@ -51,7 +51,7 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 		height: height,
 	}
 
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		t.texture = gl.CreateTexture()
 		gl.BindTexture(gl.TEXTURE_2D, t.texture)
 
@@ -111,7 +111,7 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 	}
 	t.Bind(0)
 
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.TexSubImage2D(
 			gl.TEXTURE_2D,
 			0,
@@ -131,7 +131,7 @@ func (t *Texture) Bounds() Rect {
 }
 
 func (t *Texture) Bind(position int) {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.ActiveTexture(gl.TEXTURE0);
 		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
 		gl.BindTexture(gl.TEXTURE_2D, t.texture)
@@ -139,7 +139,7 @@ func (t *Texture) Bind(position int) {
 }
 
 func (t *Texture) delete() {
-	mainthread.CallNonBlock(func() {
+	mainthreadCallNonBlock(func() {
 		gl.DeleteTexture(t.texture)
 	})
 }

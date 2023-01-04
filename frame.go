@@ -4,7 +4,6 @@ import (
 	"image"
 	"runtime"
 
-	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
 )
 
@@ -32,7 +31,7 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 	frame.material = NewSpriteMaterial(frame.tex)
 
 	// frame.tex.Bind(0)///??????
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		frame.fbo = gl.CreateFramebuffer()
 		gl.BindFramebuffer(gl.FRAMEBUFFER, frame.fbo)
 		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, frame.tex.texture, 0)
@@ -59,13 +58,13 @@ func (f *Frame) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 }
 
 func (f *Frame) delete() {
-	mainthread.CallNonBlock(func() {
+	mainthreadCallNonBlock(func() {
 		gl.DeleteFramebuffer(f.fbo)
 	})
 }
 
 func (f *Frame) Bind() {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
 		gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
@@ -73,7 +72,7 @@ func (f *Frame) Bind() {
 }
 
 // func (f *Frame) Clear() {
-// 	mainthread.Call(func() {
+// 	mainthreadCall(func() {
 // 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
 // 	})
 // }

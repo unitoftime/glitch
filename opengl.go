@@ -5,7 +5,6 @@ import (
 	"reflect"
 	"unsafe"
 
-	"github.com/faiface/mainthread"
 	"github.com/unitoftime/gl"
 )
 
@@ -193,7 +192,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	// vertices := make([]float32, 8 * sof * numVerts)
 	fakeVertices := make([]float32, 4 * numVerts * b.stride) // 4 = sof
 
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		b.vao = gl.GenVertexArrays()
 		b.vbo = gl.GenBuffers()
 		b.ebo = gl.GenBuffers()
@@ -242,7 +241,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 }
 
 func (v *VertexBuffer) Bind() {
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.BindVertexArray(v.vao)
 	})
 }
@@ -305,7 +304,7 @@ func (v *VertexBuffer) Draw() {
 		return
 	}
 
-	mainthread.Call(func() {
+	mainthreadCall(func() {
 		gl.BindVertexArray(v.vao)
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
