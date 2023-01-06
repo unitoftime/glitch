@@ -10,6 +10,7 @@ import (
 type Frame struct {
 	fbo gl.Framebuffer
 	tex *Texture
+	depth gl.Texture
 	mesh *Mesh
 	material Material
 	bounds Rect
@@ -35,6 +36,15 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 		frame.fbo = gl.CreateFramebuffer()
 		gl.BindFramebuffer(gl.FRAMEBUFFER, frame.fbo)
 		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, frame.tex.texture, 0)
+
+		// https://webgl2fundamentals.org/webgl/lessons/webgl-render-to-texture.html
+		// TODO - maybe centralize this into texture creation api
+		// TODO - make fbo depth attachment optional
+		frame.depth = gl.CreateTexture()
+		gl.BindTexture(gl.TEXTURE_2D, frame.depth)
+		// gl.TexImage2DFull(gl.TEXTURE_2D, 0, gl.DEPTH24_STENCIL8, frame.tex.width, frame.tex.height, gl.DEPTH_STENCIL, gl.UNSIGNED_INT_24_8, nil)
+		gl.TexImage2DFull(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, frame.tex.width, frame.tex.height, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, nil)
+		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, frame.depth, 0)
 	})
 
 	runtime.SetFinalizer(&frame, (*Frame).delete)

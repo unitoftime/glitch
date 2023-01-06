@@ -68,9 +68,13 @@ type Group struct {
 }
 
 func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
+	// TODO - it probably makes sense to pass the RenderPass in on the Draw() func and in the meantime just batch all the commands together.
 	shader, err := glitch.NewShader(shaders.SpriteShader)
 	if err != nil { panic(err) }
 	pass := glitch.NewRenderPass(shader)
+	pass.SetLayer(glitch.DefaultLayer)
+	pass.SoftwareSort = glitch.SoftwareSortY
+	pass.DepthTest = true
 
 	return &Group{
 		win: win,
@@ -138,6 +142,7 @@ func (g *Group) Draw() {
 	}
 
 	g.pass.Draw(g.win)
+	// g.pass.Draw(targ)
 }
 
 func (g *Group) SetColor(color glitch.RGBA) {
@@ -155,9 +160,9 @@ func (g *Group) PanelizeBounds(sprite Drawer, padding glitch.Rect) {
 	if g.unionBounds == nil { return }
 	rect := *g.unionBounds
 	rect = rect.Pad(padding)
-	g.pass.SetLayer(128) // TODO - Panel layer
+	// g.pass.SetLayer(128) // TODO - Panel layer
 	g.Panel(sprite, rect)
-	g.pass.SetLayer(glitch.DefaultLayer)
+	// g.pass.SetLayer(glitch.DefaultLayer)
 }
 
 func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
@@ -294,12 +299,12 @@ func (g *Group) debugRect(rect glitch.Rect) {
 
 	lineWidth := float32(2.0)
 
-	g.pass.SetLayer(0) // debug layer
+	// g.pass.SetLayer(0) // debug layer
 
 	g.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
 	m := g.geomDraw.Rectangle(rect, lineWidth)
 	m.Draw(g.pass, glitch.Mat4Ident)
-	g.pass.SetLayer(glitch.DefaultLayer)
+	// g.pass.SetLayer(glitch.DefaultLayer)
 }
 
 // func (g *Group) Bar(outer, inner Drawer, bounds glitch.Rect, value float64) Rect {

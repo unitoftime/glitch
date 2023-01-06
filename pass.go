@@ -1,9 +1,17 @@
 package glitch
 
 import (
-	"github.com/unitoftime/gl"
+	// "fmt"
+	// "math"
 	"sort"
+
+	"github.com/unitoftime/gl"
 )
+
+// TODO - This whole file needs to be rewritten. I'm thinking:
+// 1. 2D render pass, (which this file is kind of turning into). But I probably want to focus more on using depth buffer and less on software sorting. And batching static geometry (ie reducing copying)
+// 2. 3D render pass (todo - figure out a good way to do that)
+
 
 type BatchTarget interface {
 	Add(*Mesh, Mat4, RGBA, Material)
@@ -35,10 +43,10 @@ type RenderPass struct {
 	uniforms map[string]interface{}
 	buffer *BufferPool
 	commands [][]drawCommand
-	currentLayer uint8
+	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
 
 	dirty bool // Indicates if we need to re-draw to the buffers
-	DepthTest bool // If set true, enable hardware depth testing
+	DepthTest bool // If set true, enable hardware depth testing. This changes how software sorting works. currently If you change this mid-pass you might get weird behavior.
 	SoftwareSort SoftwareSortMode
 }
 
@@ -51,7 +59,8 @@ const (
 	SoftwareSortCommand // Sort by the computed drawCommand.command
 )
 
-const DefaultLayer uint8 = 127/2
+// const DefaultLayer uint8 = 127/2
+const DefaultLayer int8 = 0
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 100000
@@ -77,7 +86,7 @@ func (r *RenderPass) Clear() {
 }
 
 // TODO - I think I could use a linked list of layers and just use an int here
-func (r *RenderPass) SetLayer(layer uint8) {
+func (r *RenderPass) SetLayer(layer int8) {
 	r.currentLayer = layer
 }
 
@@ -90,9 +99,9 @@ func (r *RenderPass) Draw(target Target) {
 
 	mainthreadCall(func() {
 		// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
-		// 	// Do I need? glEnable(GL_ALPHA_TEST); glAlphaFunc(GL_GREATER, 0.9f); - maybe prevents "discard;" in frag shader
 		if r.DepthTest {
 			gl.Enable(gl.DEPTH_TEST)
+			gl.DepthFunc(gl.LEQUAL)
 		} else {
 			gl.Disable(gl.DEPTH_TEST)
 		}
@@ -198,6 +207,8 @@ func (r *RenderPass) Draw(target Target) {
 						for i := range c.mesh.texCoords {
 							texBuf[i] = c.mesh.texCoords[i]
 						}
+					default:
+						panic("Unsupported")
 					}
 				}
 
@@ -251,12 +262,39 @@ func (r *RenderPass) SetUniform(name string, value interface{}) {
 // Option 3: I can batch together these sprites into a single thing that is then rendered
 func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 	r.dirty = true
-	r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
-		0, mesh, mat, mask, material,
-	})
+
+	if r.DepthTest {
+		// If we are doing depth testing, then use the r.CurrentLayer field to determine the depth (normalizing from (0 to 1). Notably the standard ortho cam is (-1, 1) which this range fits into but is easier to normalize to // TODO - make that depth range tweakable?
+		// TODO - hardcoded because layer is a uint8. You probably want to make layer an int and then just set depth based on that
+		// depth := 1 - (float32(r.currentLayer) / float32(math.MaxUint8))
+		// // fmt.Println("Old/New: ", mat[i4_3_2], depth)
+		// mat[i4_3_2] = depth // Set Z translation to the depth
+
+		// fmt.Println("Apply: ", mat.Apply(Vec3{0, 0, 0}))
+
+		// mat[i4_3_2] = mat[i4_3_1] // Set Z translation to the y point
+
+		// Add the layer to the depth
+		mat[i4_3_2] -= float32(r.currentLayer)
+		// fmt.Println("Depth: ", mat[i4_3_2])
+
+		r.commands[0] = append(r.commands[0], drawCommand{
+			0, mesh, mat, mask, material,
+		})
+	} else {
+		r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
+			0, mesh, mat, mask, material,
+		})
+	}
 }
 
 func (r *RenderPass) SortInSoftware() {
+	if r.DepthTest {
+		// TODO - do special sort function for depth test code:
+		// 1. Fully Opaque or fully transparent groups of meshes: Don't sort inside that group
+		// 2. Partially transparent groups of meshes: sort inside that group
+		return
+	}
 	if r.SoftwareSort == SoftwareSortNone { return } // Skip if sorting disabled
 
 	if r.SoftwareSort == SoftwareSortX {

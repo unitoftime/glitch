@@ -77,6 +77,10 @@ func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
 	target.Add(b.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, b.material)
 }
 
+func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
+	target.Add(b.mesh, matrix, color, b.material)
+}
+
 type Mesh struct {
 	positions []Vec3
 	normals []Vec3

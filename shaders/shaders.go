@@ -46,7 +46,7 @@ var SpriteShader = glitch.ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SpriteFragmentShader,
 	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
@@ -64,7 +64,7 @@ var PixelArtShader = glitch.ShaderConfig{
 	FragmentShader: SubPixelAntiAliased,
 	// FragmentShader: SubPixelAntiAliased,
 	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
@@ -83,7 +83,7 @@ var PixelArtShader2 = glitch.ShaderConfig{
 	VertexShader: PixelArtVert,
 	FragmentShader: PixelArtFrag,
 	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},

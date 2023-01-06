@@ -48,9 +48,9 @@ void main()
   // output
   vec4 color = texture(texture1, uv / textureSize2d.xy);
 
-  /* if (color.a == 0.0) { */
-  /*   discard; */
-  /* } */
+  if (color.a == 0.0) {
+    discard;
+  }
 
   FragColor = ourColor * color;
 }

@@ -464,8 +464,11 @@ func NewCameraOrtho() *CameraOrtho {
 
 func (c *CameraOrtho) SetOrtho2D(bounds Rect) {
 	c.bounds = bounds
-	c.Projection = Mat4(mgl32.Ortho2D(0, c.bounds.W(), 0, c.bounds.H()))
+	// c.Projection = Mat4(mgl32.Ortho2D(0, c.bounds.W(), 0, c.bounds.H()))
 	// c.Projection = Mat4(mgl32.Ortho(0, c.bounds.W(), 0, c.bounds.H(), -1, 1))
+
+	// TODO - make configurable
+	c.Projection = Mat4(mgl32.Ortho(0, c.bounds.W(), 0, c.bounds.H(), -5, 5))
 }
 
 func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float32) {
