@@ -91,7 +91,7 @@ func SetTarget(win *Window) {
 func Clear(target Target, color RGBA) {
 	target.Bind()
 	mainthreadCall(func() {
-		gl.ClearColor(color.R, color.G, color.B, color.A)
+		gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
 		// gl.Clear(gl.COLOR_BUFFER_BIT)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 // TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)

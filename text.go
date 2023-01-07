@@ -36,7 +36,7 @@ func DefaultAtlas() (*Atlas, error) {
 }
 
 type Glyph struct {
-	Advance float32
+	Advance float64
 	Bearing Vec2
 	BoundsUV Rect
 }
@@ -50,12 +50,12 @@ type Atlas struct {
 	texture *Texture
 }
 
-func fixedToFloat(val fixed.Int26_6) float32 {
+func fixedToFloat(val fixed.Int26_6) float64 {
 	// Shift to the left by 6 then convert to an int, then to a float, then shift right by 6
 	// TODO - How to handle overruns?
 	// intVal := val.Mul(fixed.I(1_000_000)).Floor()
 	// return float32(intVal) / 1_000_000.0
-	return float32(val) / (1 << 6)
+	return float64(val) / (1 << 6)
 }
 
 func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
@@ -70,7 +70,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 
 	size := 1024
 	fixedSize := fixed.I(size)
-	fSize := float32(size)
+	fSize := float64(size)
 
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Alpha{0}), image.ZP, draw.Src)
@@ -96,8 +96,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 
 		// Instead of flooring we convert from fixed int to float manually (mult by 10^6 then floor, cast and divide by 10^6). I think this is slightly more accurate but it's hard to tell so I'll leave old code below
 		//		log.Println("Rune: ", string(r), " - BearingRect: ", bearingRect)
-		bearingX := float32((bearingRect.Min.X * 1000000).Floor())/(1000000 * fSize)
-		bearingY := float32((-bearingRect.Max.Y * 1000000).Floor())/(1000000 * fSize)
+		bearingX := float64((bearingRect.Min.X * 1000000).Floor()) / (1000000 * fSize)
+		bearingY := float64((-bearingRect.Max.Y * 1000000).Floor()) / (1000000 * fSize)
 		//		advance := float32((adv * 1000000).Floor())/(1000000 * fSize) // TODO - why doesn't this work?
 		// log.Println("Rune: ", string(r), " - BearingX: ", float32(bearingRect.Min.X.Floor())/fSize)
 		// log.Println("Rune: ", string(r), " - BearingX: ", bearingX)
@@ -106,13 +106,13 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 
 		draw.Draw(img, bounds, mask, maskp, draw.Src)
 		atlas.mapping[r] = Glyph{
-			Advance: float32(adv.Floor())/fSize,
+			Advance: float64(adv.Floor())/fSize,
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
 			BoundsUV: R(
-				float32(bounds.Min.X)/fSize, float32(bounds.Min.Y)/fSize,
-				float32(bounds.Max.X)/fSize, float32(bounds.Max.Y)/fSize),
+				float64(bounds.Min.X)/fSize, float64(bounds.Min.Y)/fSize,
+				float64(bounds.Max.X)/fSize, float64(bounds.Max.Y)/fSize),
 		}
 
 		// Usual next dot location
@@ -145,16 +145,16 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	return atlas
 }
 
-func (a *Atlas) LineHeight() float32 {
+func (a *Atlas) LineHeight() float64 {
 	// TODO - scale?
 	// TODO - I'm not sure why, but I have to multiply by 2 here
 	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap))
 }
 
-func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float32) (*Mesh, Vec2, float32) {
+func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float64) (*Mesh, Vec2, float64) {
 	// multiplying by texture sizes converts from UV to pixel coords
-	scaleX := scale * float32(a.texture.width)
-	scaleY := scale * float32(a.texture.height)
+	scaleX := scale * float64(a.texture.width)
+	scaleY := scale * float64(a.texture.height)
 
 	glyph, ok := a.mapping[r]
 	// if !ok { panic(fmt.Sprintf("Missing Rune: %v", r)) }
@@ -216,8 +216,8 @@ type Text struct {
 	bounds Rect
 	texture *Texture
 	material Material
-	scale float32 // TODO - is this useful? Play around with different scaling methods.
-	LineHeight float32
+	scale float64 // TODO - is this useful? Play around with different scaling methods.
+	LineHeight float64
 
 	Orig Vec2 // The baseline starting point from which to draw the text
 	Dot Vec2 // The location of the next rune to draw

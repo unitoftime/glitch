@@ -34,7 +34,7 @@ type ISubBuffer interface {
 }
 
 type SupportedSubBuffers interface {
-	Vec4 | Vec3 | Vec2 | float32
+	glVec4 | glVec3 | glVec2 | float32
 }
 
 type SubBuffer[T SupportedSubBuffers] struct {
@@ -82,19 +82,19 @@ func (b *SubBuffer[T]) Buffer() []byte {
 		h.Cap *= 1 * 4
 		// fmt.Println("float32", h.Len, h.Cap)
 		return *(*[]byte)(unsafe.Pointer(h))
-	case Vec2:
+	case glVec2:
 		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
 		h.Len *= 2 * 4
 		h.Cap *= 2 * 4
 		// fmt.Println("Vec2", h.Len, h.Cap)
 		return *(*[]byte)(unsafe.Pointer(h))
-	case Vec3:
+	case glVec3:
 		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
 		h.Len *= 3 * 4
 		h.Cap *= 3 * 4
 		// fmt.Println("Vec3", h.Len, h.Cap)
 		return *(*[]byte)(unsafe.Pointer(h))
-	case Vec4:
+	case glVec4:
 		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
 		h.Len *= 4 * 4
 		h.Cap *= 4 * 4
@@ -143,34 +143,34 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		b.stride += (int(format[i].Size()) * sof)
 
 		if format[i].Type == AttrVec4 {
-			b.buffers[i] = &SubBuffer[Vec4]{
+			b.buffers[i] = &SubBuffer[glVec4]{
 				attr: format[i].Attr,
 				// name: format[i].Name,
 				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
-				buffer: make([]Vec4, numVerts),
+				buffer: make([]glVec4, numVerts),
 			}
 		} else if format[i].Type == AttrVec3 {
-			b.buffers[i] = &SubBuffer[Vec3]{
+			b.buffers[i] = &SubBuffer[glVec3]{
 				attr: format[i].Attr,
 				// name: format[i].Name,
 				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
-				buffer: make([]Vec3, numVerts),
+				buffer: make([]glVec3, numVerts),
 			}
 		} else if format[i].Type == AttrVec2 {
-			b.buffers[i] = &SubBuffer[Vec2]{
+			b.buffers[i] = &SubBuffer[glVec2]{
 				attr: format[i].Attr,
 				// name: format[i].Name,
 				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
-				buffer: make([]Vec2, numVerts),
+				buffer: make([]glVec2, numVerts),
 			}
 		} else if format[i].Type == AttrFloat {
 			b.buffers[i] = &SubBuffer[float32]{
@@ -214,17 +214,17 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				size := int(subBuffer.attr.Size())
 				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
-			case *SubBuffer[Vec2]:
+			case *SubBuffer[glVec2]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
 				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
-			case *SubBuffer[Vec3]:
+			case *SubBuffer[glVec3]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
 				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
-			case *SubBuffer[Vec4]:
+			case *SubBuffer[glVec4]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
 				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
@@ -283,15 +283,15 @@ func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int
 		case *SubBuffer[float32]:
 			d := dests[i].(*[]float32)
 			*d = ReserveSubBuffer[float32](subBuffer, numVerts)
-		case *SubBuffer[Vec2]:
-			d := dests[i].(*[]Vec2)
-			*d = ReserveSubBuffer[Vec2](subBuffer, numVerts)
-		case *SubBuffer[Vec3]:
-			d := dests[i].(*[]Vec3)
-			*d = ReserveSubBuffer[Vec3](subBuffer, numVerts)
-		case *SubBuffer[Vec4]:
-			d := dests[i].(*[]Vec4)
-			*d = ReserveSubBuffer[Vec4](subBuffer, numVerts)
+		case *SubBuffer[glVec2]:
+			d := dests[i].(*[]glVec2)
+			*d = ReserveSubBuffer[glVec2](subBuffer, numVerts)
+		case *SubBuffer[glVec3]:
+			d := dests[i].(*[]glVec3)
+			*d = ReserveSubBuffer[glVec3](subBuffer, numVerts)
+		case *SubBuffer[glVec4]:
+			d := dests[i].(*[]glVec4)
+			*d = ReserveSubBuffer[glVec4](subBuffer, numVerts)
 		default:
 			panic("Unknown!")
 		}

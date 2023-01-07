@@ -72,7 +72,7 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 	shader, err := glitch.NewShader(shaders.SpriteShader)
 	if err != nil { panic(err) }
 	pass := glitch.NewRenderPass(shader)
-	pass.SetLayer(glitch.DefaultLayer)
+	// pass.SetLayer(glitch.DefaultLayer)
 	pass.SoftwareSort = glitch.SoftwareSortY
 	pass.DepthTest = true
 
@@ -87,6 +87,10 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		OnlyCheckUnion: true,
 		color: glitch.RGBA{1, 1, 1, 1},
 	}
+}
+
+func (g *Group) SetLayer(layer int8) {
+	g.pass.SetLayer(layer)
 }
 
 // onlyCheckUnion is an optimization if the ui elements are tightly packed (it doesn't loop through each rect
@@ -105,7 +109,7 @@ func (g *Group) ContainsMouse() bool {
 	return false
 }
 
-func (g *Group) mousePosition() (float32, float32) {
+func (g *Group) mousePosition() (float64, float64) {
 	x, y := g.win.MousePosition()
 	worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
 	return worldSpaceMouse[0], worldSpaceMouse[1]
@@ -205,7 +209,7 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 
 // Text, but doesn't automatically scale to fill the rect
 // TODO maybe I should call the other text "AutoText"? or something
-func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scale float32) {
+func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scale float64) {
 	text := g.atlas.Text(str)
 	r := rect.Anchor(text.Bounds().Scaled(scale), anchor)
 	text.RectDrawColorMask(g.pass, r, g.color)
@@ -214,7 +218,7 @@ func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scal
 }
 
 // TODO - combine with fixedtext
-func (g *Group) FullFixedText(str string, rect glitch.Rect, anchor, anchor2 glitch.Vec2, scale float32) {
+func (g *Group) FullFixedText(str string, rect glitch.Rect, anchor, anchor2 glitch.Vec2, scale float64) {
 	text := g.atlas.Text(str)
 	r := rect.FullAnchor(text.Bounds().Scaled(scale), anchor, anchor2)
 	text.RectDrawColorMask(g.pass, r, g.color)
@@ -222,7 +226,7 @@ func (g *Group) FullFixedText(str string, rect glitch.Rect, anchor, anchor2 glit
 	g.debugRect(r)
 }
 
-func (g *Group) TextInput(panel Drawer, str *string, rect glitch.Rect, anchor glitch.Vec2, scale float32) {
+func (g *Group) TextInput(panel Drawer, str *string, rect glitch.Rect, anchor glitch.Vec2, scale float64) {
 	if str == nil { return }
 
 	runes := g.win.Typed()
@@ -297,7 +301,7 @@ func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2) {
 func (g *Group) debugRect(rect glitch.Rect) {
 	if !g.Debug { return }
 
-	lineWidth := float32(2.0)
+	lineWidth := 2.0
 
 	// g.pass.SetLayer(0) // debug layer
 

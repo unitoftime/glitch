@@ -10,10 +10,10 @@ type Sprite struct {
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	uvBounds := R(
-		bounds.Min[0] / float32(texture.width),
-		bounds.Min[1] / float32(texture.height),
-		bounds.Max[0] / float32(texture.width),
-		bounds.Max[1] / float32(texture.height),
+		bounds.Min[0] / float64(texture.width),
+		bounds.Min[1] / float64(texture.height),
+		bounds.Max[0] / float64(texture.width),
+		bounds.Max[1] / float64(texture.height),
 	)
 	// Note: I tried biasing this for tilemaps, but it doesn't seem to work very well.
 	// uvBounds := R(
@@ -78,7 +78,7 @@ type NinePanelSprite struct {
 	border Rect
 	bounds Rect
 	Mask RGBA // This represents the default color mask to draw with (unless one is passed in via a draw function, Example: *Mask)
-	Scale float32
+	Scale float64
 }
 
 func SpriteToNinePanel(sprite *Sprite, border Rect) *NinePanelSprite {

@@ -189,10 +189,10 @@ func (w *Window) ShouldClose() bool {
 }
 
 func (w *Window) Bounds() Rect {
-	return R(0, 0, float32(w.width), float32(w.height))
+	return R(0, 0, float64(w.width), float64(w.height))
 }
 
-func (w *Window) MousePosition() (float32, float32) {
+func (w *Window) MousePosition() (float64, float64) {
 	var x, y float64
 	var sx, sy float32
 	mainthreadCall(func() {
@@ -203,8 +203,8 @@ func (w *Window) MousePosition() (float32, float32) {
 	})
 
 	// We scale the mouse position (which is in window pixel coords) into framebuffer pixel coords by multiplying it by the content scale.
-	xPos := float32(x) * sx
-	yPos := float32(float32(w.height) - (float32(y) * sy)) // This flips the coordinate to quadrant 1
+	xPos := x * float64(sx)
+	yPos := float64(w.height) - (y * float64(sy)) // This flips the coordinate to quadrant 1
 	return xPos, yPos
 }
 

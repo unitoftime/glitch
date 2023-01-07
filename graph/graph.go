@@ -45,16 +45,16 @@ func (g *Graph) Line(series []glitch.Vec2) {
 		maxRange = math.Max(maxRange, float64(p[1]))
 	}
 
-	g.axes = glitch.R(float32(minDomain), float32(minRange), float32(maxDomain), float32(maxRange))
+	g.axes = glitch.R(minDomain, minRange, maxDomain, maxRange)
 
-	dx := g.bounds.W() / float32(maxDomain - minDomain)
-	dy := g.bounds.H() / float32(maxRange - minRange)
+	dx := g.bounds.W() / (maxDomain - minDomain)
+	dy := g.bounds.H() / (maxRange - minRange)
 	// fmt.Println(dx, dy, rect.H(), maxDomain, minDomain, minRange, maxRange)
 	points := make([]glitch.Vec3, 0)
 	for _, p := range series {
 		points = append(points, glitch.Vec3{
-			g.bounds.Min[0] + float32(p[0] - float32(minDomain)) * dx,
-			g.bounds.Min[1] + float32(p[1] - float32(minRange)) * dy,
+			g.bounds.Min[0] + (p[0] - (minDomain)) * dx,
+			g.bounds.Min[1] + (p[1] - (minRange)) * dy,
 			0,
 		})
 	}

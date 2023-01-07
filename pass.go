@@ -60,7 +60,7 @@ const (
 )
 
 // const DefaultLayer uint8 = 127/2
-const DefaultLayer int8 = 0
+// const DefaultLayer int8 = 0
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 100000
@@ -70,7 +70,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		uniforms: make(map[string]interface{}),
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
-		currentLayer: DefaultLayer,
+		// currentLayer: DefaultLayer,
 		dirty: true,
 	}
 }
@@ -132,22 +132,24 @@ func (r *RenderPass) Draw(target Target) {
 
 				// TODO If large enough mesh, then don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
 
+				mat32 := c.matrix.gl()
+
 				// Append all mesh buffers to shader buffers
 				for bufIdx, attr := range r.shader.attrFmt {
 					// TODO - I'm not sure of a good way to break up this switch statement
 					switch attr.Swizzle {
 						// Positions
 					case PositionXY:
-						posBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+						posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 						for i := range c.mesh.positions {
-							vec := c.matrix.Apply(c.mesh.positions[i])
-							posBuf[i] = *(*Vec2)(vec[:2])
+							vec := mat32.Apply(c.mesh.positions[i])
+							posBuf[i] = *(*glVec2)(vec[:2])
 						}
 
 					case PositionXYZ:
-						posBuf := *(destBuffs[bufIdx]).(*[]Vec3)
+						posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 						for i := range c.mesh.positions {
-							vec := c.matrix.Apply(c.mesh.positions[i])
+							vec := mat32.Apply(c.mesh.positions[i])
 							posBuf[i] = vec
 						}
 
@@ -161,8 +163,8 @@ func (r *RenderPass) Draw(target Target) {
 					// 	}
 
 					case NormalXYZ:
-						renormalizeMat := c.matrix.Inv().Transpose()
-						normBuf := *(destBuffs[bufIdx]).(*[]Vec3)
+						renormalizeMat := c.matrix.Inv().Transpose().gl()
+						normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 						for i := range c.mesh.normals {
 							vec := renormalizeMat.Apply(c.mesh.normals[i])
 							normBuf[i] = vec
@@ -172,38 +174,38 @@ func (r *RenderPass) Draw(target Target) {
 					case ColorR:
 						colBuf := *(destBuffs[bufIdx]).(*[]float32)
 						for i := range c.mesh.colors {
-							colBuf[i] = c.mesh.colors[i][0] * c.mask.R
+							colBuf[i] = c.mesh.colors[i][0] * float32(c.mask.R)
 						}
 					case ColorRG:
-						colBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+						colBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 						for i := range c.mesh.colors {
-							colBuf[i] = Vec2{
-								c.mesh.colors[i][0] * c.mask.R,
-								c.mesh.colors[i][1] * c.mask.G,
+							colBuf[i] = glVec2{
+								c.mesh.colors[i][0] * float32(c.mask.R),
+								c.mesh.colors[i][1] * float32(c.mask.G),
 							}
 						}
 					case ColorRGB:
-						colBuf := *(destBuffs[bufIdx]).(*[]Vec3)
+						colBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 						for i := range c.mesh.colors {
-							colBuf[i] = Vec3{
-								c.mesh.colors[i][0] * c.mask.R,
-								c.mesh.colors[i][1] * c.mask.G,
-								c.mesh.colors[i][2] * c.mask.B,
+							colBuf[i] = glVec3{
+								c.mesh.colors[i][0] * float32(c.mask.R),
+								c.mesh.colors[i][1] * float32(c.mask.G),
+								c.mesh.colors[i][2] * float32(c.mask.B),
 							}
 						}
 					case ColorRGBA:
-						colBuf := *(destBuffs[bufIdx]).(*[]Vec4)
+						colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
 						for i := range c.mesh.colors {
-							colBuf[i] = Vec4{
-								c.mesh.colors[i][0] * c.mask.R,
-								c.mesh.colors[i][1] * c.mask.G,
-								c.mesh.colors[i][2] * c.mask.B,
-								c.mesh.colors[i][3] * c.mask.A,
+							colBuf[i] = glVec4{
+								c.mesh.colors[i][0] * float32(c.mask.R),
+								c.mesh.colors[i][1] * float32(c.mask.G),
+								c.mesh.colors[i][2] * float32(c.mask.B),
+								c.mesh.colors[i][3] * float32(c.mask.A),
 							}
 						}
 
 					case TexCoordXY:
-						texBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+						texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 						for i := range c.mesh.texCoords {
 							texBuf[i] = c.mesh.texCoords[i]
 						}
@@ -275,7 +277,7 @@ func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 		// mat[i4_3_2] = mat[i4_3_1] // Set Z translation to the y point
 
 		// Add the layer to the depth
-		mat[i4_3_2] -= float32(r.currentLayer)
+		mat[i4_3_2] -= float64(r.currentLayer)
 		// fmt.Println("Depth: ", mat[i4_3_2])
 
 		r.commands[0] = append(r.commands[0], drawCommand{

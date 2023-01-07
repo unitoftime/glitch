@@ -134,11 +134,14 @@ func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 			sliced := []float32{val}
 			gl.Uniform1fv(uniform.loc, sliced)
 		case Vec3:
-			gl.Uniform3fv(uniform.loc, val[:])
+			vec := val.gl()
+			gl.Uniform3fv(uniform.loc, vec[:])
 		case Vec4:
-			gl.Uniform4fv(uniform.loc, val[:])
+			vec := val.gl()
+			gl.Uniform4fv(uniform.loc, vec[:])
 		case Mat4:
-			gl.UniformMatrix4fv(uniform.loc, val[:])
+			mat := val.gl()
+			gl.UniformMatrix4fv(uniform.loc, mat[:])
 		default:
 			// fmt.Println("ERROR", uniform)
 			panic("set uniform attr: invalid attribute type:")

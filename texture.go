@@ -127,7 +127,7 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 }
 
 func (t *Texture) Bounds() Rect {
-	return R(0, 0, float32(t.width), float32(t.height))
+	return R(0, 0, float64(t.width), float64(t.height))
 }
 
 func (t *Texture) Bind(position int) {

@@ -22,24 +22,24 @@ func (g *GeomDraw) SetColor(color RGBA) {
 }
 
 func (g *GeomDraw) FillRect(rect Rect) *Mesh {
-	positions := []Vec3{
-		Vec3{rect.Min[0], rect.Max[1], 0},
-		Vec3{rect.Min[0], rect.Min[1], 0},
-		Vec3{rect.Max[0], rect.Min[1], 0},
-		Vec3{rect.Max[0], rect.Max[1], 0},
+	positions := []glVec3{
+		glVec3{float32(rect.Min[0]), float32(rect.Max[1]), 0},
+		glVec3{float32(rect.Min[0]), float32(rect.Min[1]), 0},
+		glVec3{float32(rect.Max[0]), float32(rect.Min[1]), 0},
+		glVec3{float32(rect.Max[0]), float32(rect.Max[1]), 0},
 	}
-	colors := []Vec4{
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+	colors := []glVec4{
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
 	}
 
-	texCoords := []Vec2{
-		Vec2{1, 0},
-		Vec2{1, 1},
-		Vec2{0, 1},
-		Vec2{0, 0},
+	texCoords := []glVec2{
+		glVec2{1, 0},
+		glVec2{1, 1},
+		glVec2{0, 1},
+		glVec2{0, 0},
 	}
 
 	inds := []uint32{
@@ -56,7 +56,7 @@ func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 }
 
 // if width == 0, then fill the rect
-func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
+func (g *GeomDraw) Rectangle(rect Rect, width float64) *Mesh {
 	if width <= 0 {
 		return g.FillRect(rect)
 	}
@@ -75,19 +75,19 @@ func (g *GeomDraw) Rectangle(rect Rect, width float32) *Mesh {
 	return m
 }
 
-func (g *GeomDraw) Circle(center Vec3, radius float32, width float32) *Mesh {
+func (g *GeomDraw) Circle(center Vec3, radius float64, width float64) *Mesh {
 	return g.Ellipse(center, Vec2{radius, radius}, 0, width)
 }
 
-func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float32) *Mesh {
+func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float64, width float64) *Mesh {
 	if width <= 0 {
 		panic("TODO - Fill Ellipse")
 	}
 
-	alpha := float64(rotation)
+	alpha := rotation
 
-	a := math.Max(float64(size[0]), float64(size[1])) // SemiMajorAxis
-	b := math.Min(float64(size[0]), float64(size[1])) // SemiMinorAxis
+	a := math.Max(size[0], size[1]) // SemiMajorAxis
+	b := math.Min(size[0], size[1]) // SemiMinorAxis
 	// TODO - Rotate pi/2 if width < height?
 	e := math.Sqrt(1 - (b*b)/(a*a)) // Eccintricity
 
@@ -98,8 +98,8 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 		r := b / (math.Sqrt(1 - (eCos * eCos)))
 
 		points[i] = center.Add(Vec3{
-		float32(r * math.Cos(radians - alpha)),
-		float32(r * math.Sin(radians - alpha)),
+			r * math.Cos(radians - alpha),
+			r * math.Sin(radians - alpha),
 		0,
 		})
 		radians += 2 * math.Pi / float64(g.Divisions)
@@ -111,8 +111,8 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 		// r := a * (1 - e * e) / (1 + (e * math.Cos(radians - alpha)))
 		// r := l / (1 + (e * math.Cos(radians - alpha)))
 		lastPoint := center.Add(Vec3{
-		float32(r * math.Cos(radians - alpha)),
-		float32(r * math.Sin(radians - alpha)),
+		r * math.Cos(radians - alpha),
+		r * math.Sin(radians - alpha),
 		0,
 		})
 		points = append(points, lastPoint)
@@ -135,7 +135,7 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float32, width float
 	return g.LineStrip(points, width)
 }
 
-func (g *GeomDraw) LineStrip(points []Vec3, width float32) *Mesh {
+func (g *GeomDraw) LineStrip(points []Vec3, width float64) *Mesh {
 	// fmt.Println("Points:", points)
 	m := NewMesh()
 	c := points[0]
@@ -153,7 +153,7 @@ func (g *GeomDraw) LineStrip(points []Vec3, width float32) *Mesh {
 }
 
 // TODO - remake linestrip but don't have the looping indexes (ie modulo). This is technically for polygons
-func (g *GeomDraw) Polygon(points []Vec3, width float32) *Mesh {
+func (g *GeomDraw) Polygon(points []Vec3, width float64) *Mesh {
 	// fmt.Println("Points:", points)
 	m := NewMesh()
 	// for i := 0; i < len(points)-1; i++ {
@@ -181,13 +181,13 @@ func (g *GeomDraw) Polygon(points []Vec3, width float32) *Mesh {
 }
 
 // TODO different line endings
-func (g *GeomDraw) Line(a, b Vec3, lastAngle, nextAngle float32, width float32) *Mesh {
+func (g *GeomDraw) Line(a, b Vec3, lastAngle, nextAngle float64, width float64) *Mesh {
 	// fmt.Println("Angles:", lastAngle, nextAngle)
 
 	line := b.Sub(a)
 	lineAngle := line.Theta()
-	lastAngle = (lineAngle - (float32(math.Pi)/2)) - lastAngle
-	nextAngle += (lineAngle - (float32(math.Pi)/2))
+	lastAngle = (lineAngle - (math.Pi / 2)) - lastAngle
+	nextAngle += (lineAngle - (math.Pi / 2))
 	// fmt.Println("LineAngle:", lineAngle, lastAngle, nextAngle)
 
 	// // Shift the point over by width
@@ -232,27 +232,27 @@ func (g *GeomDraw) Line(a, b Vec3, lastAngle, nextAngle float32, width float32) 
 		b2 = tmp
 	}
 
-	positions := []Vec3{
-		b1,
-		b2,
-		a2,
-		a1,
+	positions := []glVec3{
+		b1.gl(),
+		b2.gl(),
+		a2.gl(),
+		a1.gl(),
 	}
 	// fmt.Println("Positions:", positions)
 
-	colors := []Vec4{
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
-		Vec4{g.color.R, g.color.G, g.color.B, g.color.A},
+	colors := []glVec4{
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
+		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
 	}
 
 	// TODO - Finalize what these should be
-	texCoords := []Vec2{
-		Vec2{1, 0},
-		Vec2{1, 1},
-		Vec2{0, 1},
-		Vec2{0, 0},
+	texCoords := []glVec2{
+		glVec2{1, 0},
+		glVec2{1, 1},
+		glVec2{0, 1},
+		glVec2{0, 0},
 	}
 
 	inds := []uint32{
@@ -269,11 +269,11 @@ func (g *GeomDraw) Line(a, b Vec3, lastAngle, nextAngle float32, width float32) 
 }
 
 // Point generation functions:
-func EllipsePoints(size Vec2, rotation float32, divisions int) []Vec3 {
-	alpha := float64(rotation)
+func EllipsePoints(size Vec2, rotation float64, divisions int) []Vec3 {
+	alpha := rotation
 
-	a := math.Max(float64(size[0]), float64(size[1])) // SemiMajorAxis
-	b := math.Min(float64(size[0]), float64(size[1])) // SemiMinorAxis
+	a := math.Max(size[0], size[1]) // SemiMajorAxis
+	b := math.Min(size[0], size[1]) // SemiMinorAxis
 	// TODO - Rotate pi/2 if width < height?
 	e := math.Sqrt(1 - (b*b)/(a*a)) // Eccintricity
 
@@ -284,8 +284,8 @@ func EllipsePoints(size Vec2, rotation float32, divisions int) []Vec3 {
 		r := b / (math.Sqrt(1 - (eCos * eCos)))
 
 		points[i] = Vec3{
-			float32(r * math.Cos(radians - alpha)),
-			float32(r * math.Sin(radians - alpha)),
+			r * math.Cos(radians - alpha),
+			r * math.Sin(radians - alpha),
 			0,
 		}
 		radians += 2 * math.Pi / float64(divisions)

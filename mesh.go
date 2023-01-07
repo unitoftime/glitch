@@ -23,30 +23,32 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
 		}
 	}
 
-	posBuf := make([]Vec3, len(mesh.positions))
+	mat := matrix.gl()
+
+	posBuf := make([]glVec3, len(mesh.positions))
 	for i := range mesh.positions {
-		posBuf[i] = matrix.Apply(mesh.positions[i])
+		posBuf[i] = mat.Apply(mesh.positions[i])
 	}
 
-	renormalizeMat := matrix.Inv().Transpose()
-	normBuf := make([]Vec3, len(mesh.normals))
+	renormalizeMat := matrix.Inv().Transpose().gl()
+	normBuf := make([]glVec3, len(mesh.normals))
 	for i := range mesh.normals {
 		normBuf[i] = renormalizeMat.Apply(mesh.normals[i])
 	}
 
-	colBuf := make([]Vec4, len(mesh.colors))
+	colBuf := make([]glVec4, len(mesh.colors))
 	for i := range mesh.colors {
 		// TODO - vec4 mult function
-		colBuf[i] = Vec4{
-			mesh.colors[i][0] * mask.R,
-			mesh.colors[i][1] * mask.G,
-			mesh.colors[i][2] * mask.B,
-			mesh.colors[i][3] * mask.A,
+		colBuf[i] = glVec4{
+			mesh.colors[i][0] * float32(mask.R),
+			mesh.colors[i][1] * float32(mask.G),
+			mesh.colors[i][2] * float32(mask.B),
+			mesh.colors[i][3] * float32(mask.A),
 		}
 	}
 
 	// TODO - is a copy faster?
-	texBuf := make([]Vec2, len(mesh.texCoords))
+	texBuf := make([]glVec2, len(mesh.texCoords))
 	for i := range mesh.texCoords {
 		texBuf[i] = mesh.texCoords[i]
 	}
@@ -82,10 +84,10 @@ func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 }
 
 type Mesh struct {
-	positions []Vec3
-	normals []Vec3
-	colors []Vec4
-	texCoords []Vec2
+	positions []glVec3
+	normals []glVec3
+	colors []glVec4
+	texCoords []glVec2
 	indices []uint32
 	bounds Box
 
@@ -94,10 +96,10 @@ type Mesh struct {
 
 func NewMesh() *Mesh {
 	return &Mesh{
-		positions: make([]Vec3, 0),
-		normals: make([]Vec3, 0),
-		colors: make([]Vec4, 0),
-		texCoords: make([]Vec2, 0),
+		positions: make([]glVec3, 0),
+		normals: make([]glVec3, 0),
+		colors: make([]glVec4, 0),
+		texCoords: make([]glVec2, 0),
 		indices: make([]uint32, 0),
 	}
 }
@@ -146,7 +148,7 @@ func (m *Mesh) SetOrigin(newOrigin Vec3) {
 	// delta := pos.Sub(m.translation)
 
 	// TODO - should I do this in a different order?
-	delta := m.origin.Sub(newOrigin)
+	delta := m.origin.Sub(newOrigin).gl()
 	for i := range m.positions {
 		m.positions[i] = delta.Add(m.positions[i])
 	}
@@ -158,7 +160,7 @@ func (m *Mesh) SetOrigin(newOrigin Vec3) {
 
 // Sets the color of every vertex
 func (m *Mesh) SetColor(col RGBA) {
-	v4Color := Vec4{col.R, col.G, col.B, col.A}
+	v4Color := glVec4{float32(col.R), float32(col.G), float32(col.B), float32(col.A)}
 	for i := range m.colors {
 		m.colors[i] = v4Color
 	}
@@ -177,30 +179,30 @@ func (m *Mesh) SetColor(col RGBA) {
 // }
 
 // Basically a quad mesh, but with a centered position
-func NewSpriteMesh(w, h float32, uvBounds Rect) *Mesh {
+func NewSpriteMesh(w, h float64, uvBounds Rect) *Mesh {
 	return NewQuadMesh(R(-w/2, -h/2, w/2, h/2), uvBounds)
 }
 
 func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
-	positions := []Vec3{
-		Vec3{bounds.Max[0], bounds.Max[1], 0.0},
-		Vec3{bounds.Max[0], bounds.Min[1], 0.0},
-		Vec3{bounds.Min[0], bounds.Min[1], 0.0},
-		Vec3{bounds.Min[0], bounds.Max[1], 0.0},
+	positions := []glVec3{
+		glVec3{float32(bounds.Max[0]), float32(bounds.Max[1]), float32(0.0)},
+		glVec3{float32(bounds.Max[0]), float32(bounds.Min[1]), float32(0.0)},
+		glVec3{float32(bounds.Min[0]), float32(bounds.Min[1]), float32(0.0)},
+		glVec3{float32(bounds.Min[0]), float32(bounds.Max[1]), float32(0.0)},
 	}
 	// TODO normals
-	colors := []Vec4{
-		Vec4{color.R, color.G, color.B, color.A},
-		Vec4{color.R, color.G, color.B, color.A},
-		Vec4{color.R, color.G, color.B, color.A},
-		Vec4{color.R, color.G, color.B, color.A},
+	colors := []glVec4{
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
 	}
-	texCoords := []Vec2{
-		Vec2{uvBounds.Max[0], uvBounds.Min[1]},
-		Vec2{uvBounds.Max[0], uvBounds.Max[1]},
-		Vec2{uvBounds.Min[0], uvBounds.Max[1]},
-		Vec2{uvBounds.Min[0], uvBounds.Min[1]},
+	texCoords := []glVec2{
+		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
+		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
+		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
+		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
 	}
 
 	inds := []uint32{
@@ -217,44 +219,44 @@ func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 	}
 }
 
-func NewCubeMesh(size float32) *Mesh {
-	size = size/2
+func NewCubeMesh(size float64) *Mesh {
+	f32size := float32(size/2)
 
-	positions := []Vec3{
+	positions := []glVec3{
 		// Front face
-		Vec3{-size, -size,  size},
-		Vec3{size, -size,  size},
-		Vec3{size,  size,  size},
-		Vec3{-size,  size,  size},
+		glVec3{-f32size, -f32size,  f32size},
+		glVec3{f32size, -f32size,  f32size},
+		glVec3{f32size,  f32size,  f32size},
+		glVec3{-f32size,  f32size,  f32size},
 		// Back face
-		Vec3{-size, -size, -size},
-		Vec3{-size,  size, -size},
-		Vec3{size,  size, -size},
-		Vec3{size, -size, -size},
+		glVec3{-f32size, -f32size, -f32size},
+		glVec3{-f32size,  f32size, -f32size},
+		glVec3{f32size,  f32size, -f32size},
+		glVec3{f32size, -f32size, -f32size},
 		// Top face
-		Vec3{-size,  size, -size},
-		Vec3{-size,  size,  size},
-		Vec3{size,  size,  size},
-		Vec3{size,  size, -size},
+		glVec3{-f32size,  f32size, -f32size},
+		glVec3{-f32size,  f32size,  f32size},
+		glVec3{f32size,  f32size,  f32size},
+		glVec3{f32size,  f32size, -f32size},
 		// Bottom face
-		Vec3{-size, -size, -size},
-		Vec3{size, -size, -size},
-		Vec3{size, -size,  size},
-		Vec3{-size, -size,  size},
+		glVec3{-f32size, -f32size, -f32size},
+		glVec3{f32size, -f32size, -f32size},
+		glVec3{f32size, -f32size,  f32size},
+		glVec3{-f32size, -f32size,  f32size},
 		// Right face
-		Vec3{size, -size, -size},
-		Vec3{size,  size, -size},
-		Vec3{size,  size,  size},
-		Vec3{size, -size,  size},
+		glVec3{f32size, -f32size, -f32size},
+		glVec3{f32size,  f32size, -f32size},
+		glVec3{f32size,  f32size,  f32size},
+		glVec3{f32size, -f32size,  f32size},
 		// Left face
-		Vec3{-size, -size, -size},
-		Vec3{-size, -size,  size},
-		Vec3{-size,  size,  size},
-		Vec3{-size,  size, -size},
+		glVec3{-f32size, -f32size, -f32size},
+		glVec3{-f32size, -f32size,  f32size},
+		glVec3{-f32size,  f32size,  f32size},
+		glVec3{-f32size,  f32size, -f32size},
 	}
 
-	col := Vec4{1.0, 1.0, 1.0, 1.0}
-	colors := []Vec4{
+	col := glVec4{1.0, 1.0, 1.0, 1.0}
+	colors := []glVec4{
 		col, col, col, col,
 		col, col, col, col,
 		col, col, col, col,
@@ -263,71 +265,71 @@ func NewCubeMesh(size float32) *Mesh {
 	}
 
 	// TODO normals
-	normals := []Vec3{
+	normals := []glVec3{
 		// Front face
-		Vec3{0, 0, 1},
-		Vec3{0, 0, 1},
-		Vec3{0, 0, 1},
-		Vec3{0, 0, 1},
+		glVec3{0, 0, 1},
+		glVec3{0, 0, 1},
+		glVec3{0, 0, 1},
+		glVec3{0, 0, 1},
 		// Back face
-		Vec3{0, 0, -1},
-		Vec3{0, 0, -1},
-		Vec3{0, 0, -1},
-		Vec3{0, 0, -1},
+		glVec3{0, 0, -1},
+		glVec3{0, 0, -1},
+		glVec3{0, 0, -1},
+		glVec3{0, 0, -1},
 		// Top face
-		Vec3{0, 1, 0},
-		Vec3{0, 1, 0},
-		Vec3{0, 1, 0},
-		Vec3{0, 1, 0},
+		glVec3{0, 1, 0},
+		glVec3{0, 1, 0},
+		glVec3{0, 1, 0},
+		glVec3{0, 1, 0},
 		// Bottom face
-		Vec3{0, -1, 0},
-		Vec3{0, -1, 0},
-		Vec3{0, -1, 0},
-		Vec3{0, -1, 0},
+		glVec3{0, -1, 0},
+		glVec3{0, -1, 0},
+		glVec3{0, -1, 0},
+		glVec3{0, -1, 0},
 		// Right face
-		Vec3{1, 0, 0},
-		Vec3{1, 0, 0},
-		Vec3{1, 0, 0},
-		Vec3{1, 0, 0},
+		glVec3{1, 0, 0},
+		glVec3{1, 0, 0},
+		glVec3{1, 0, 0},
+		glVec3{1, 0, 0},
 		// Left face
-		Vec3{-1, 0, 0},
-		Vec3{-1, 0, 0},
-		Vec3{-1, 0, 0},
-		Vec3{-1, 0, 0},
+		glVec3{-1, 0, 0},
+		glVec3{-1, 0, 0},
+		glVec3{-1, 0, 0},
+		glVec3{-1, 0, 0},
 	}
 
 	// TODO texCoords
-	texCoords := []Vec2{
+	texCoords := []glVec2{
 		// Front face
-		Vec2{-0, -0},
-		Vec2{0, -0},
-		Vec2{0,  0},
-		Vec2{-0,  0},
+		glVec2{-0, -0},
+		glVec2{0, -0},
+		glVec2{0,  0},
+		glVec2{-0,  0},
 		// Back face
-		Vec2{-0, -0},
-		Vec2{-0,  0},
-		Vec2{0,  0},
-		Vec2{0, -0},
+		glVec2{-0, -0},
+		glVec2{-0,  0},
+		glVec2{0,  0},
+		glVec2{0, -0},
 		// Top face
-		Vec2{-0,  0},
-		Vec2{-0,  0},
-		Vec2{0,  0},
-		Vec2{0,  0},
+		glVec2{-0,  0},
+		glVec2{-0,  0},
+		glVec2{0,  0},
+		glVec2{0,  0},
 		// Bottom face
-		Vec2{-0, -0},
-		Vec2{0, -0},
-		Vec2{0, -0},
-		Vec2{-0, -0},
+		glVec2{-0, -0},
+		glVec2{0, -0},
+		glVec2{0, -0},
+		glVec2{-0, -0},
 		// Right face
-		Vec2{0, -0},
-		Vec2{0,  0},
-		Vec2{0,  0},
-		Vec2{0, -0},
+		glVec2{0, -0},
+		glVec2{0,  0},
+		glVec2{0,  0},
+		glVec2{0, -0},
 		// Left face
-		Vec2{-0, -0},
-		Vec2{-0, -0},
-		Vec2{-0,  0},
-		Vec2{-0,  0},
+		glVec2{-0, -0},
+		glVec2{-0, -0},
+		glVec2{-0,  0},
+		glVec2{-0,  0},
 	}
 
 	indices := []uint32{

@@ -22,11 +22,11 @@ func (a Attr) GetBuffer() any {
 	case AttrFloat:
 		return &[]float32{}
 	case AttrVec2:
-		return &[]Vec2{}
+		return &[]glVec2{}
 	case AttrVec3:
-		return &[]Vec3{}
+		return &[]glVec3{}
 	case AttrVec4:
-		return &[]Vec4{}
+		return &[]glVec4{}
 	default:
 		panic(fmt.Sprintf("Attr not valid for GetBuffer: %v", a))
 	}
