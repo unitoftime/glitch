@@ -351,11 +351,16 @@ func (r Rect) ScaledToFit(r2 Rect) Rect {
 	return r.Scaled(min)
 }
 
+// TODO - this only works if you're centered on (0, 0)
 func (r Rect) Scaled(scale float64) Rect {
-	return Rect{
+	// center := r.Center()
+	// r = r.Moved(center.Scaled(-1))
+	r = Rect{
 		Min: r.Min.Scaled(scale),
 		Max: r.Max.Scaled(scale),
 	}
+	// r = r.Moved(center)
+	return r
 }
 
 func (r Rect) Norm() Rect {
@@ -485,7 +490,8 @@ func (m *Mat4) Transpose() *Mat4 {
 // TODO - I feel like camera should be a higher-up abstraction and not held here
 type CameraOrtho struct {
 	Projection Mat4
-	View, ViewSnapped Mat4
+	View Mat4
+	// ViewSnapped Mat4
 	bounds Rect
 	DepthRange Vec2 // Specifies the near and far plane of the camera, defaults to (-1, 1)
 }
@@ -494,7 +500,7 @@ func NewCameraOrtho() *CameraOrtho {
 	return &CameraOrtho{
 		Projection: Mat4Ident,
 		View: Mat4Ident,
-		ViewSnapped: Mat4Ident,
+		// ViewSnapped: Mat4Ident,
 		bounds: R(0,0,1,1),
 		DepthRange: Vec2{-1, 1},
 	}
@@ -517,16 +523,19 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 		Scale(scaleX, scaleY, 1.0).
 		Translate(cameraCenter[0], cameraCenter[1], 0)
 
-	// TODO - this is literally only for pixel art
-	c.ViewSnapped = Mat4Ident
-	centerX := math.Round(cameraCenter[0])
-	centerY := math.Round(cameraCenter[1])
-	pX := math.Round(x)
-	pY := math.Round(y)
-	c.ViewSnapped.
-		Translate(-pX - centerX, -pY - centerY, 0).
-		Scale(scaleX, scaleY, 1.0).
-		Translate(centerX, centerY, 0)
+	// // TODO - this is literally only for pixel art
+	// c.ViewSnapped = Mat4Ident
+	// centerX := math.Round(cameraCenter[0])
+	// centerY := math.Round(cameraCenter[1])
+	// pX := math.Round(x)
+	// pY := math.Round(y)
+	// c.ViewSnapped.
+	// 	Translate(-pX - centerX, -pY - centerY, 0).
+	// 	Scale(scaleX, scaleY, 1.0).
+	// 	Translate(centerX, centerY, 0)
+
+
+
 
 	// centerX := float32(math.Round(float64(cameraCenter[0])))
 	// centerY := float32(math.Round(float64(cameraCenter[1])))

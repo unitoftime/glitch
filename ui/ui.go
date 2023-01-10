@@ -49,7 +49,7 @@ func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
 // }
 
 type Drawer interface {
-	Bounds() glitch.Rect
+	// Bounds() glitch.Rect
 	RectDraw(glitch.BatchTarget, glitch.Rect)
 	RectDrawColorMask(glitch.BatchTarget, glitch.Rect, glitch.RGBA)
 }
@@ -72,7 +72,6 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 	shader, err := glitch.NewShader(shaders.SpriteShader)
 	if err != nil { panic(err) }
 	pass := glitch.NewRenderPass(shader)
-	// pass.SetLayer(glitch.DefaultLayer)
 	pass.SoftwareSort = glitch.SoftwareSortY
 	pass.DepthTest = true
 
@@ -159,14 +158,12 @@ func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
 	g.debugRect(rect)
 }
 
-// Addds a panel with padding to the current bounds of the group
+// Adds a panel with padding to the current bounds of the group
 func (g *Group) PanelizeBounds(sprite Drawer, padding glitch.Rect) {
 	if g.unionBounds == nil { return }
 	rect := *g.unionBounds
 	rect = rect.Pad(padding)
-	// g.pass.SetLayer(128) // TODO - Panel layer
 	g.Panel(sprite, rect)
-	// g.pass.SetLayer(glitch.DefaultLayer)
 }
 
 func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
@@ -303,12 +300,9 @@ func (g *Group) debugRect(rect glitch.Rect) {
 
 	lineWidth := 2.0
 
-	// g.pass.SetLayer(0) // debug layer
-
 	g.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
 	m := g.geomDraw.Rectangle(rect, lineWidth)
 	m.Draw(g.pass, glitch.Mat4Ident)
-	// g.pass.SetLayer(glitch.DefaultLayer)
 }
 
 // func (g *Group) Bar(outer, inner Drawer, bounds glitch.Rect, value float64) Rect {

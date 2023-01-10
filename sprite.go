@@ -2,7 +2,8 @@ package glitch
 
 type Sprite struct {
 	mesh *Mesh
-	bounds Rect
+	bounds Rect // Represents the bounds centered on (0, 0)
+	frame Rect // Represents the bounds inside the spritesheet
 	texture *Texture
 	material Material
 	// origin Vec3 // This is used to skew the center of the sprite (which helps with sorting sprites who shouldn't be sorted based on their center points.
@@ -23,9 +24,13 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	// 	(-1./2. + bounds.Max[1]) / float32(texture.height),
 	// )
 
+	mesh := NewSpriteMesh(bounds.W(), bounds.H(), uvBounds)
 	return &Sprite{
-		mesh: NewSpriteMesh(bounds.W(), bounds.H(), uvBounds),
-		bounds: bounds,
+		mesh: mesh,
+		// bounds: bounds,
+		frame: bounds,
+		bounds: bounds.Moved(Vec2{-bounds.W()/2, -bounds.H()/2}),
+		// bounds: mesh.Bounds().Rect(),
 		texture: texture,
 		material: NewSpriteMaterial(texture),
 	}
@@ -82,7 +87,7 @@ type NinePanelSprite struct {
 }
 
 func SpriteToNinePanel(sprite *Sprite, border Rect) *NinePanelSprite {
-	return NewNinePanelSprite(sprite.texture, sprite.bounds, border)
+	return NewNinePanelSprite(sprite.texture, sprite.frame, border)
 }
 
 func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {
@@ -137,7 +142,7 @@ func (s *NinePanelSprite) RectDraw(pass BatchTarget, bounds Rect) {
 	s.RectDrawColorMask(pass, bounds, RGBA{1,1,1,1})
 }
 
-func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, bounds Rect, mask RGBA) {
+func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RGBA) {
 	// fmt.Println("here")
 	// fmt.Println(bounds.W(), bounds.H())
 
@@ -147,18 +152,18 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, bounds Rect, mask 
 		s.Scale * s.border.Max[0],
 		s.Scale * s.border.Max[1])
 
-	top := bounds.CutTop(border.Max[1])
-	bot := bounds.CutBottom(border.Min[1])
+	top := rect.CutTop(border.Max[1])
+	bot := rect.CutBottom(border.Min[1])
 
 	topLeft := top.CutLeft(border.Min[0])
 	topRight := top.CutRight(border.Max[0])
 	botLeft := bot.CutLeft(border.Min[0])
 	botRight := bot.CutRight(border.Max[0])
-	left := bounds.CutLeft(border.Min[0])
-	right := bounds.CutRight(border.Max[0])
+	left := rect.CutLeft(border.Min[0])
+	right := rect.CutRight(border.Max[0])
 
 	destRects := [9]Rect{
-		bounds, //center
+		rect, //center
 
 		top, // Top
 		bot, // Bot
