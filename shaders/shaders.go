@@ -56,6 +56,23 @@ var SpriteShader = glitch.ShaderConfig{
 	},
 }
 
+//go:embed minimap.fs
+var MinimapFragmentShader string;
+
+var MinimapShader = glitch.ShaderConfig{
+	VertexShader: SpriteVertexShader,
+	FragmentShader: MinimapFragmentShader,
+	VertexFormat: glitch.VertexFormat{
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	},
+	UniformFormat: glitch.UniformFormat{
+		glitch.Attr{"projection", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
+	},
+}
+
 //go:embed subPixel.fs
 var SubPixelAntiAliased string;
 

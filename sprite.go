@@ -29,7 +29,7 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		mesh: mesh,
 		// bounds: bounds,
 		frame: bounds,
-		bounds: bounds.Moved(Vec2{-bounds.W()/2, -bounds.H()/2}),
+		bounds: bounds.Moved(bounds.Center().Scaled(-1)),
 		// bounds: mesh.Bounds().Rect(),
 		texture: texture,
 		material: NewSpriteMaterial(texture),
