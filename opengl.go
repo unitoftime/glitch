@@ -20,6 +20,7 @@ type VertexBuffer struct {
 
 	buffers []ISubBuffer
 	indices []uint32
+	bufferedToGPU bool
 }
 
 // TODO - rename
@@ -254,6 +255,7 @@ func (v *VertexBuffer) Clear() {
 	v.indices = v.indices[:0]
 	v.material = nil
 	v.materialSet = false
+	v.bufferedToGPU = false
 }
 
 func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) bool {
@@ -307,24 +309,30 @@ func (v *VertexBuffer) Draw() {
 	mainthreadCall(func() {
 		gl.BindVertexArray(v.vao)
 
-		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
-		offset := 0
-		for i := range v.buffers {
-			gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
-			// byteBuff := v.buffers[i].Buffer()
-			// switch t := byteBuff.(type) {
-			// case []Vec2:
-			// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][2]float32(t))
-			// case []Vec3:
-			// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][3]float32(t))
-			// }
-			offset += v.buffers[i].Offset()
+		if !v.bufferedToGPU {
+			gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
+			offset := 0
+			for i := range v.buffers {
+				gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
+				// byteBuff := v.buffers[i].Buffer()
+				// switch t := byteBuff.(type) {
+				// case []Vec2:
+				// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][2]float32(t))
+				// case []Vec3:
+				// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][3]float32(t))
+				// }
+				offset += v.buffers[i].Offset()
+			}
+
+			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+			gl.BufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
+
+			v.bufferedToGPU = true
+			gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
+		} else {
+			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+			gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
 		}
-
-		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-		gl.BufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
-
-		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
 	})
 }
 
@@ -336,6 +344,7 @@ type BufferPool struct {
 	triangleCount int
 	buffers []*VertexBuffer
 	currentIndex int
+	nextClean int // Tracks the next clean vertex buffer (ie clean = buffers that haven't been written reserved on in this case
 }
 func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
 	return &BufferPool{
@@ -344,8 +353,8 @@ func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
 		triangleCount: 0,
 		buffers: make([]*VertexBuffer, 0),
 		currentIndex: 0,
+		nextClean: 0,
 	}
-
 }
 
 func (b *BufferPool) Clear() {
@@ -354,15 +363,23 @@ func (b *BufferPool) Clear() {
 	}
 	b.triangleCount = 0
 	b.currentIndex = 0
+	b.nextClean = 0
 }
 
-func (b *BufferPool) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) bool {
+// Updates the buffer pool, so that the next reserve call will return a brand new vertex buffer
+func (b *BufferPool) gotoNextClean() {
+	b.currentIndex = b.nextClean
+}
+
+// Returns the vertexbuffer that we reserved to
+func (b *BufferPool) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) *VertexBuffer {
 	for i := b.currentIndex; i < len(b.buffers); i++ {
 		success := b.buffers[i].Reserve(material, indices, numVerts, dests)
 		if success {
 			b.triangleCount += len(indices) / 3
 			b.currentIndex = i
-			return true
+			b.nextClean = b.currentIndex + 1
+			return b.buffers[i]
 		}
 	}
 
@@ -376,21 +393,37 @@ func (b *BufferPool) Reserve(material Material, indices []uint32, numVerts int, 
 	b.triangleCount += len(indices) / 3
 
 	b.currentIndex = len(b.buffers) - 1
+	b.nextClean = b.currentIndex + 1
 
-	return success
+	return newBuff
 }
 
-func (b *BufferPool) Draw() {
+// func (b *BufferPool) Draw() {
+// 	lastMaterial := Material(nil)
+// 	for i := range b.buffers {
+// 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
+// 		if lastMaterial != b.buffers[i].material {
+// 			lastMaterial = b.buffers[i].material
+// 			if lastMaterial != nil {
+// 				// fmt.Println("Binding New Material", lastMaterial)
+// 				lastMaterial.Bind()
+// 			}
+// 		}
+// 		b.buffers[i].Draw()
+// 	}
+// }
+
+func openglDraw(buffers []*VertexBuffer) {
 	lastMaterial := Material(nil)
-	for i := range b.buffers {
+	for i := range buffers {
 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
-		if lastMaterial != b.buffers[i].material {
-			lastMaterial = b.buffers[i].material
+		if lastMaterial != buffers[i].material {
+			lastMaterial = buffers[i].material
 			if lastMaterial != nil {
 				// fmt.Println("Binding New Material", lastMaterial)
 				lastMaterial.Bind()
 			}
 		}
-		b.buffers[i].Draw()
+		buffers[i].Draw()
 	}
 }

@@ -92,6 +92,7 @@ type Mesh struct {
 	bounds Box
 
 	origin Vec3
+	generation uint32
 }
 
 func NewMesh() *Mesh {
@@ -112,6 +113,8 @@ func (m *Mesh) Clear() {
 	m.texCoords = m.texCoords[:0]
 	m.indices = m.indices[:0]
 	m.bounds = Box{}
+
+	m.generation++
 }
 
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
@@ -140,6 +143,7 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.texCoords = append(m.texCoords, m2.texCoords...)
 
 	m.bounds = m.bounds.Union(m2.bounds)
+	m.generation++
 }
 
 // Changes the origin point of the mesh by translating all the geometry to the new origin. This shouldn't be called frequently
@@ -156,6 +160,8 @@ func (m *Mesh) SetOrigin(newOrigin Vec3) {
 	m.origin = newOrigin
 
 	// TODO - recalculate mesh bounds/box
+
+	m.generation++
 }
 
 // Sets the color of every vertex
@@ -164,6 +170,8 @@ func (m *Mesh) SetColor(col RGBA) {
 	for i := range m.colors {
 		m.colors[i] = v4Color
 	}
+
+	m.generation++
 }
 
 // TODO - Maybe this is faster in some scenarios?

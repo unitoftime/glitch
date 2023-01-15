@@ -28,6 +28,23 @@ func WhiteTexture() *Texture {
 	return whiteTexture
 }
 
+func NewTransparentTexture64() *Texture {
+	max := 64 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
+	img := image.NewRGBA(image.Rect(0,0,max,max))
+
+	for x:=0; x<max; x++ {
+		for y:=0; y<max; y++ {
+			img.SetRGBA(x,y, color.RGBA{255,255,255, 255})
+			// img.SetRGBA(x,y, color.RGBA{0, 0, 0, 0})
+		}
+	}
+
+	return NewTexture(img, true)
+}
+
+
+
+
 type Texture struct {
 	texture gl.Texture
 	width, height int
