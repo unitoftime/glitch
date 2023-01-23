@@ -51,6 +51,7 @@ var SpriteShader = glitch.ShaderConfig{
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
+		// glitch.Attr{"model", glitch.AttrMat4},
 		glitch.Attr{"projection", glitch.AttrMat4},
 		glitch.Attr{"view", glitch.AttrMat4},
 	},
@@ -68,6 +69,7 @@ var MinimapShader = glitch.ShaderConfig{
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
+		// glitch.Attr{"model", glitch.AttrMat4},
 		glitch.Attr{"projection", glitch.AttrMat4},
 		glitch.Attr{"view", glitch.AttrMat4},
 	},
@@ -86,6 +88,7 @@ var PixelArtShader = glitch.ShaderConfig{
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
+		// glitch.Attr{"model", glitch.AttrMat4},
 		glitch.Attr{"projection", glitch.AttrMat4},
 		glitch.Attr{"view", glitch.AttrMat4},
 	},
@@ -105,6 +108,7 @@ var PixelArtShader2 = glitch.ShaderConfig{
 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
 	},
 	UniformFormat: glitch.UniformFormat{
+		// glitch.Attr{"model", glitch.AttrMat4},
 		glitch.Attr{"projection", glitch.AttrMat4},
 		glitch.Attr{"view", glitch.AttrMat4},
 	},

@@ -142,9 +142,12 @@ func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
 		case Mat4:
 			mat := val.gl()
 			gl.UniformMatrix4fv(uniform.loc, mat[:])
+		case *Mat4:
+			mat := val.gl()
+			gl.UniformMatrix4fv(uniform.loc, mat[:])
 		default:
 			// fmt.Println("ERROR", uniform)
-			panic("set uniform attr: invalid attribute type:")
+			panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
 		}
 		ret = true
 	})

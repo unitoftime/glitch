@@ -19,6 +19,7 @@ void main()
 {
   float s = 16.0;
   vec4 color = texture(texture1, (floor(TexCoord * s)+.5)/s);
+  /* vec4 color = texture(texture1, TexCoord); */
 
   if (color.a == 0.0) {
     discard;

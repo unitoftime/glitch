@@ -53,6 +53,10 @@ func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	return meshBuf
 }
 
+// type drawCall struct {
+// 	buffer *VertexBuffer
+// 	model Mat4
+// }
 
 // This is essentially a generalized 2D render pass
 type RenderPass struct {
@@ -136,6 +140,7 @@ func (r *RenderPass) Batch() {
 				// TODO b/c we are a large mesh, don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
 				meshBuf, ok := r.meshCache[c.mesh]
 				if !ok {
+					// fmt.Println("MeshCache: Mesh has never been cached!")
 					// Create and add the meshBuffer to the cache
 					meshBuf = newMeshBuffer(r.shader, c.mesh)
 					r.meshCache[c.mesh] = meshBuf
@@ -150,6 +155,7 @@ func (r *RenderPass) Batch() {
 					// 1. Has a correct generation - No need to rebuffer it
 					// 2. Has an old generation - we need to clear and rebuffer it
 					if c.mesh.generation != meshBuf.generation {
+						// fmt.Println("MeshCache: Mesh has new generation!")
 						meshBuf.buffer.Clear()
 						success := meshBuf.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 						if !success {
@@ -161,6 +167,10 @@ func (r *RenderPass) Batch() {
 							}
 						}
 						r.batchToBuffers(c, destBuffs)
+
+						// Update the cache
+						meshBuf.generation = c.mesh.generation
+						r.meshCache[c.mesh] = meshBuf
 					}
 				}
 

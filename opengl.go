@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"reflect"
 	"unsafe"
+	"runtime"
 
 	"github.com/unitoftime/gl"
 )
@@ -131,6 +132,7 @@ func ReserveSubBuffer[T SupportedSubBuffers](b *SubBuffer[T], count int) []T {
 }
 
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
+	// fmt.Println("NewVertexBuffer:", shader, numVerts, numTris)
 	format := shader.attrFmt // TODO - cleanup this variable
 	b := &VertexBuffer{
 		format: format,
@@ -238,7 +240,16 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 	b.Clear() // TODO - fix
 
+	runtime.SetFinalizer(b, (*VertexBuffer).delete)
+
 	return b
+}
+
+func (v *VertexBuffer) delete() {
+	mainthreadCallNonBlock(func() {
+		gl.DeleteVertexArrays(v.vao)
+		gl.DeleteBuffers(v.vbo)
+	})
 }
 
 func (v *VertexBuffer) Bind() {
@@ -261,13 +272,15 @@ func (v *VertexBuffer) Clear() {
 func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int, dests []interface{}) bool {
 	// If material is set and it doesn't match the reserved material
 	if v.materialSet && v.material != material {
-		// fmt.Println("Material not matching")
+		// fmt.Println("VertexBuffer.Reserve - Material Doesn't match")
 		return false
 	}
 	if len(v.indices) + len(indices) > cap(v.indices) {
+		// fmt.Println("VertexBuffer.Reserve - Not enough index capacity")
 		return false
 	}
 	if v.buffers[0].Len() + numVerts > v.buffers[0].Cap() {
+		// fmt.Println("VertexBuffer.Reserve - Not enough vertex capacity")
 		return false
 	}
 
