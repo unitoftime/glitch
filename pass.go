@@ -89,7 +89,7 @@ const (
 // const DefaultLayer int8 = 0
 
 func NewRenderPass(shader *Shader) *RenderPass {
-	defaultBatchSize := 100000
+	defaultBatchSize := 10000
 	return &RenderPass{
 		shader: shader,
 		texture: nil,
