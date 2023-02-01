@@ -494,6 +494,10 @@ type CameraOrtho struct {
 	// ViewSnapped Mat4
 	bounds Rect
 	DepthRange Vec2 // Specifies the near and far plane of the camera, defaults to (-1, 1)
+
+	// Tracks the view inverse and whether or not its been recalculated or not
+	ViewInv Mat4
+	dirtyViewInv bool
 }
 
 func NewCameraOrtho() *CameraOrtho {
@@ -507,12 +511,16 @@ func NewCameraOrtho() *CameraOrtho {
 }
 
 func (c *CameraOrtho) SetOrtho2D(bounds Rect) {
+	c.dirtyViewInv = true
+
 	c.bounds = bounds
 
 	c.Projection = Mat4(mgl64.Ortho(0, c.bounds.W(), 0, c.bounds.H(), c.DepthRange[0], c.DepthRange[1]))
 }
 
 func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
+	c.dirtyViewInv = true
+
 	c.View = Mat4Ident
 	cameraCenter := c.bounds.Center()
 	c.View.
@@ -571,28 +579,15 @@ func (c *CameraOrtho) Project(point Vec3) Vec3 {
 }
 
 func (c *CameraOrtho) Unproject(point Vec3) Vec3 {
-	p := c.View.Inv().Apply(point)
-	return p
+	// TODO - This logic breaks down if someone modifies camera internals. Ie I need better protection. for private members
+	if c.dirtyViewInv == true {
+		c.ViewInv = *c.View.Inv()
+		c.dirtyViewInv = false
+	}
+	return c.ViewInv.Apply(point)
 
-	// return c.Projection.Mul(&c.View).Inv().Apply(point)
-	// point[0] /= 1920
-	// point[1] /= 1080
-
-	// p := c.Projection.Mul(&c.View).Inv().Apply(point)
+	// p := c.View.Inv().Apply(point)
 	// return p
-	// return Vec3{
-	// 	p[0] / 1920,
-	// 	p[1] / 1080,
-	// 	p[2] / 1,
-	// }
-
-	// m := c.Projection.Mul(&c.View)
-	// det := m[i4_0_0]*m[i4_1_1] - m[i4_1_0]*m[i4_0_1]
-	// return Vec3{
-	// 	(m[i4_1_1]*(point[0] - m[i4_3_0]) - m[2]*(point[1] - m[i4_3_1])) / det,
-	// 	(-m[i4_0_1]*(point[0] - m[i4_3_0]) + m[0]*(point[1] - m[i4_3_1])) / det,
-	// 	0,
-	// }
 }
 
 type Camera struct {
