@@ -30,6 +30,40 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
 		posBuf[i] = mat.Apply(mesh.positions[i])
 	}
 
+
+	min := posBuf[0]
+	max := posBuf[0]
+	for i := range posBuf {
+		// X
+		if posBuf[i][0] < min[0] {
+			min[0] = posBuf[i][0]
+		}
+		if posBuf[i][0] > max[0] {
+			max[0] = posBuf[i][0]
+		}
+
+		// Y
+		if posBuf[i][1] < min[1] {
+			min[1] = posBuf[i][1]
+		}
+		if posBuf[i][1] > max[1] {
+			max[1] = posBuf[i][1]
+		}
+
+		// Z
+		if posBuf[i][2] < min[2] {
+			min[2] = posBuf[i][2]
+		}
+		if posBuf[i][2] > max[2] {
+			max[2] = posBuf[i][2]
+		}
+	}
+
+	newBounds := Box{
+		Min: Vec3{float64(min[0]), float64(min[1]), float64(min[2])},
+		Max: Vec3{float64(max[0]), float64(max[1]), float64(max[2])},
+	}
+
 	renormalizeMat := matrix.Inv().Transpose().gl()
 	normBuf := make([]glVec3, len(mesh.normals))
 	for i := range mesh.normals {
@@ -64,7 +98,7 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
 		colors: colBuf,
 		texCoords: texBuf,
 		indices: indices,
-		//bounds: todo,
+		bounds: newBounds,
 	}
 
 	b.mesh.Append(m2)
@@ -81,6 +115,10 @@ func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
 
 func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	target.Add(b.mesh, matrix, color, b.material)
+}
+
+func (b *Batch) Bounds() Box {
+	return b.mesh.Bounds()
 }
 
 type Mesh struct {

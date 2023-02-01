@@ -373,6 +373,14 @@ func (r Rect) Contains(x, y float64) bool {
 	return x > r.Min[0] && x < r.Max[0] && y > r.Min[1] && y < r.Max[1]
 }
 
+func (r Rect) Intersects(r2 Rect) bool {
+	return (
+		r.Min[0] <= r2.Max[0] &&
+			r.Max[0] >= r2.Min[0] &&
+			r.Min[1] <= r2.Max[1] &&
+			r.Max[1] >= r2.Min[1])
+}
+
 func (r *Rect) CutLeft(amount float64) Rect {
 	cutRect := *r
 	cutRect.Max[0] = cutRect.Min[0] + amount
