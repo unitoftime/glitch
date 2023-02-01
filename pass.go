@@ -216,8 +216,6 @@ func (r *RenderPass) Draw(target Target) {
 		}
 	}
 
-	// r.buffer.Draw()
-	// openglDraw(r.buffer.buffers)
 	openglDraw(r.buffersToDraw)
 }
 

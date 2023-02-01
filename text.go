@@ -291,7 +291,7 @@ func (t *Text) StringVerts(text string) (*Mesh, Rect) {
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			t.Dot[1] -= t.atlas.LineHeight()
+			t.Dot[1] -= t.atlas.LineHeight()/2
 			t.Dot[0] = t.Orig[0]
 			continue
 		}
