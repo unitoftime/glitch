@@ -97,7 +97,6 @@ func (g *Group) Stats() glitch.RenderStats {
 
 func (g *Group) getText(str string) *glitch.Text {
 	if g.currentTextBufferIndex >= len(g.textBuffer) {
-		fmt.Println("APPENDING NEW TEXT")
 		g.textBuffer = append(g.textBuffer, g.atlas.Text(str))
 	}
 
