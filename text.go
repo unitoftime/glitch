@@ -200,6 +200,7 @@ func (a *Atlas) Text(str string) *Text {
 		material: NewSpriteMaterial(a.texture),
 		scale: 1.0,
 		LineHeight: a.LineHeight(),
+		mesh: NewMesh(),
 
 		Color: RGBA{1, 1, 1, 1},
 	}
@@ -232,12 +233,18 @@ func (t *Text) MeshBounds() Rect {
 	return t.mesh.Bounds().Rect()
 }
 
+func (t *Text) Clear() {
+	t.Orig = Vec2{}
+	t.Dot = t.Orig
+}
+
 // This resets the text and sets it to the passed in string (if the passed in string is different!)
 // TODO - I need to deprecate this in favor of a better interface
 func (t *Text) Set(str string) {
 	if t.currentString != str {
 		t.currentString = str
-		t.mesh, t.bounds = t.StringVerts(str)
+		t.mesh.Clear()
+		t.bounds = t.AppendStringVerts(str)
 	}
 }
 
@@ -252,8 +259,7 @@ func (t *Text) Write(p []byte) (n int, err error) {
 	}
 
 	t.currentString = t.currentString + appendedStr
-	newMesh, newBounds := t.StringVerts(appendedStr)
-	t.mesh.Append(newMesh)
+	newBounds := t.AppendStringVerts(appendedStr)
 	t.bounds = t.bounds.Union(newBounds)
 	return len(p), nil
 }
@@ -281,13 +287,11 @@ func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	pass.Add(t.mesh, mat, mask, t.material)
 }
 
-func (t *Text) StringVerts(text string) (*Mesh, Rect) {
-// func (t *Text) StringVerts(orig *Vec2, dot *Vec2, text string, color RGBA, scale float32) (*Mesh, Rect) {
+func (t *Text) AppendStringVerts(text string) Rect{
 	// maxAscent := float32(0) // Tracks the maximum y point of the text block
 
 	initialDot := t.Dot
 
-	mesh := NewMesh()
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
@@ -300,7 +304,7 @@ func (t *Text) StringVerts(text string) (*Mesh, Rect) {
 		// fmt.Println("dot", *dot)
 		runeMesh, newDot, _ := t.atlas.RuneVerts(r, t.Dot, t.scale)
 		runeMesh.SetColor(t.Color)
-		mesh.Append(runeMesh)
+		t.mesh.Append(runeMesh)
 
 		t.Dot = newDot
 
@@ -330,13 +334,17 @@ func (t *Text) StringVerts(text string) (*Mesh, Rect) {
 		t.Dot[1] - (fixedToFloat(t.atlas.descent))).
 			Norm().
 			Moved(Vec2{0, fixedToFloat(t.atlas.ascent)})
+
+	return bounds
+
+
 	// fmt.Println(bounds)
 
 	// bounds := R(initialDot[0],
 	// 	initialDot[1] - (fixedToFloat(a.descent)),
 	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
 	// 	dot[1] - (fixedToFloat(a.ascent))).Norm()
-	return mesh, bounds
+	// return mesh, bounds
 
 	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
 	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] - (fixedToFloat(a.ascent) - fixedToFloat(a.descent)))

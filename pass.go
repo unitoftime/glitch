@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	// "fmt"
+	"fmt"
 	// "math"
 	"sort"
 
@@ -74,6 +74,9 @@ type RenderPass struct {
 	meshCache map[*Mesh]meshBuffer // TODO - this should be some sort of LRU cache
 
 	buffersToDraw []*VertexBuffer
+
+	// Stats
+	stats RenderStats
 }
 
 type SoftwareSortMode uint8
@@ -89,7 +92,7 @@ const (
 // const DefaultLayer int8 = 0
 
 func NewRenderPass(shader *Shader) *RenderPass {
-	defaultBatchSize := 10000
+	defaultBatchSize := 1024 * 8 // 10000 // TODO - arbitrary
 	return &RenderPass{
 		shader: shader,
 		texture: nil,
@@ -98,12 +101,49 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
 		// currentLayer: DefaultLayer,
 		meshCache: make(map[*Mesh]meshBuffer),
-		minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
+		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
+		minimumCacheSize: 128,
 		buffersToDraw: make([]*VertexBuffer, 0),
 	}
 }
 
+type RenderStats struct {
+	MeshCacheSize int
+	DrawCalls int
+	UncachedDraws int
+	CachedDraws int
+	BatchToBuffers int
+	CachedVerts int
+	CachedIndices int
+	UncachedVerts int
+	UncachedIndices int
+}
+
+func (s RenderStats) String() string {
+	return fmt.Sprintf(`CachedMeshes: %d | DrawCalls: %d
+Cached: %d | Uncached: %d | BatchToBuffers: %d
+CachedVerts: %d | CachedIndices: %d
+UncachedVerts: %d | UncachedIndices: %d
+NumVertexBuffers: %d
+`, s.MeshCacheSize, s.DrawCalls,
+		s.CachedDraws, s.UncachedDraws, s.BatchToBuffers,
+		s.CachedVerts, s.CachedIndices,
+		s.UncachedVerts, s.UncachedIndices,
+		numVertexBuffers,
+	)
+}
+
+func (r *RenderPass) Stats() RenderStats {
+	r.stats.MeshCacheSize = len(r.meshCache)
+	r.stats.DrawCalls = len(r.buffersToDraw)
+
+	return r.stats
+}
+
 func (r *RenderPass) Clear() {
+	// Clear stats
+	r.stats = RenderStats{}
+
 	// Clear stuff
 	r.buffer.Clear()
 	// r.commands = r.commands[:0]
@@ -134,12 +174,14 @@ func (r *RenderPass) Batch() {
 
 			// Try to use a previously batched mesh
 			if numVerts > r.minimumCacheSize {
+				r.stats.CachedDraws++
 				// Because we are about to use a custom meshBuffer, we need to make sure the next time we do an autobatch we use a new VertexBuffer, So we call this function to foward the autobuffer to the next clean buffer
 				r.buffer.gotoNextClean()
 
 				// TODO b/c we are a large mesh, don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
 				meshBuf, ok := r.meshCache[c.mesh]
 				if !ok {
+
 					// fmt.Println("MeshCache: Mesh has never been cached!")
 					// Create and add the meshBuffer to the cache
 					meshBuf = newMeshBuffer(r.shader, c.mesh)
@@ -151,6 +193,7 @@ func (r *RenderPass) Batch() {
 					}
 					r.batchToBuffers(c, destBuffs)
 				} else {
+
 					// If here we know we have a valid meshBuf, which either:
 					// 1. Has a correct generation - No need to rebuffer it
 					// 2. Has an old generation - we need to clear and rebuffer it
@@ -177,7 +220,11 @@ func (r *RenderPass) Batch() {
 				// At this point we have a meshBuf with the mesh data already written to it.
 				// We can just append it to our list of things to draw
 				r.buffersToDraw = append(r.buffersToDraw, meshBuf.buffer)
+				r.stats.CachedVerts += len(c.mesh.positions)
+				r.stats.CachedIndices += len(c.mesh.indices)
+
 			} else {
+				r.stats.UncachedDraws++
 				// Else we are auto-batching the mesh because the mesh is small
 				vertexBuffer := r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 				r.batchToBuffers(c, destBuffs)
@@ -294,6 +341,11 @@ func (r *RenderPass) SortInSoftware() {
 }
 
 func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
+	r.stats.BatchToBuffers++
+
+	r.stats.UncachedVerts += len(c.mesh.positions)
+	r.stats.UncachedIndices += len(c.mesh.indices)
+
 	mat32 := c.matrix.gl()
 
 	// Append all mesh buffers to shader buffers

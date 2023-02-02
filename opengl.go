@@ -131,7 +131,9 @@ func ReserveSubBuffer[T SupportedSubBuffers](b *SubBuffer[T], count int) []T {
 	return b.buffer[start:end]
 }
 
+var numVertexBuffers int
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
+	numVertexBuffers++
 	// fmt.Println("NewVertexBuffer:", shader, numVerts, numTris)
 	format := shader.attrFmt // TODO - cleanup this variable
 	b := &VertexBuffer{
@@ -283,6 +285,8 @@ func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int
 		// fmt.Println("VertexBuffer.Reserve - Not enough vertex capacity")
 		return false
 	}
+
+	v.bufferedToGPU = false
 
 	// fmt.Println("Establishing Buffer", material)
 	v.materialSet = true

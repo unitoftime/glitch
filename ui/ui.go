@@ -65,6 +65,8 @@ type Group struct {
 	OnlyCheckUnion bool
 	geomDraw glitch.GeomDraw
 	color glitch.RGBA
+	textBuffer []*glitch.Text
+	currentTextBufferIndex int
 }
 
 func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
@@ -85,7 +87,25 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		Debug: false,
 		OnlyCheckUnion: true,
 		color: glitch.RGBA{1, 1, 1, 1},
+		textBuffer: make([]*glitch.Text, 0),
 	}
+}
+
+func (g *Group) Stats() glitch.RenderStats {
+	return g.pass.Stats()
+}
+
+func (g *Group) getText(str string) *glitch.Text {
+	if g.currentTextBufferIndex >= len(g.textBuffer) {
+		fmt.Println("APPENDING NEW TEXT")
+		g.textBuffer = append(g.textBuffer, g.atlas.Text(str))
+	}
+
+	idx := g.currentTextBufferIndex
+	g.currentTextBufferIndex++
+	g.textBuffer[idx].Clear()
+	g.textBuffer[idx].Set(str)
+	return g.textBuffer[idx]
 }
 
 func (g *Group) SetLayer(layer int8) {
@@ -127,6 +147,8 @@ func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 }
 
 func (g *Group) Clear() {
+	g.currentTextBufferIndex = 0
+
 	g.pass.Clear()
 	g.unionBounds = nil
 	g.allBounds = g.allBounds[:0]
@@ -197,7 +219,7 @@ func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 
 // TODO! - text masking around rect?
 func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
-	text := g.atlas.Text(str)
+	text := g.getText(str)
 	r := rect.Anchor(text.Bounds().ScaledToFit(rect), anchor)
 	text.RectDrawColorMask(g.pass, r, g.color)
 	g.appendUnionBounds(r)
@@ -207,7 +229,7 @@ func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 // Text, but doesn't automatically scale to fill the rect
 // TODO maybe I should call the other text "AutoText"? or something
 func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scale float64) {
-	text := g.atlas.Text(str)
+	text := g.getText(str)
 	r := rect.Anchor(text.Bounds().Scaled(scale), anchor)
 	text.RectDrawColorMask(g.pass, r, g.color)
 	g.appendUnionBounds(r)
@@ -216,7 +238,7 @@ func (g *Group) FixedText(str string, rect glitch.Rect, anchor glitch.Vec2, scal
 
 // TODO - combine with fixedtext
 func (g *Group) FullFixedText(str string, rect glitch.Rect, anchor, anchor2 glitch.Vec2, scale float64) {
-	text := g.atlas.Text(str)
+	text := g.getText(str)
 	r := rect.FullAnchor(text.Bounds().Scaled(scale), anchor, anchor2)
 	text.RectDrawColorMask(g.pass, r, g.color)
 	g.appendUnionBounds(r)
@@ -270,7 +292,7 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitc
 		return // If mouse not contained by rect, then don't draw
 	}
 
-	text := g.atlas.Text(tip)
+	text := g.getText(tip)
 	tipRect := rect.Anchor(text.Bounds(), anchor)
 
 	g.Panel(panel, tipRect)
