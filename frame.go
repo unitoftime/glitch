@@ -14,6 +14,7 @@ type Frame struct {
 	mesh *Mesh
 	material Material
 	bounds Rect
+	mainthreadBind func()
 }
 
 // Type? Color, depth, stencil?
@@ -47,6 +48,10 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, frame.depth, 0)
 	})
 
+	frame.mainthreadBind = func() {
+		frame.bind()
+	}
+
 	runtime.SetFinalizer(&frame, (*Frame).delete)
 	return &frame
 }
@@ -74,12 +79,21 @@ func (f *Frame) delete() {
 }
 
 func (f *Frame) Bind() {
-	mainthreadCall(func() {
-		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
-		gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
-		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-	})
+	mainthreadCall(f.mainthreadBind)
 }
+func (f *Frame) bind() {
+	// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
+	gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
+	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+}
+
+// func (f *Frame) Bind() {
+// 	mainthreadCall(func() {
+// 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
+// 		gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
+// 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
+// 	})
+// }
 
 // func (f *Frame) Clear() {
 // 	mainthreadCall(func() {

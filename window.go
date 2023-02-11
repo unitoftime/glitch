@@ -30,8 +30,16 @@ type Window struct {
 		}
 	}
 
+	mousePosition Vec2
+
 	// The back and front buffers for tracking typed characters
 	typedBack, typedFront []rune
+
+	mainthreadUpdate func()
+	mainthreadBind func()
+	mainthreadPressed func()
+	pressedKeyCheck Key
+	pressedKeyReturn bool
 }
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
@@ -147,16 +155,28 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		return nil, fmt.Errorf("Failed CreateWindow: %w", err)
 	}
 
+	win.mainthreadUpdate = func() {
+		win.window.SwapBuffers()
+		glfw.PollEvents()
+
+		win.mainthreadCacheMousePosition()
+	}
+
+	win.mainthreadBind = func() {
+		win.bind()
+	}
+
+	win.mainthreadPressed = func() {
+		win.pressed()
+	}
+
 	win.Update()
 
 	return win, nil
 }
 
 func (w *Window) Update() {
-	mainthreadCall(func() {
-		w.window.SwapBuffers()
-		glfw.PollEvents()
-	})
+	mainthreadCall(w.mainthreadUpdate)
 
 	w.input = w.tmpInput
 	w.tmpInput.scroll.X = 0
@@ -193,19 +213,22 @@ func (w *Window) Bounds() Rect {
 }
 
 func (w *Window) MousePosition() (float64, float64) {
+	return w.mousePosition[0], w.mousePosition[1]
+}
+
+func (w *Window) mainthreadCacheMousePosition() {
 	var x, y float64
 	var sx, sy float32
-	mainthreadCall(func() {
-		x, y = w.window.GetCursorPos()
+	x, y = w.window.GetCursorPos()
 
-		// TODO - Use callback to get contentScale. There is a function available in glfw library. In javascript though, I'm not sure if there's a way to detect content scale (other than maybe in the framebuffer size callback) But if a window is dragged to another monitor which has a different content scale, then the framebuffer size callback may not trigger, but the content scale will be updated.
-		sx, sy = w.window.GetContentScale()
-	})
-
+	// TODO - Use callback to get contentScale. There is a function available in glfw library. In javascript though, I'm not sure if there's a way to detect content scale (other than maybe in the framebuffer size callback) But if a window is dragged to another monitor which has a different content scale, then the framebuffer size callback may not trigger, but the content scale will be updated.
+	sx, sy = w.window.GetContentScale()
 	// We scale the mouse position (which is in window pixel coords) into framebuffer pixel coords by multiplying it by the content scale.
 	xPos := x * float64(sx)
 	yPos := float64(w.height) - (y * float64(sy)) // This flips the coordinate to quadrant 1
-	return xPos, yPos
+	// return xPos, yPos
+	w.mousePosition[0] = xPos
+	w.mousePosition[1] = yPos
 }
 
 // // Returns true if the key was pressed in the last frame
@@ -219,39 +242,71 @@ func (w *Window) Repeated(key Key) bool {
 
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
-	mainthreadCall(func() {
-		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
-		gl.Viewport(0, 0, int(w.width), int(w.height))
-		// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
-		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
-	})
+	mainthreadCall(w.mainthreadBind)
 }
+func (w *Window) bind() {
+	// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
+	gl.Viewport(0, 0, int(w.width), int(w.height))
+	// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
+	gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
+}
+
+// func (w *Window) Bind() {
+// 	mainthreadCall(func() {
+// 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
+// 		gl.Viewport(0, 0, int(w.width), int(w.height))
+// 		// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
+// 		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
+// 	})
+// }
 
 // Reads a rectangle of the window's frame as a collection of bytes
-func (w *Window) ReadFrame(rect Rect, dst []byte) {
-	mainthreadCall(func() {
-		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
-		// TODO Note: https://docs.gl/es3/glReadPixels#:~:text=glReadPixels%20returns%20pixel%20data%20from,parameters%20are%20set%20with%20glPixelStorei.
-		// Format and Type Enums define the expected pixel format and type to return to the byte buffer. Right now I have that hardcoded to gl.RGBA and gl.UNSIGNED_BYTE, respectively
-		gl.ReadPixels(dst, int(rect.Min[0]), int(rect.Min[1]), int(rect.W()), int(rect.H()), gl.RGBA, gl.UNSIGNED_BYTE)
-	})
-}
+// func (w *Window) ReadFrame(rect Rect, dst []byte) {
+// 	mainthreadCall(func() {
+// 		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
+// 		// TODO Note: https://docs.gl/es3/glReadPixels#:~:text=glReadPixels%20returns%20pixel%20data%20from,parameters%20are%20set%20with%20glPixelStorei.
+// 		// Format and Type Enums define the expected pixel format and type to return to the byte buffer. Right now I have that hardcoded to gl.RGBA and gl.UNSIGNED_BYTE, respectively
+// 		gl.ReadPixels(dst, int(rect.Min[0]), int(rect.Min[1]), int(rect.W()), int(rect.H()), gl.RGBA, gl.UNSIGNED_BYTE)
+// 	})
+// }
 
 func (w *Window) Pressed(key Key) bool {
-	var action glfw.Action
-	mainthreadCall(func() {
-		if isMouseKey(key) {
-			action = w.window.GetMouseButton(glfw.MouseButton(key))
-		} else {
-			action = w.window.GetKey(glfw.Key(key))
-		}
-	})
-
-	if action == glfw.Press || action == glfw.Repeat {
-		return true
-	}
-	return false
+	w.pressedKeyCheck = key
+	mainthreadCall(w.mainthreadPressed)
+	return w.pressedKeyReturn
 }
+
+func (w *Window) pressed() {
+	key := w.pressedKeyCheck
+
+	var action glfw.Action
+	if isMouseKey(key) {
+		action = w.window.GetMouseButton(glfw.MouseButton(key))
+	} else {
+		action = w.window.GetKey(glfw.Key(key))
+	}
+
+	w.pressedKeyReturn = false
+	if action == glfw.Press || action == glfw.Repeat {
+		w.pressedKeyReturn = true
+	}
+}
+
+// func (w *Window) Pressed(key Key) bool {
+// 	var action glfw.Action
+// 	mainthreadCall(func() {
+// 		if isMouseKey(key) {
+// 			action = w.window.GetMouseButton(glfw.MouseButton(key))
+// 		} else {
+// 			action = w.window.GetKey(glfw.Key(key))
+// 		}
+// 	})
+
+// 	if action == glfw.Press || action == glfw.Repeat {
+// 		return true
+// 	}
+// 	return false
+// }
 
 // Don't cache the returned buffer because it gets overwritten
 func (w *Window) Typed() []rune {

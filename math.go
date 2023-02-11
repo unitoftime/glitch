@@ -40,6 +40,13 @@ func (m Mat4) gl() glMat4 {
 	return ret
 }
 
+func (m Mat4) writeToFloat32(s []float32) []float32 {
+	for i := range m {
+		s = append(s, float32(m[i]))
+	}
+	return s
+}
+
 // TODO - conver these to structs {x, y}
 type Vec2 [2]float64
 type Vec3 [3]float64
@@ -200,10 +207,12 @@ func (m *Mat4) Rotate(angle float64, axis Vec3) *Mat4 {
 }
 
 // TODO should this modify in place?
-// Note: Does not modify in place
+// ~~Scratch that: Note: Does not modify in place~~
+// This now modifies in place! Yay less garbage
 func (m *Mat4) Mul(n *Mat4) *Mat4 {
 	// This is in column major order
-	return &Mat4{
+	*m = Mat4{
+	// return &Mat4{
 		// Column 0
 		m[i4_0_0] * n[i4_0_0] + m[i4_1_0] * n[i4_0_1] + m[i4_2_0] * n[i4_0_2] + m[i4_3_0] * n[i4_0_3],
 		m[i4_0_1] * n[i4_0_0] + m[i4_1_1] * n[i4_0_1] + m[i4_2_1] * n[i4_0_2] + m[i4_3_1] * n[i4_0_3],
@@ -228,6 +237,7 @@ func (m *Mat4) Mul(n *Mat4) *Mat4 {
 		m[i4_0_2] * n[i4_3_0] + m[i4_1_2] * n[i4_3_1] + m[i4_2_2] * n[i4_3_2] + m[i4_3_2] * n[i4_3_3],
 		m[i4_0_3] * n[i4_3_0] + m[i4_1_3] * n[i4_3_1] + m[i4_2_3] * n[i4_3_2] + m[i4_3_3] * n[i4_3_3],
 	}
+	return m
 }
 
 // Matrix Indices

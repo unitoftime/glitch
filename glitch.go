@@ -75,6 +75,10 @@ func init() {
 		bufferPool: make(map[*Shader]*VertexBuffer),
 		vertexBuffer: nil,
 	}
+
+	targetClearer.Func = func() {
+		targetClearer.Run()
+	}
 }
 
 // Sets the current target
@@ -88,15 +92,37 @@ func SetTarget(win *Window) {
 // func Clear(rgba RGBA) {
 // context.target.Clear(rgba)
 // }
+
+type targetClear struct {
+	color RGBA
+	Func func()
+}
+var targetClearer targetClear
+
+func (t *targetClear) Run() {
+	color := t.color
+	gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
+	// gl.Clear(gl.COLOR_BUFFER_BIT)
+	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	// TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+}
+
 func Clear(target Target, color RGBA) {
 	target.Bind()
-	mainthreadCall(func() {
-		gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
-		// gl.Clear(gl.COLOR_BUFFER_BIT)
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-// TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	})
+
+	targetClearer.color = color
+	mainthreadCall(targetClearer.Func)
 }
+
+// func Clear(target Target, color RGBA) {
+// 	target.Bind()
+// 	mainthreadCall(func() {
+// 		gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
+// 		// gl.Clear(gl.COLOR_BUFFER_BIT)
+// 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+// // TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+// 	})
+// }
 
 /*
 func FinalizeDraw() {

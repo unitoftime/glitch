@@ -62,7 +62,8 @@ func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 type RenderPass struct {
 	shader *Shader
 	texture *Texture
-	uniforms map[string]interface{}
+	// uniforms map[string]interface{}
+	uniforms map[string]Mat4
 	buffer *BufferPool
 	commands [][]drawCommand
 	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
@@ -77,6 +78,8 @@ type RenderPass struct {
 
 	// Stats
 	stats RenderStats
+
+	mainthreadDepthTest func()
 }
 
 type SoftwareSortMode uint8
@@ -93,10 +96,11 @@ const (
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 1024 * 8 // 10000 // TODO - arbitrary
-	return &RenderPass{
+	r := &RenderPass{
 		shader: shader,
 		texture: nil,
-		uniforms: make(map[string]interface{}),
+		uniforms: make(map[string]Mat4),
+		// uniforms: make(map[string]interface{}),
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
 		// currentLayer: DefaultLayer,
@@ -105,6 +109,10 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		minimumCacheSize: 128,
 		buffersToDraw: make([]*VertexBuffer, 0),
 	}
+	r.mainthreadDepthTest = func() {
+		r.enableDepthTest()
+	}
+	return r
 }
 
 type RenderStats struct {
@@ -162,10 +170,11 @@ func (r *RenderPass) SetLayer(layer int8) {
 func (r *RenderPass) Batch() {
 	r.SortInSoftware()
 
-	destBuffs := make([]any, len(r.shader.attrFmt))
-	for i, attr := range r.shader.attrFmt {
-		destBuffs[i] = attr.GetBuffer()
-	}
+	// destBuffs := make([]any, len(r.shader.attrFmt))
+	// for i, attr := range r.shader.attrFmt {
+	// 	destBuffs[i] = attr.GetBuffer()
+	// }
+	destBuffs := r.shader.tmpBuffers
 
 	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 		for _, c := range r.commands[l] {
@@ -245,15 +254,7 @@ func (r *RenderPass) Draw(target Target) {
 	// Bind render target
 	target.Bind()
 
-	mainthreadCall(func() {
-		// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
-		if r.DepthTest {
-			gl.Enable(gl.DEPTH_TEST)
-			gl.DepthFunc(gl.LEQUAL)
-		} else {
-			gl.Disable(gl.DEPTH_TEST)
-		}
-	})
+	mainthreadCall(r.mainthreadDepthTest)
 
 	r.shader.Bind()
 	for k,v := range r.uniforms {
@@ -265,15 +266,27 @@ func (r *RenderPass) Draw(target Target) {
 
 	openglDraw(r.buffersToDraw)
 }
+func (r *RenderPass) enableDepthTest() {
+	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
+	if r.DepthTest {
+		gl.Enable(gl.DEPTH_TEST)
+		gl.DepthFunc(gl.LEQUAL)
+	} else {
+		gl.Disable(gl.DEPTH_TEST)
+	}
+}
 
 func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	// TODO - use correct texture slot
 	r.texture = texture
 }
 
-func (r *RenderPass) SetUniform(name string, value interface{}) {
+func (r *RenderPass) SetUniform(name string, value Mat4) {
 	r.uniforms[name] = value
 }
+// func (r *RenderPass) SetUniform(name string, value interface{}) {
+// 	r.uniforms[name] = value
+// }
 
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation

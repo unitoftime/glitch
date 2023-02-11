@@ -48,6 +48,7 @@ func NewTransparentTexture64() *Texture {
 type Texture struct {
 	texture gl.Texture
 	width, height int
+	mainthreadBind func()
 }
 
 func toRgba(img image.Image) *image.RGBA {

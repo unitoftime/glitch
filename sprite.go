@@ -176,10 +176,10 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 		botRight, // BR
 	}
 
-
+	matrix := Mat4Ident
 	for i := range s.sprites {
 		// fmt.Println(destRects[i].W(), destRects[i].H())
-		matrix := Mat4Ident
+		matrix = Mat4Ident
 		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min[0], destRects[i].H()/2 + destRects[i].Min[1], 0)
 		pass.Add(s.sprites[i].mesh, matrix, s.Mask, s.sprites[i].material)
 	}

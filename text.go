@@ -68,7 +68,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		lineGap: metrics.Height,
 	}
 
-	size := 1024
+	size := 512
 	fixedSize := fixed.I(size)
 	fSize := float64(size)
 
@@ -283,7 +283,10 @@ func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	// TODO why shouldn't I be shifting to the middle?
 	// mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
 	// mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
+
+	// TODO!!! - There's something wrong with this
 	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
+
 	pass.Add(t.mesh, mat, mask, t.material)
 }
 

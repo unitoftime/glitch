@@ -5,6 +5,8 @@
 # 	go test -v .
 
 # TODO - tinyGO?
+tinygo:
+	tinygo build -o main.wasm -target wasm ./main.go
 wasm:
 #	cp "$(go env GOROOT)/misc/wasm/wasm_exec.js" .
 	GOOS=js GOARCH=wasm go build -ldflags "-s" -o main.wasm
@@ -18,6 +20,6 @@ compress:
 	ls -lh main.wasm.gz
 
 serve:
-	~/go/src/github.com/unitoftime/go-experiments/fileserver/fileserver
+	serve
 
 run: wasm compress serve

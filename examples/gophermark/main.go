@@ -71,7 +71,7 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
-		Vsync: false,
+		Vsync: true,
 	})
 	if err != nil { panic(err) }
 
@@ -89,18 +89,18 @@ func runGame() {
 	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
 
 	// mesh := glitch.NewQuadMesh()
-	x := float32(0)
-	y := float32(0)
+	x := 0.0
+	y := 0.0
 	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
 
-	length := 1000000
+	length := 20000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
 	}
 
-	w := float32(160.0)/4
-	h := float32(200.0)/4
+	w := float64(160.0)/4
+	h := float64(200.0)/4
 
 	// Text
 	atlas, err := glitch.DefaultAtlas()
@@ -108,22 +108,31 @@ func runGame() {
 
 	text := atlas.Text("hello world")
 
+	min := time.Duration(0)
+	max := time.Duration(0)
+
+	counter := 0
 	camera := glitch.NewCameraOrtho()
 	start := time.Now()
 	var dt time.Duration
+
+	mat := glitch.Mat4Ident
 	for !win.ShouldClose() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
 		}
 		start = time.Now()
+
+		counter = (counter + 1) % 60
+
 		for i := range man {
 			man[i].position[0] += man[i].velocity[0]
 			man[i].position[1] += man[i].velocity[1]
 
-			if man[i].position[0] <= 0 || (man[i].position[0]+w) >= float32(1920) {
+			if man[i].position[0] <= 0 || (man[i].position[0]+w) >= float64(1920) {
 				man[i].velocity[0] = -man[i].velocity[0]
 			}
-			if man[i].position[1] <= 0 || (man[i].position[1]+h) >= float32(1080) {
+			if man[i].position[1] <= 0 || (man[i].position[1]+h) >= float64(1080) {
 				man[i].velocity[1] = -man[i].velocity[1]
 			}
 		}
@@ -134,20 +143,29 @@ func runGame() {
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
 		for i := range man {
-			mat := glitch.Mat4Ident
+			mat = glitch.Mat4Ident
 			// mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
 			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
-			pass.SetLayer(man[i].layer)
+			// pass.SetLayer(man[i].layer)
 			manSprite.DrawColorMask(pass, mat, man[i].color)
 			// manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
 		}
 
-		mat := glitch.Mat4Ident
+		mat = glitch.Mat4Ident
 		mat.Translate(0, 0, 0)
 		pass.SetLayer(0)
-		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
+
+		if counter == 0 {
+			text.Clear()
+			text.Set(fmt.Sprintf("%2.2f (%2.2f, %2.2f) ms",
+				1000 * dt.Seconds(),
+				1000 * min.Seconds(),
+				1000 * max.Seconds()))
+			min = 100000000000
+			max = 0
+		}
 		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
 
 		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
@@ -159,6 +177,10 @@ func runGame() {
 		win.Update()
 
 		dt = time.Since(start)
+
+		// dt = time.Since(start)
+		if dt > max { max = dt }
+		if dt < min { min = dt }
 		// fmt.Println(dt.Seconds() * 1000)
 	}
 }
@@ -181,8 +203,8 @@ func NewMan() Man {
 		// position: mgl32.Vec2{float32(float64(width/2) * rand.Float64()),
 		// 	float32(float64(height/2) * rand.Float64())},
 		position: glitch.Vec2{1920/2, 1080/2},
-		velocity: glitch.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
-			float32(2*vScale * (rand.Float64()-0.5))},
+		velocity: glitch.Vec2{float64(2*vScale * (rand.Float64()-0.5)),
+			float64(2*vScale * (rand.Float64()-0.5))},
 		color: colors[randIndex],
 		layer: uint8(randIndex) + 1,
 	}

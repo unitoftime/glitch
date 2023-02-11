@@ -22,6 +22,7 @@ type VertexBuffer struct {
 	buffers []ISubBuffer
 	indices []uint32
 	bufferedToGPU bool
+	mainthreadDraw func()
 }
 
 // TODO - rename
@@ -47,6 +48,8 @@ type SubBuffer[T SupportedSubBuffers] struct {
 	offset int
 	vertexCount int
 	buffer []T
+	sliceScale int
+	byteBuffer []byte // This is just a byte header that points to the buffer
 }
 
 type SubSubBuffer[T SupportedSubBuffers] struct {
@@ -71,41 +74,19 @@ func (b *SubBuffer[T]) VertexCount() uint32 {
 }
 
 func (b *SubBuffer[T]) Buffer() []byte {
-	// TODO - maybe I could put this in the struct so its not allocated every time?
-	// https://github.com/golang/go/issues/45380
-	var tt T
-	t := interface{}(tt)
+	copiedHeader := b.buffer
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&copiedHeader))
+	h.Len = h.Len * b.sliceScale
+	h.Cap = h.Len * b.sliceScale
 
-	buff := b.buffer
-	switch s := t.(type) {
-	case float32:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
-		h.Len *= 1 * 4
-		h.Cap *= 1 * 4
-		// fmt.Println("float32", h.Len, h.Cap)
-		return *(*[]byte)(unsafe.Pointer(h))
-	case glVec2:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
-		h.Len *= 2 * 4
-		h.Cap *= 2 * 4
-		// fmt.Println("Vec2", h.Len, h.Cap)
-		return *(*[]byte)(unsafe.Pointer(h))
-	case glVec3:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
-		h.Len *= 3 * 4
-		h.Cap *= 3 * 4
-		// fmt.Println("Vec3", h.Len, h.Cap)
-		return *(*[]byte)(unsafe.Pointer(h))
-	case glVec4:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&buff))
-		h.Len *= 4 * 4
-		h.Cap *= 4 * 4
-		// fmt.Println("Vec3", h.Len, h.Cap)
-		return *(*[]byte)(unsafe.Pointer(h))
-	default:
-		panic(fmt.Sprintf("Error: %T", s))
-	}
-	return nil
+	b.byteBuffer = *(*[]byte)(unsafe.Pointer(h))
+	return b.byteBuffer
+
+	// copiedHeader := b.buffer
+	// h := (*reflect.SliceHeader)(unsafe.Pointer(&copiedHeader))
+	// h.Len *= b.sliceScale
+	// h.Cap *= b.sliceScale
+	// return *(*[]byte)(unsafe.Pointer(h))
 }
 
 // func (b *SubBuffer[T]) BufferSubData(offset int) {
@@ -142,6 +123,11 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		indices: make([]uint32, 3 * numTris), // 3 indices per triangle
 	}
 
+	b.mainthreadDraw = func() {
+		mainthreadDrawVertexBuffer(b)
+	}
+
+
 	b.stride = 0
 	offset := 0
 	for i := range format {
@@ -156,6 +142,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]glVec4, numVerts),
+				sliceScale: 4 * sof, //int(format[i].Size()) * sof,
 			}
 		} else if format[i].Type == AttrVec3 {
 			b.buffers[i] = &SubBuffer[glVec3]{
@@ -166,6 +153,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]glVec3, numVerts),
+				sliceScale: 3 * sof, //int(format[i].Size()) * sof,
 			}
 		} else if format[i].Type == AttrVec2 {
 			b.buffers[i] = &SubBuffer[glVec2]{
@@ -176,6 +164,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]glVec2, numVerts),
+				sliceScale: 2 * sof, //int(format[i].Size()) * sof,
 			}
 		} else if format[i].Type == AttrFloat {
 			b.buffers[i] = &SubBuffer[float32]{
@@ -186,6 +175,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]float32, numVerts),
+				sliceScale: 1 * sof, //int(format[i].Size()) * sof,
 			}
 		} else {
 			panic(fmt.Sprintf("Unknown format: %v", format[i]))
@@ -195,7 +185,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	}
 
 	// vertices := make([]float32, 8 * sof * numVerts)
-	fakeVertices := make([]float32, 4 * numVerts * b.stride) // 4 = sof
+	// fakeVertices := make([]float32, 4 * numVerts * b.stride) // 4 = sof
 
 	mainthreadCall(func() {
 		b.vao = gl.GenVertexArrays()
@@ -206,11 +196,13 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 		componentSize := 4 // float32
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, fakeVertices, gl.DYNAMIC_DRAW)
+		// gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, fakeVertices, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, nil, gl.DYNAMIC_DRAW)
 
 		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize * len(b.indices), b.indices, gl.DYNAMIC_DRAW)
+		// gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize * len(b.indices), b.indices, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize * len(b.indices), nil, gl.DYNAMIC_DRAW)
 
 		for i := range b.buffers {
 			switch subBuffer := b.buffers[i].(type) {
@@ -318,39 +310,58 @@ func (v *VertexBuffer) Reserve(material Material, indices []uint32, numVerts int
 	return true
 }
 
+func mainthreadDrawVertexBuffer(v *VertexBuffer) {
+	gl.BindVertexArray(v.vao)
+
+	if !v.bufferedToGPU {
+		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
+		offset := 0
+		var buf []byte
+		for i := range v.buffers {
+			buf = v.buffers[i].Buffer()
+			gl.BufferSubDataByte(gl.ARRAY_BUFFER, offset, buf)
+			offset += v.buffers[i].Offset()
+		}
+
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+		gl.BufferSubDataUint32(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
+
+		v.bufferedToGPU = true
+		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
+	} else {
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
+	}
+}
+
 func (v *VertexBuffer) Draw() {
 	if len(v.indices) <= 0 {
 		return
 	}
 
-	mainthreadCall(func() {
-		gl.BindVertexArray(v.vao)
+	mainthreadCall(v.mainthreadDraw)
 
-		if !v.bufferedToGPU {
-			gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
-			offset := 0
-			for i := range v.buffers {
-				gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
-				// byteBuff := v.buffers[i].Buffer()
-				// switch t := byteBuff.(type) {
-				// case []Vec2:
-				// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][2]float32(t))
-				// case []Vec3:
-				// 	gl.BufferSubData(gl.ARRAY_BUFFER, offset, [][3]float32(t))
-				// }
-				offset += v.buffers[i].Offset()
-			}
+	// mainthreadCall(func() {
+	// 	gl.BindVertexArray(v.vao)
 
-			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-			gl.BufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
+	// 	if !v.bufferedToGPU {
+	// 		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
+	// 		offset := 0
+	// 		for i := range v.buffers {
+	// 			gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
+	// 			offset += v.buffers[i].Offset()
+	// 		}
 
-			v.bufferedToGPU = true
-			gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
-		} else {
-			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-			gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
-		}
-	})
+	// 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+	// 		gl.BufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
+
+	// 		v.bufferedToGPU = true
+	// 		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
+	// 	} else {
+	// 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+	// 		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
+	// 	}
+	// })
 }
 
 // BufferPool

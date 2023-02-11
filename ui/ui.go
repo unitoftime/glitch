@@ -59,7 +59,8 @@ type Group struct {
 	pass *glitch.RenderPass
 	camera *glitch.CameraOrtho
 	atlas *glitch.Atlas
-	unionBounds *glitch.Rect // A union of all drawn object's bounds
+	unionBoundsSet bool
+	unionBounds glitch.Rect // A union of all drawn object's bounds
 	allBounds []glitch.Rect
 	Debug bool
 	OnlyCheckUnion bool
@@ -82,7 +83,7 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		camera: camera,
 		pass: pass,
 		atlas: atlas,
-		unionBounds: nil,
+		unionBoundsSet: false,
 		allBounds: make([]glitch.Rect, 0),
 		Debug: false,
 		OnlyCheckUnion: true,
@@ -114,7 +115,7 @@ func (g *Group) SetLayer(layer int8) {
 // onlyCheckUnion is an optimization if the ui elements are tightly packed (it doesn't loop through each rect
 func (g *Group) ContainsMouse() bool {
 	if g.OnlyCheckUnion {
-		if g.unionBounds == nil { return false }
+		if !g.unionBoundsSet { return false }
 		return g.unionBounds.Contains(g.mousePosition())
 	} else {
 		x, y := g.mousePosition()
@@ -137,11 +138,10 @@ func (g *Group) mousePosition() (float64, float64) {
 func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 	g.allBounds = append(g.allBounds, newBounds)
 
-	if g.unionBounds == nil {
-		g.unionBounds = &newBounds
+	if !g.unionBoundsSet {
+		g.unionBounds = newBounds
 	} else {
-		newUnion := g.unionBounds.Union(newBounds)
-		g.unionBounds = &newUnion
+		g.unionBounds = g.unionBounds.Union(newBounds)
 	}
 }
 
@@ -149,7 +149,7 @@ func (g *Group) Clear() {
 	g.currentTextBufferIndex = 0
 
 	g.pass.Clear()
-	g.unionBounds = nil
+	g.unionBoundsSet = false
 	g.allBounds = g.allBounds[:0]
 }
 
@@ -160,8 +160,8 @@ func (g *Group) Draw() {
 
 	// Draw the union rect
 	if g.Debug {
-		if g.unionBounds != nil {
-			g.debugRect(*g.unionBounds)
+		if !g.unionBoundsSet {
+			g.debugRect(g.unionBounds)
 		}
 	}
 
@@ -181,8 +181,8 @@ func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
 
 // Adds a panel with padding to the current bounds of the group
 func (g *Group) PanelizeBounds(sprite Drawer, padding glitch.Rect) {
-	if g.unionBounds == nil { return }
-	rect := *g.unionBounds
+	if !g.unionBoundsSet { return }
+	rect := g.unionBounds
 	rect = rect.Pad(padding)
 	g.Panel(sprite, rect)
 }
