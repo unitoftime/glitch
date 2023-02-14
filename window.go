@@ -17,6 +17,7 @@ type WindowConfig struct {
 
 type Window struct {
 	window *glfw.Window
+	closed bool
 
 	width, height int
 
@@ -194,18 +195,15 @@ func (w *Window) Update() {
 	}
 }
 
+func (w *Window) Closed() bool {
+	return w.closed
+}
+
 func (w *Window) Close() {
+	w.closed = true
 	mainthreadCall(func() {
 		w.window.SetShouldClose(true)
 	})
-}
-
-func (w *Window) ShouldClose() bool {
-	var value bool
-	mainthreadCall(func() {
-		value = w.window.ShouldClose()
-	})
-	return value
 }
 
 func (w *Window) Bounds() Rect {
@@ -340,3 +338,4 @@ func (w *Window) SetCursor(mode CursorMode) {
 func (w *Window) BrowserHidden() bool {
 	return w.window.BrowserHidden()
 }
+
