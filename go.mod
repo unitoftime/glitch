@@ -6,7 +6,7 @@ require (
 	github.com/go-gl/mathgl v1.0.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/unitoftime/gl v0.0.0-20230211001139-3bcb49366f81
-	github.com/unitoftime/glfw v0.0.0-20230215125514-8a222f44abfe
+	github.com/unitoftime/glfw v0.0.0-20230215180625-4ecacf6c3621
 	golang.org/x/image v0.5.0
 )
 

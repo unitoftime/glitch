@@ -232,8 +232,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/subosito/gotenv v1.2.0/go.mod h1:N0PQaV/YGNqwC0u51sEeR/aUtSLEXKX9iv69rRypqCw=
 github.com/unitoftime/gl v0.0.0-20230211001139-3bcb49366f81 h1:1tF8NHGJoDmI5ky2OhxeLHfHADqIcYWirP9yGyJrs+8=
 github.com/unitoftime/gl v0.0.0-20230211001139-3bcb49366f81/go.mod h1:4JHIYkV4HsReFTsX6nKXq2ncndQ3v132C4GKqcUbXJ8=
-github.com/unitoftime/glfw v0.0.0-20230215125514-8a222f44abfe h1:IB0ovwdVZyp0cIIlHBoCSIg/hsOJ8+/Pi3sSMg/Ly1g=
-github.com/unitoftime/glfw v0.0.0-20230215125514-8a222f44abfe/go.mod h1:iFo6o2VFaByuNpn0xxcPMze8A0fm36XQag8KK4T04OU=
+github.com/unitoftime/glfw v0.0.0-20230215180625-4ecacf6c3621 h1:OG59wB6Gj+4FbBNRt++jzEc402MxTGKu81cgnIB1OtI=
+github.com/unitoftime/glfw v0.0.0-20230215180625-4ecacf6c3621/go.mod h1:iFo6o2VFaByuNpn0xxcPMze8A0fm36XQag8KK4T04OU=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.27/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
 github.com/yuin/goldmark v1.1.32/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=
