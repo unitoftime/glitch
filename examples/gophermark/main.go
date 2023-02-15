@@ -117,7 +117,7 @@ func runGame() {
 	var dt time.Duration
 
 	mat := glitch.Mat4Ident
-	for !win.ShouldClose() {
+	for !win.Closed() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
 		}
