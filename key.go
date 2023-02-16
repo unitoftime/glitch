@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	"github.com/unitoftime/glfw"
+	"github.com/unitoftime/glitch/internal/glfw"
 )
 
 // https://www.glfw.org/docs/3.3/input_guide.html

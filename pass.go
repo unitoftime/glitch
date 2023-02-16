@@ -5,7 +5,7 @@ import (
 	// "math"
 	"sort"
 
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/gl"
 )
 
 // TODO - This whole file needs to be rewritten. I'm thinking:

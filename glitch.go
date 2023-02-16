@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/gl"
 
 )
 

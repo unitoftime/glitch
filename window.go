@@ -3,8 +3,8 @@ package glitch
 import (
 	"fmt"
 
-	"github.com/unitoftime/glfw"
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/glfw"
+	"github.com/unitoftime/glitch/internal/gl"
 )
 
 

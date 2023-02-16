@@ -7,7 +7,7 @@ import (
 	"image/color"
 	"runtime"
 
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/gl"
 )
 
 // TODO - Should I use this as default? Or is there a way to do null textures for textureless things?

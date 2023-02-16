@@ -6,7 +6,7 @@ import (
 	"unsafe"
 	"runtime"
 
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/gl"
 )
 
 const sof int = 4 // SizeOf(Float)

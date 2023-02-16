@@ -4,7 +4,7 @@ import (
 	"image"
 	"runtime"
 
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/gl"
 )
 
 type Frame struct {

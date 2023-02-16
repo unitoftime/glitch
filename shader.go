@@ -5,7 +5,7 @@ import (
 
 	// "github.com/go-gl/mathgl/mgl32"
 
-	"github.com/unitoftime/gl"
+	"github.com/unitoftime/glitch/internal/gl"
 )
 
 type ShaderConfig struct {
