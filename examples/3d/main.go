@@ -96,8 +96,8 @@ func runGame() {
 	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
 
 	// mesh := glitch.NewQuadMesh()
-	x := float32(0)
-	y := float32(0)
+	x := 0.0
+	y := 0.0
 	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
 
 	// Text
@@ -118,7 +118,7 @@ func runGame() {
 
 	tt := 0.0
 	var dt time.Duration
-	for !win.ShouldClose() {
+	for !win.Closed() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
 		}
@@ -132,7 +132,7 @@ func runGame() {
 
 		tt += dt.Seconds()
 		// pCam.Position = glitch.Vec3{float32(100 * math.Cos(tt)), float32(100 * math.Sin(tt)), 50}
-		pCam.Position = glitch.Vec3{float32(100 * math.Cos(0)), float32(100 * math.Sin(0)), 50}
+		pCam.Position = glitch.Vec3{100 * math.Cos(0), 100 * math.Sin(0), 50}
 		pCam.Target = glitch.Vec3{0, 0, 0}
 
 		pCam.SetPerspective(win)
@@ -141,12 +141,12 @@ func runGame() {
 		mat := glitch.Mat4Ident
 		mat.Scale(0.25, 0.25, 1.0).Translate(100, 100, 0)
 
-		pass.SetLayer(glitch.DefaultLayer)
+		pass.SetLayer(0)
 		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
 		quadModel.Draw(pass, glitch.Mat4Ident)
 
 		cubeMat := glitch.Mat4Ident
-		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float32(tt), glitch.Vec3{0, 0, 1})
+		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float64(tt), glitch.Vec3{0, 0, 1})
 
 		cube.Draw(diffusePass, cubeMat)
 

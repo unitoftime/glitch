@@ -85,7 +85,7 @@ func runGame() {
 	group := ui.NewGroup(win, camera, atlas)
 	// group.Debug = true
 
-	for !win.ShouldClose() {
+	for !win.Closed() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
 		}

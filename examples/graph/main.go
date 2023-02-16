@@ -34,7 +34,7 @@ func runGame() {
 
 	dat := make([]glitch.Vec2, 0)
 	for i := 0; i < 1000; i++ {
-		dat = append(dat, glitch.Vec2{float32(i)/100.0, float32(math.Sin(float64(i) / 100.0))})
+		dat = append(dat, glitch.Vec2{float64(i)/100.0, float64(math.Sin(float64(i) / 100.0))})
 	}
 
 	// lightBlue := glitch.RGBA{0x8a, 0xeb, 0xf1, 0xff}
@@ -73,7 +73,7 @@ func runGame() {
 		win.Update()
 
 		dt = time.Since(start)
-		dat[index][1] = float32(dt.Seconds())
+		dat[index][1] = float64(dt.Seconds())
 		index = (index + 1) % len(dat)
 		start = time.Now()
 	}

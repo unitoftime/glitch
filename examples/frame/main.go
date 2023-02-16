@@ -52,8 +52,8 @@ func runGame() {
 	}
 	texture := glitch.NewTexture(manImage, false)
 
-	x := float32(0)
-	y := float32(0)
+	x := 0.0
+	y := 0.0
 	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
 
 	length := 100000
@@ -62,8 +62,8 @@ func runGame() {
 		man[i] = NewMan()
 	}
 
-	w := float32(160.0)/4
-	h := float32(200.0)/4
+	w := 160.0 / 4.0
+	h := 200.0 / 4.0
 
 	// Text
 	atlas, err := glitch.DefaultAtlas()
@@ -77,7 +77,7 @@ func runGame() {
 	camera := glitch.NewCameraOrtho()
 	start := time.Now()
 	var dt time.Duration
-	for !win.ShouldClose() {
+	for !win.Closed() {
 		if win.Pressed(glitch.KeyBackspace) {
 			win.Close()
 		}
@@ -86,10 +86,10 @@ func runGame() {
 			man[i].position[0] += man[i].velocity[0]
 			man[i].position[1] += man[i].velocity[1]
 
-			if man[i].position[0] <= 0 || (man[i].position[0]+w) >= float32(1920) {
+			if man[i].position[0] <= 0 || (man[i].position[0]+w) >= float64(1920) {
 				man[i].velocity[0] = -man[i].velocity[0]
 			}
-			if man[i].position[1] <= 0 || (man[i].position[1]+h) >= float32(1080) {
+			if man[i].position[1] <= 0 || (man[i].position[1]+h) >= float64(1080) {
 				man[i].velocity[1] = -man[i].velocity[1]
 			}
 		}
@@ -140,7 +140,7 @@ func runGame() {
 type Man struct {
 	position, velocity glitch.Vec2
 	color glitch.RGBA
-	layer uint8
+	layer int8
 }
 func NewMan() Man {
 	colors := []glitch.RGBA{
@@ -155,9 +155,9 @@ func NewMan() Man {
 		// position: mgl32.Vec2{float32(float64(width/2) * rand.Float64()),
 		// 	float32(float64(height/2) * rand.Float64())},
 		position: glitch.Vec2{1920/2, 1080/2},
-		velocity: glitch.Vec2{float32(2*vScale * (rand.Float64()-0.5)),
-			float32(2*vScale * (rand.Float64()-0.5))},
+		velocity: glitch.Vec2{float64(2*vScale * (rand.Float64()-0.5)),
+			float64(2*vScale * (rand.Float64()-0.5))},
 		color: colors[randIndex],
-		layer: uint8(randIndex) + 1,
+		layer: int8(randIndex) + 1,
 	}
 }
