@@ -196,6 +196,13 @@ func (w *Window) Update() {
 }
 
 func (w *Window) Closed() bool {
+	shouldClose := false
+	mainthreadCall(func() {
+		shouldClose = w.window.ShouldClose()
+	})
+	if shouldClose {
+		w.closed = true
+	}
 	return w.closed
 }
 
