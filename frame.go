@@ -79,24 +79,5 @@ func (f *Frame) delete() {
 }
 
 func (f *Frame) Bind() {
-	mainthreadCall(f.mainthreadBind)
+	state.bindFramebuffer(f.fbo, f.bounds)
 }
-func (f *Frame) bind() {
-	// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
-	gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
-	gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-}
-
-// func (f *Frame) Bind() {
-// 	mainthreadCall(func() {
-// 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
-// 		gl.Viewport(0, 0, int(f.bounds.W()), int(f.bounds.H()))
-// 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-// 	})
-// }
-
-// func (f *Frame) Clear() {
-// 	mainthreadCall(func() {
-// 		gl.BindFramebuffer(gl.FRAMEBUFFER, f.fbo)
-// 	})
-// }

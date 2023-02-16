@@ -29,6 +29,9 @@ type Buffer struct {
 type Framebuffer struct {
 	js.Value
 }
+func (o Framebuffer) Equal(o2 Framebuffer) bool {
+	return o.Value.Equal(o2.Value)
+}
 
 type Renderbuffer struct {
 	js.Value
@@ -65,7 +68,7 @@ func (v Attrib) Valid() bool       { return v != NoAttrib }
 func (v Program) Valid() bool      { return !v.Equal(NoProgram.Value) }
 func (v Shader) Valid() bool       { return !v.Equal(NoShader.Value) }
 func (v Buffer) Valid() bool       { return !v.Equal(NoBuffer.Value) }
-func (v Framebuffer) Valid() bool  { return !v.Equal(NoFramebuffer.Value) }
+func (v Framebuffer) Valid() bool  { return !v.Equal(NoFramebuffer) }
 func (v Renderbuffer) Valid() bool { return !v.Equal(NoRenderbuffer.Value) }
 func (v Texture) Valid() bool      { return !v.Equal(NoTexture.Value) }
 func (v Uniform) Valid() bool      { return !v.Equal(NoUniform.Value) }

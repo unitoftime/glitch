@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+// Useful: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
+
 var htmlWindow = js.Global().Get("window")
 var document = js.Global().Get("document")
 
@@ -35,8 +37,6 @@ func resolveCanvas() js.Value {
 }
 
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
-	// THINK: Consider https://developer.mozilla.org/en-US/docs/Web/API/Window.open?
-
 	// Find a canvas, preferably one with an id of glfw
 	canvas := resolveCanvas()
 

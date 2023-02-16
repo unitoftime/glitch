@@ -30,6 +30,10 @@ type Buffer struct {
 type Framebuffer struct {
 	Value uint32
 }
+func (o Framebuffer) Equal(o2 Framebuffer) bool {
+	return o.Value == o2.Value
+}
+
 
 // A Renderbuffer is a GL object that holds an image in an internal format.
 type Renderbuffer struct {
@@ -53,6 +57,8 @@ type Object struct {
 func (o Object) Equal(o2 Object) bool {
 	return o.Value == o2.Value
 }
+
+
 
 var NoObject = Object{0}
 

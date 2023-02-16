@@ -74,7 +74,6 @@ type RenderPass struct {
 	SoftwareSort SoftwareSortMode
 
 	minimumCacheSize int // The minimum number of verts a mesh must have before we cache it
-	// meshCache map[*Mesh]meshBuffer // TODO - this should be some sort of LRU cache
 	meshCache *lru.Cache[*Mesh, meshBuffer]
 
 	buffersToDraw []*VertexBuffer
@@ -102,7 +101,8 @@ func NewRenderPass(shader *Shader) *RenderPass {
 	defaultCacheSize := 1024 // TODO - arbitrary
 	meshCache, err := lru.New[*Mesh, meshBuffer](defaultCacheSize)
 	if err != nil {
-		panic(err) // TODO
+		panic(err) // Note: Only panics if defaultCacheSize is negative
+		// https://github.com/hashicorp/golang-lru/blob/6ce8a7443353151a95e1d2d74e0579bd4e5b92e5/simplelru/lru.go#L19
 	}
 
 	r := &RenderPass{

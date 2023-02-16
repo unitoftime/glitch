@@ -247,23 +247,8 @@ func (w *Window) Repeated(key Key) bool {
 
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
-	mainthreadCall(w.mainthreadBind)
+	state.bindFramebuffer(gl.NoFramebuffer, w.Bounds())
 }
-func (w *Window) bind() {
-	// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
-	gl.Viewport(0, 0, int(w.width), int(w.height))
-	// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
-	gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
-}
-
-// func (w *Window) Bind() {
-// 	mainthreadCall(func() {
-// 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
-// 		gl.Viewport(0, 0, int(w.width), int(w.height))
-// 		// Note: 0 (gl.NoFramebuffer) is the window's framebuffer
-// 		gl.BindFramebuffer(gl.FRAMEBUFFER, gl.NoFramebuffer)
-// 	})
-// }
 
 // Reads a rectangle of the window's frame as a collection of bytes
 // func (w *Window) ReadFrame(rect Rect, dst []byte) {

@@ -42,9 +42,6 @@ func NewTransparentTexture64() *Texture {
 	return NewTexture(img, true)
 }
 
-
-
-
 type Texture struct {
 	texture gl.Texture
 	width, height int
@@ -149,11 +146,14 @@ func (t *Texture) Bounds() Rect {
 }
 
 func (t *Texture) Bind(position int) {
-	mainthreadCall(func() {
-		gl.ActiveTexture(gl.TEXTURE0);
-		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
-		gl.BindTexture(gl.TEXTURE_2D, t.texture)
-	})
+	// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
+	mainthreadCall(t.bind)
+}
+
+func (t *Texture) bind() {
+	gl.ActiveTexture(gl.TEXTURE0);
+	// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
+	gl.BindTexture(gl.TEXTURE_2D, t.texture)
 }
 
 func (t *Texture) delete() {
