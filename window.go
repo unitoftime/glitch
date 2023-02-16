@@ -37,7 +37,6 @@ type Window struct {
 	typedBack, typedFront []rune
 
 	mainthreadUpdate func()
-	mainthreadBind func()
 	mainthreadPressed func()
 	pressedKeyCheck Key
 	pressedKeyReturn bool
@@ -161,10 +160,6 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		glfw.PollEvents()
 
 		win.mainthreadCacheMousePosition()
-	}
-
-	win.mainthreadBind = func() {
-		win.bind()
 	}
 
 	win.mainthreadPressed = func() {

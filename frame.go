@@ -14,7 +14,6 @@ type Frame struct {
 	mesh *Mesh
 	material Material
 	bounds Rect
-	mainthreadBind func()
 }
 
 // Type? Color, depth, stencil?
@@ -47,10 +46,6 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 		gl.TexImage2DFull(gl.TEXTURE_2D, 0, gl.DEPTH_COMPONENT24, frame.tex.width, frame.tex.height, gl.DEPTH_COMPONENT, gl.UNSIGNED_INT, nil)
 		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, frame.depth, 0)
 	})
-
-	frame.mainthreadBind = func() {
-		frame.bind()
-	}
 
 	runtime.SetFinalizer(&frame, (*Frame).delete)
 	return &frame
