@@ -5,6 +5,8 @@ import (
 	// "math"
 	"sort"
 
+	"github.com/hashicorp/golang-lru/v2"
+
 	"github.com/unitoftime/glitch/internal/gl"
 )
 
@@ -72,7 +74,8 @@ type RenderPass struct {
 	SoftwareSort SoftwareSortMode
 
 	minimumCacheSize int // The minimum number of verts a mesh must have before we cache it
-	meshCache map[*Mesh]meshBuffer // TODO - this should be some sort of LRU cache
+	// meshCache map[*Mesh]meshBuffer // TODO - this should be some sort of LRU cache
+	meshCache *lru.Cache[*Mesh, meshBuffer]
 
 	buffersToDraw []*VertexBuffer
 
@@ -96,6 +99,12 @@ const (
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 1024 * 8 // 10000 // TODO - arbitrary
+	defaultCacheSize := 1024 // TODO - arbitrary
+	meshCache, err := lru.New[*Mesh, meshBuffer](defaultCacheSize)
+	if err != nil {
+		panic(err) // TODO
+	}
+
 	r := &RenderPass{
 		shader: shader,
 		texture: nil,
@@ -104,7 +113,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
 		// currentLayer: DefaultLayer,
-		meshCache: make(map[*Mesh]meshBuffer),
+		meshCache: meshCache,
 		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
 		minimumCacheSize: 128,
 		buffersToDraw: make([]*VertexBuffer, 0),
@@ -142,7 +151,7 @@ NumVertexBuffers: %d
 }
 
 func (r *RenderPass) Stats() RenderStats {
-	r.stats.MeshCacheSize = len(r.meshCache)
+	r.stats.MeshCacheSize = r.meshCache.Len()
 	r.stats.DrawCalls = len(r.buffersToDraw)
 
 	return r.stats
@@ -188,13 +197,13 @@ func (r *RenderPass) Batch() {
 				r.buffer.gotoNextClean()
 
 				// TODO b/c we are a large mesh, don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
-				meshBuf, ok := r.meshCache[c.mesh]
+				meshBuf, ok := r.meshCache.Get(c.mesh)
 				if !ok {
 
 					// fmt.Println("MeshCache: Mesh has never been cached!")
 					// Create and add the meshBuffer to the cache
 					meshBuf = newMeshBuffer(r.shader, c.mesh)
-					r.meshCache[c.mesh] = meshBuf
+					r.meshCache.Add(c.mesh, meshBuf)
 
 					success := meshBuf.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
 					if !success {
@@ -222,7 +231,7 @@ func (r *RenderPass) Batch() {
 
 						// Update the cache
 						meshBuf.generation = c.mesh.generation
-						r.meshCache[c.mesh] = meshBuf
+						r.meshCache.Add(c.mesh, meshBuf)
 					}
 				}
 
