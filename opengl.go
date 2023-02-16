@@ -224,6 +224,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 			case *SubBuffer[glVec4]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
+				// TODO!!! - gl.VertexAttribPointerWithOffset: https://github.com/go-gl/gl/pull/135/files#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5R67
 				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			default:
