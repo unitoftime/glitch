@@ -306,6 +306,10 @@ func (m *Mesh) SetColor(col RGBA) {
 // 	m.texCoords = append(m.texCoords, m2.texCoords...)
 // }
 
+// --------------------------------------------------------------------------------
+// - Standalone meshes
+// --------------------------------------------------------------------------------
+
 // Basically a quad mesh, but with a centered position
 func NewSpriteMesh(w, h float64, uvBounds Rect) *Mesh {
 	return NewQuadMesh(R(-w/2, -h/2, w/2, h/2), uvBounds)
