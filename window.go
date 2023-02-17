@@ -156,6 +156,9 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 	}
 
 	win.mainthreadUpdate = func() {
+		// TODO - I think this is only useful for webgl because of how my RAF works I think in Firefox it sometimes swaps buffer before finishing the opengl stuff. Weird!
+		gl.Flush()
+		gl.Finish()
 		win.window.SwapBuffers()
 		glfw.PollEvents()
 

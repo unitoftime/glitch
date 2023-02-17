@@ -82,6 +82,9 @@ var (
 
 	fnClear js.Value
 	fnClearColor js.Value
+
+	fnFinish js.Value
+	fnFlush js.Value
 )
 
 func (contextWatcher) OnMakeCurrent(context interface{}) {
@@ -127,6 +130,9 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 
 	fnClear = c.Get("clear").Call("bind", c)
 	fnClearColor = c.Get("clearColor").Call("bind", c)
+
+	fnFinish = c.Get("finish").Call("bind", c)
+	fnFlush = c.Get("flush").Call("bind", c)
 }
 func (contextWatcher) OnDetach() {
 	c = js.Null()
@@ -597,11 +603,11 @@ func EnableVertexAttribArray(a Attrib) {
 }
 
 func Finish() {
-	c.Call("finish")
+	fnFinish.Invoke()
 }
 
 func Flush() {
-	c.Call("flush")
+	fnFlush.Invoke()
 }
 
 func FramebufferRenderbuffer(target, attachment, rbTarget Enum, rb Renderbuffer) {
