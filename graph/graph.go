@@ -27,6 +27,10 @@ func (g *Graph) Clear() {
 	g.mesh.Clear()
 }
 
+func (g *Graph) SetBounds(bounds glitch.Rect) {
+	g.bounds = bounds
+}
+
 func (g *Graph) DrawColorMask(pass *glitch.RenderPass, matrix glitch.Mat4, mask glitch.RGBA) {
 	pass.Add(g.mesh, matrix, mask, glitch.DefaultMaterial())
 }
@@ -59,18 +63,28 @@ func (g *Graph) Line(series []glitch.Vec2) {
 		})
 	}
 
-	g.mesh.Append(g.geom.LineStrip(points, 1))
+	// g.mesh.Append(g.geom.LineStrip(points, 1))
+	g.geom.LineStrip(g.mesh, points, 1)
 }
 
 func (g *Graph) Axes() {
-	g.mesh.Append(g.geom.LineStrip(
+	g.geom.LineStrip(g.mesh,
 		[]glitch.Vec3{
 			glitch.Vec3{g.bounds.Min[0], g.bounds.Max[1], 0},
 			glitch.Vec3{g.bounds.Min[0], g.bounds.Min[1], 0},
 			glitch.Vec3{g.bounds.Max[0], g.bounds.Min[1], 0},
 		},
 		2,
-	))
+	)
+
+	// g.mesh.Append(g.geom.LineStrip(
+	// 	[]glitch.Vec3{
+	// 		glitch.Vec3{g.bounds.Min[0], g.bounds.Max[1], 0},
+	// 		glitch.Vec3{g.bounds.Min[0], g.bounds.Min[1], 0},
+	// 		glitch.Vec3{g.bounds.Max[0], g.bounds.Min[1], 0},
+	// 	},
+	// 	2,
+	// ))
 }
 
 func (g *Graph) GetAxes() glitch.Rect {

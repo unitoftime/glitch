@@ -75,11 +75,11 @@ func (g *GeomDraw) Rectangle(rect Rect, width float64) *Mesh {
 	return m
 }
 
-func (g *GeomDraw) Circle(center Vec3, radius float64, width float64) *Mesh {
-	return g.Ellipse(center, Vec2{radius, radius}, 0, width)
+func (g *GeomDraw) Circle(mesh *Mesh, center Vec3, radius float64, width float64) {
+	g.Ellipse(mesh, center, Vec2{radius, radius}, 0, width)
 }
 
-func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float64, width float64) *Mesh {
+func (g *GeomDraw) Ellipse(mesh *Mesh, center Vec3, size Vec2, rotation float64, width float64) {
 	if width <= 0 {
 		panic("TODO - Fill Ellipse")
 	}
@@ -132,12 +132,11 @@ func (g *GeomDraw) Ellipse(center Vec3, size Vec2, rotation float64, width float
 	// // Append last point
 	// points = append(points, center.Add(Vec3{radius, 0, 0}))
 
-	return g.LineStrip(points, width)
+	g.LineStrip(mesh, points, width)
 }
 
-func (g *GeomDraw) LineStrip(points []Vec3, width float64) *Mesh {
+func (g *GeomDraw) LineStrip(mesh *Mesh, points []Vec3, width float64) {
 	// fmt.Println("Points:", points)
-	m := NewMesh()
 	c := points[0]
 	for i := 0; i < len(points); i++ {
 		b := points[i]
@@ -146,16 +145,14 @@ func (g *GeomDraw) LineStrip(points []Vec3, width float64) *Mesh {
 		}
 
 		// Note: Divide by 2 because each connection spills over have the midpoint of the joint
-		m.Append(g.Line(b, c, 0, 0, width))
+		g.Line(mesh, b, c, 0, 0, width)
 	}
-
-	return m
 }
 
 // TODO - remake linestrip but don't have the looping indexes (ie modulo). This is technically for polygons
-func (g *GeomDraw) Polygon(points []Vec3, width float64) *Mesh {
+func (g *GeomDraw) Polygon(mesh *Mesh, points []Vec3, width float64) {
 	// fmt.Println("Points:", points)
-	m := NewMesh()
+
 	// for i := 0; i < len(points)-1; i++ {
 	a := points[len(points)-1]
 	for i := 0; i < len(points); i++ {
@@ -171,17 +168,18 @@ func (g *GeomDraw) Polygon(points []Vec3, width float64) *Mesh {
 		v2 := d.Sub(c)
 		// fmt.Println("Index:", i, v0, v1, v2)
 		// Note: Divide by 2 because each connection spills over have the midpoint of the joint
-		m.Append(g.Line(b, c, v0.Angle(v1) / 2, v1.Angle(v2) / 2, width))
+		g.Line(mesh, b, c, v0.Angle(v1) / 2, v1.Angle(v2) / 2, width)
+		// m := NewMesh()
+		// m.Append(g.Line(b, c, v0.Angle(v1) / 2, v1.Angle(v2) / 2, width))
 		// m.Append(g.Line(points[i], points[i+1], v0.Angle(v1), v1.Angle(v2), width))
 
 		// m.Append(g.Line(points[i], points[i+1], width))
 	}
 	// fmt.Println("Positions:" m.positions)
-	return m
 }
 
 // TODO different line endings
-func (g *GeomDraw) Line(a, b Vec3, lastAngle, nextAngle float64, width float64) *Mesh {
+func (g *GeomDraw) Line(mesh *Mesh, a, b Vec3, lastAngle, nextAngle float64, width float64) {
 	// fmt.Println("Angles:", lastAngle, nextAngle)
 
 	line := b.Sub(a)
@@ -260,12 +258,24 @@ func (g *GeomDraw) Line(a, b Vec3, lastAngle, nextAngle float64, width float64) 
 		2, 3, 0,
 	}
 
-	return &Mesh{
-		positions: positions,
-		colors: colors,
-		texCoords: texCoords,
-		indices: inds,
+	currentElement := uint32(len(mesh.positions))
+	for i := range inds {
+		mesh.indices = append(mesh.indices, currentElement + inds[i])
 	}
+
+	mesh.positions = append(mesh.positions, positions...)
+	mesh.colors = append(mesh.colors, colors...)
+	mesh.texCoords = append(mesh.texCoords, texCoords...)
+
+	// mesh.bounds = mesh.bounds.Union(bounds.ToBox()) // TODO - add back
+	mesh.generation++ // TODO - I'd prefer this to manage entirely in the mesh object
+
+	// return &Mesh{
+	// 	positions: positions,
+	// 	colors: colors,
+	// 	texCoords: texCoords,
+	// 	indices: inds,
+	// }
 }
 
 // Point generation functions:

@@ -68,6 +68,8 @@ type Group struct {
 	color glitch.RGBA
 	textBuffer []*glitch.Text
 	currentTextBufferIndex int
+	graphBuffer []*graph.Graph
+	currentGraphBufferIndex int
 }
 
 func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
@@ -89,6 +91,7 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		OnlyCheckUnion: true,
 		color: glitch.RGBA{1, 1, 1, 1},
 		textBuffer: make([]*glitch.Text, 0),
+		graphBuffer: make([]*graph.Graph, 0),
 	}
 }
 
@@ -147,6 +150,7 @@ func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 
 func (g *Group) Clear() {
 	g.currentTextBufferIndex = 0
+	g.currentGraphBufferIndex = 0
 
 	g.pass.Clear()
 	g.unionBoundsSet = false
@@ -301,8 +305,22 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitc
 	g.debugRect(tipRect)
 }
 
+func (g *Group) getGraph(bounds glitch.Rect) *graph.Graph {
+	if g.currentGraphBufferIndex >= len(g.graphBuffer) {
+		g.graphBuffer = append(g.graphBuffer, graph.NewGraph(bounds))
+	}
+
+	idx := g.currentGraphBufferIndex
+	g.currentGraphBufferIndex++
+	g.graphBuffer[idx].Clear()
+	g.graphBuffer[idx].SetBounds(bounds)
+	return g.graphBuffer[idx]
+}
+
 func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2) {
-	line := graph.NewGraph(rect)
+	line := g.getGraph(rect)
+
+	// line := graph.NewGraph(rect)
 	line.Line(series)
 	line.Axes()
 	line.DrawColorMask(g.pass, glitch.Mat4Ident, g.color)

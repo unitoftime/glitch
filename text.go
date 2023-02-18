@@ -151,7 +151,7 @@ func (a *Atlas) LineHeight() float64 {
 	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap))
 }
 
-func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float64) (*Mesh, Vec2, float64) {
+func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64) (Vec2, float64) {
 	// multiplying by texture sizes converts from UV to pixel coords
 	scaleX := scale * float64(a.texture.width)
 	scaleY := scale * float64(a.texture.height)
@@ -185,11 +185,12 @@ func (a *Atlas) RuneVerts(r rune, dot Vec2, scale float64) (*Mesh, Vec2, float64
 	y1 := dot[1] + (scaleY * glyph.Bearing[1])// - (2*fixedToFloat(a.descent))
 	y2 := y1 + (scaleY * (v2 - v1))
 
-	mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
+	mesh.AppendQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
+	// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 
 	dot[0] += (scaleX * glyph.Advance)
 
-	return mesh, dot, y2
+	return dot, y2
 }
 
 func (a *Atlas) Text(str string) *Text {
@@ -201,6 +202,7 @@ func (a *Atlas) Text(str string) *Text {
 		scale: 1.0,
 		LineHeight: a.LineHeight(),
 		mesh: NewMesh(),
+		tmpMesh: NewMesh(),
 
 		Color: RGBA{1, 1, 1, 1},
 	}
@@ -213,6 +215,7 @@ func (a *Atlas) Text(str string) *Text {
 type Text struct {
 	currentString string
 	mesh *Mesh
+	tmpMesh *Mesh // For temporarily buffering data. TODO - would be more efficient just to append the quads directly to the mesh rather than buffering them here
 	atlas *Atlas
 	bounds Rect
 	texture *Texture
@@ -305,9 +308,8 @@ func (t *Text) AppendStringVerts(text string) Rect{
 
 		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
 		// fmt.Println("dot", *dot)
-		runeMesh, newDot, _ := t.atlas.RuneVerts(r, t.Dot, t.scale)
-		runeMesh.SetColor(t.Color)
-		t.mesh.Append(runeMesh)
+		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale)
+		// t.tmpMesh.SetColor(t.Color) // TODO - enable this back
 
 		t.Dot = newDot
 

@@ -306,6 +306,46 @@ func (m *Mesh) SetColor(col RGBA) {
 // 	m.texCoords = append(m.texCoords, m2.texCoords...)
 // }
 
+func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect) {
+	color := RGBA{1.0, 1.0, 1.0, 1.0}
+	positions := []glVec3{
+		glVec3{float32(bounds.Max[0]), float32(bounds.Max[1]), float32(0.0)},
+		glVec3{float32(bounds.Max[0]), float32(bounds.Min[1]), float32(0.0)},
+		glVec3{float32(bounds.Min[0]), float32(bounds.Min[1]), float32(0.0)},
+		glVec3{float32(bounds.Min[0]), float32(bounds.Max[1]), float32(0.0)},
+	}
+	// TODO normals
+	colors := []glVec4{
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
+	}
+	texCoords := []glVec2{
+		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
+		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
+		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
+		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
+	}
+
+	inds := []uint32{
+		0, 1, 3,
+		1, 2, 3,
+	}
+
+	currentElement := uint32(len(m.positions))
+	for i := range inds {
+		m.indices = append(m.indices, currentElement + inds[i])
+	}
+
+	m.positions = append(m.positions, positions...)
+	m.colors = append(m.colors, colors...)
+	m.texCoords = append(m.texCoords, texCoords...)
+
+	m.bounds = m.bounds.Union(bounds.ToBox())
+	m.generation++
+}
+
 // --------------------------------------------------------------------------------
 // - Standalone meshes
 // --------------------------------------------------------------------------------
