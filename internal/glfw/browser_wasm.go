@@ -611,8 +611,8 @@ func (w *Window) SwapBuffers() error {
 	// <-animationFrameChan
 	// raf.Invoke(animationFrameCallback)
 
-	// Alternative 3 RAF strategy
-	<-animationFrameChan
+	// // Alternative 3 RAF strategy
+	// <-animationFrameChan
 
 	return nil
 }
