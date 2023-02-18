@@ -118,9 +118,9 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		minimumCacheSize: 128,
 		buffersToDraw: make([]*VertexBuffer, 0),
 	}
-	r.mainthreadDepthTest = func() {
-		r.enableDepthTest()
-	}
+	// r.mainthreadDepthTest = func() {
+	// 	r.enableDepthTest()
+	// }
 	return r
 }
 
@@ -263,7 +263,8 @@ func (r *RenderPass) Draw(target Target) {
 	// Bind render target
 	target.Bind()
 
-	mainthreadCall(r.mainthreadDepthTest)
+	// mainthreadCall(r.mainthreadDepthTest)
+	state.enableDepthTest(gl.LEQUAL)
 
 	r.shader.Bind()
 	for k,v := range r.uniforms {
@@ -275,15 +276,15 @@ func (r *RenderPass) Draw(target Target) {
 
 	openglDraw(r.buffersToDraw)
 }
-func (r *RenderPass) enableDepthTest() {
-	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
-	if r.DepthTest {
-		gl.Enable(gl.DEPTH_TEST)
-		gl.DepthFunc(gl.LEQUAL)
-	} else {
-		gl.Disable(gl.DEPTH_TEST)
-	}
-}
+// func (r *RenderPass) enableDepthTest() {
+// 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
+// 	if r.DepthTest {
+// 		gl.Enable(gl.DEPTH_TEST)
+// 		gl.DepthFunc(gl.LEQUAL)
+// 	} else {
+// 		gl.Disable(gl.DEPTH_TEST)
+// 	}
+// }
 
 func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	// TODO - use correct texture slot

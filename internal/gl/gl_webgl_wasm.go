@@ -7,10 +7,10 @@
 package gl
 
 import (
-	"encoding/binary"
+	// "encoding/binary"
 	"fmt"
 	"strings"
-	"math"
+	// "math"
 	"reflect"
 	"runtime"
 	"syscall/js"
@@ -83,8 +83,21 @@ var (
 	fnClear js.Value
 	fnClearColor js.Value
 
+	fnUseProgram js.Value
+
 	fnFinish js.Value
 	fnFlush js.Value
+
+	fnGetParameter js.Value
+	fnCreateFramebuffer js.Value
+	fnCreateProgram js.Value
+	fnCreateTexture js.Value
+	fnDeleteFramebuffer js.Value
+	fnDeleteShader js.Value
+	fnFramebufferTexture2D js.Value
+	fnGetUniformLocation js.Value
+	fnLinkProgram js.Value
+	fnTexImage2D js.Value
 )
 
 func (contextWatcher) OnMakeCurrent(context interface{}) {
@@ -133,6 +146,20 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 
 	fnFinish = c.Get("finish").Call("bind", c)
 	fnFlush = c.Get("flush").Call("bind", c)
+
+	fnUseProgram = c.Get("useProgram").Call("bind", c)
+	fnGetParameter = c.Get("getParameter").Call("bind", c)
+
+	fnCreateFramebuffer = c.Get("createFramebuffer").Call("bind", c)
+	fnCreateProgram = c.Get("createProgram").Call("bind", c)
+	fnCreateTexture = c.Get("createTexture").Call("bind", c)
+	fnDeleteFramebuffer = c.Get("deleteFramebuffer").Call("bind", c)
+	fnDeleteShader = c.Get("deleteShader").Call("bind", c)
+	fnFramebufferTexture2D = c.Get("framebufferTexture2D").Call("bind", c)
+	fnGetUniformLocation = c.Get("getUniformLocation").Call("bind", c)
+	fnLinkProgram = c.Get("linkProgram").Call("bind", c)
+	fnTexImage2D = c.Get("texImage2D").Call("bind", c)
+
 }
 func (contextWatcher) OnDetach() {
 	c = js.Null()
@@ -467,41 +494,41 @@ func ClearColor(red, green, blue, alpha float32) {
 	// c.Call("clearColor", red, green, blue, alpha)
 }
 
-func ClearDepthf(d float32) {
-	c.Call("clearDepth", d)
-}
+// func ClearDepthf(d float32) {
+// 	c.Call("clearDepth", d)
+// }
 
-func ClearStencil(s int) {
-	c.Call("clearStencil", s)
-}
+// func ClearStencil(s int) {
+// 	c.Call("clearStencil", s)
+// }
 
-func ColorMask(red, green, blue, alpha bool) {
-	c.Call("colorMask", red, green, blue, alpha)
-}
+// func ColorMask(red, green, blue, alpha bool) {
+// 	c.Call("colorMask", red, green, blue, alpha)
+// }
 
 func CompileShader(s Shader) {
 	c.Call("compileShader", s.Value)
 }
 
-func CompressedTexImage2D(target Enum, level int, internalformat Enum, width, height, border int, data interface{}) {
-	array, length := SliceToTypedArray(data)
-	subarray := array.Call("subarray", 0, length)
-	c.Call("compressedTexImage2D", int(target), level, internalformat, width, height, border, subarray)
-}
+// func CompressedTexImage2D(target Enum, level int, internalformat Enum, width, height, border int, data interface{}) {
+// 	array, length := SliceToTypedArray(data)
+// 	subarray := array.Call("subarray", 0, length)
+// 	c.Call("compressedTexImage2D", int(target), level, internalformat, width, height, border, subarray)
+// }
 
-func CompressedTexSubImage2D(target Enum, level, xoffset, yoffset, width, height int, format Enum, data interface{}) {
-	array, length := SliceToTypedArray(data)
-	subarray := array.Call("subarray", 0, length)
-	c.Call("compressedTexSubImage2D", int(target), level, xoffset, yoffset, width, height, format, subarray)
-}
+// func CompressedTexSubImage2D(target Enum, level, xoffset, yoffset, width, height int, format Enum, data interface{}) {
+// 	array, length := SliceToTypedArray(data)
+// 	subarray := array.Call("subarray", 0, length)
+// 	c.Call("compressedTexSubImage2D", int(target), level, xoffset, yoffset, width, height, format, subarray)
+// }
 
-func CopyTexImage2D(target Enum, level int, internalformat Enum, x, y, width, height, border int) {
-	c.Call("copyTexImage2D", int(target), level, internalformat, x, y, width, height, border)
-}
+// func CopyTexImage2D(target Enum, level int, internalformat Enum, x, y, width, height, border int) {
+// 	c.Call("copyTexImage2D", int(target), level, internalformat, x, y, width, height, border)
+// }
 
-func CopyTexSubImage2D(target Enum, level, xoffset, yoffset, x, y, width, height int) {
-	c.Call("copyTexSubImage2D", int(target), level, xoffset, yoffset, x, y, width, height)
-}
+// func CopyTexSubImage2D(target Enum, level, xoffset, yoffset, x, y, width, height int) {
+// 	c.Call("copyTexSubImage2D", int(target), level, xoffset, yoffset, x, y, width, height)
+// }
 
 func CreateBuffer() Buffer {
 	// return Buffer{Value: c.Call("createBuffer")}
@@ -509,47 +536,52 @@ func CreateBuffer() Buffer {
 }
 
 func CreateFramebuffer() Framebuffer {
-	return Framebuffer{Value: c.Call("createFramebuffer")}
+	return Framebuffer{Value: fnCreateFramebuffer.Invoke()}
+	// return Framebuffer{Value: c.Call("createFramebuffer")}
 }
 
 func CreateProgram() Program {
-	return Program{Value: c.Call("createProgram")}
+	return Program{Value: fnCreateProgram.Invoke("createProgram")}
+	// return Program{Value: c.Call("createProgram")}
 }
 
-func CreateRenderbuffer() Renderbuffer {
-	return Renderbuffer{Value: c.Call("createRenderbuffer")}
-}
+// func CreateRenderbuffer() Renderbuffer {
+// 	return Renderbuffer{Value: c.Call("createRenderbuffer")}
+// }
 
 func CreateShader(ty Enum) Shader {
 	return Shader{Value: c.Call("createShader", int(ty))}
 }
 
 func CreateTexture() Texture {
-	return Texture{Value: c.Call("createTexture")}
+	return Texture{Value: fnCreateTexture.Invoke()}
+	// return Texture{Value: c.Call("createTexture")}
 }
 
-func CullFace(mode Enum) {
-	c.Call("cullFace", int(mode))
-}
+// func CullFace(mode Enum) {
+// 	c.Call("cullFace", int(mode))
+// }
 
-func DeleteBuffer(v Buffer) {
-	c.Call("deleteBuffer", v.Value)
-}
+// func DeleteBuffer(v Buffer) {
+// 	c.Call("deleteBuffer", v.Value)
+// }
 
 func DeleteFramebuffer(v Framebuffer) {
-	c.Call("deleteFramebuffer", v.Value)
+	fnDeleteFramebuffer.Invoke(v.Value)
+	// c.Call("deleteFramebuffer", v.Value)
 }
 
 func DeleteProgram(p Program) {
 	c.Call("deleteProgram", p.Value)
 }
 
-func DeleteRenderbuffer(v Renderbuffer) {
-	c.Call("deleteRenderbuffer", v.Value)
-}
+// func DeleteRenderbuffer(v Renderbuffer) {
+// 	c.Call("deleteRenderbuffer", v.Value)
+// }
 
 func DeleteShader(s Shader) {
-	c.Call("deleteShader", s.Value)
+	fnDeleteShader.Invoke(s.Value)
+	// c.Call("deleteShader", s.Value)
 }
 
 func DeleteTexture(v Texture) {
@@ -561,30 +593,30 @@ func DepthFunc(fn Enum) {
 	// c.Call("depthFunc", int(fn))
 }
 
-func DepthMask(flag bool) {
-	c.Call("depthMask", flag)
-}
+// func DepthMask(flag bool) {
+// 	c.Call("depthMask", flag)
+// }
 
-func DepthRangef(n, f float32) {
-	c.Call("depthRange", n, f)
-}
+// func DepthRangef(n, f float32) {
+// 	c.Call("depthRange", n, f)
+// }
 
-func DetachShader(p Program, s Shader) {
-	c.Call("detachShader", p.Value, s.Value)
-}
+// func DetachShader(p Program, s Shader) {
+// 	c.Call("detachShader", p.Value, s.Value)
+// }
 
 func Disable(cap Enum) {
 	fnDisable.Invoke(int(cap))
 	// c.Call("disable", int(cap))
 }
 
-func DisableVertexAttribArray(a Attrib) {
-	c.Call("disableVertexAttribArray", a.Value)
-}
+// func DisableVertexAttribArray(a Attrib) {
+// 	c.Call("disableVertexAttribArray", a.Value)
+// }
 
-func DrawArrays(mode Enum, first, count int) {
-	c.Call("drawArrays", int(mode), first, count)
-}
+// func DrawArrays(mode Enum, first, count int) {
+// 	c.Call("drawArrays", int(mode), first, count)
+// }
 
 // TODO - webgl1 won't work until I change all calls to this to use UNSIGNED_BYTE or UNSIGNED_SHORT as the type (ty Enum). https://registry.khronos.org/OpenGL-Refpages/es2.0/xhtml/glDrawElements.xml
 func DrawElements(mode Enum, count int, ty Enum, offset int) {
@@ -610,95 +642,96 @@ func Flush() {
 	fnFlush.Invoke()
 }
 
-func FramebufferRenderbuffer(target, attachment, rbTarget Enum, rb Renderbuffer) {
-	c.Call("framebufferRenderbuffer", target, attachment, int(rbTarget), rb.Value)
-}
+// func FramebufferRenderbuffer(target, attachment, rbTarget Enum, rb Renderbuffer) {
+// 	c.Call("framebufferRenderbuffer", target, attachment, int(rbTarget), rb.Value)
+// }
 
 func FramebufferTexture2D(target, attachment, texTarget Enum, t Texture, level int) {
-	c.Call("framebufferTexture2D", int(target), int(attachment), int(texTarget), t.Value, level)
+	fnFramebufferTexture2D.Invoke(int(target), int(attachment), int(texTarget), t.Value, level)
+	// c.Call("framebufferTexture2D", int(target), int(attachment), int(texTarget), t.Value, level)
 }
 
-func FrontFace(mode Enum) {
-	c.Call("frontFace", int(mode))
-}
+// func FrontFace(mode Enum) {
+// 	c.Call("frontFace", int(mode))
+// }
 
-func GenerateMipmap(target Enum) {
-	c.Call("generateMipmap", int(target))
-}
+// func GenerateMipmap(target Enum) {
+// 	c.Call("generateMipmap", int(target))
+// }
 
-func GetActiveAttrib(p Program, index uint32) (name string, size int, ty Enum) {
-	ai := c.Call("getActiveAttrib", p.Value, index)
-	return ai.Get("name").String(), ai.Get("size").Int(), Enum(ai.Get("type").Int())
-}
+// func GetActiveAttrib(p Program, index uint32) (name string, size int, ty Enum) {
+// 	ai := c.Call("getActiveAttrib", p.Value, index)
+// 	return ai.Get("name").String(), ai.Get("size").Int(), Enum(ai.Get("type").Int())
+// }
 
-func GetActiveUniform(p Program, index uint32) (name string, size int, ty Enum) {
-	ai := c.Call("getActiveUniform", p.Value, index)
-	return ai.Get("name").String(), ai.Get("size").Int(), Enum(ai.Get("type").Int())
-}
+// func GetActiveUniform(p Program, index uint32) (name string, size int, ty Enum) {
+// 	ai := c.Call("getActiveUniform", p.Value, index)
+// 	return ai.Get("name").String(), ai.Get("size").Int(), Enum(ai.Get("type").Int())
+// }
 
-func GetAttachedShaders(p Program) []Shader {
-	objs := c.Call("getAttachedShaders", p.Value)
-	shaders := make([]Shader, objs.Length())
-	for i := 0; i < objs.Length(); i++ {
-		shaders[i] = Shader{Value: objs.Index(i)}
-	}
-	return shaders
-}
+// func GetAttachedShaders(p Program) []Shader {
+// 	objs := c.Call("getAttachedShaders", p.Value)
+// 	shaders := make([]Shader, objs.Length())
+// 	for i := 0; i < objs.Length(); i++ {
+// 		shaders[i] = Shader{Value: objs.Index(i)}
+// 	}
+// 	return shaders
+// }
 
 func GetAttribLocation(p Program, name string) Attrib {
 	return Attrib{Value: fnGetAttribLocation.Invoke(p.Value, name).Int()}
 	// return Attrib{Value: c.Call("getAttribLocation", p.Value, name).Int()}
 }
 
-func GetBooleanv(dst []bool, pname Enum) {
-	println("GetBooleanv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	result := c.Call("getParameter", int(pname))
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		dst[i] = result.Index(i).Bool()
-	}
-}
-
-func GetFloatv(dst []float32, pname Enum) {
-	println("GetFloatv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	result := c.Call("getParameter", int(pname))
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		dst[i] = float32(result.Index(i).Float())
-	}
-}
-
-func GetIntegerv(pname Enum, data []int32) {
-	result := c.Call("getParameter", int(pname))
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		data[i] = int32(result.Index(i).Int())
-	}
-}
-
-// func GetInteger(pname Enum) int {
-// 	return c.Call("getParameter", int(pname)).Int()
+// func GetBooleanv(dst []bool, pname Enum) {
+// 	println("GetBooleanv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	result := c.Call("getParameter", int(pname))
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		dst[i] = result.Index(i).Bool()
+// 	}
 // }
-func GetInteger(pname Enum) Object {
-	return Object{c.Call("getParameter", int(pname))}
-}
+
+// func GetFloatv(dst []float32, pname Enum) {
+// 	println("GetFloatv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	result := c.Call("getParameter", int(pname))
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		dst[i] = float32(result.Index(i).Float())
+// 	}
+// }
+
+// func GetIntegerv(pname Enum, data []int32) {
+// 	result := c.Call("getParameter", int(pname))
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		data[i] = int32(result.Index(i).Int())
+// 	}
+// }
+
+// // func GetInteger(pname Enum) int {
+// // 	return c.Call("getParameter", int(pname)).Int()
+// // }
+// func GetInteger(pname Enum) Object {
+// 	return Object{c.Call("getParameter", int(pname))}
+// }
 
 
-func GetBufferParameteri(target, pname Enum) int {
-	return c.Call("getBufferParameter", int(target), int(pname)).Int()
-}
+// func GetBufferParameteri(target, pname Enum) int {
+// 	return c.Call("getBufferParameter", int(target), int(pname)).Int()
+// }
 
-func GetError() Enum {
-	return Enum(c.Call("getError").Int())
-}
+// func GetError() Enum {
+// 	return Enum(c.Call("getError").Int())
+// }
 
-func GetBoundFramebuffer() Framebuffer {
-	return Framebuffer{Value: c.Call("getParameter", FRAMEBUFFER_BINDING)}
-}
+// func GetBoundFramebuffer() Framebuffer {
+// 	return Framebuffer{Value: c.Call("getParameter", FRAMEBUFFER_BINDING)}
+// }
 
-func GetFramebufferAttachmentParameteri(target, attachment, pname Enum) int {
-	return c.Call("getFramebufferAttachmentParameter", int(target), int(attachment), int(pname)).Int()
-}
+// func GetFramebufferAttachmentParameteri(target, attachment, pname Enum) int {
+// 	return c.Call("getFramebufferAttachmentParameter", int(target), int(attachment), int(pname)).Int()
+// }
 
 func GetProgrami(p Program, pname Enum) int {
 	switch pname {
@@ -716,9 +749,9 @@ func GetProgramInfoLog(p Program) string {
 	return c.Call("getProgramInfoLog", p.Value).String()
 }
 
-func GetRenderbufferParameteri(target, pname Enum) int {
-	return c.Call("getRenderbufferParameter", int(target), int(pname)).Int()
-}
+// func GetRenderbufferParameteri(target, pname Enum) int {
+// 	return c.Call("getRenderbufferParameter", int(target), int(pname)).Int()
+// }
 
 func GetShaderi(s Shader, pname Enum) int {
 	switch pname {
@@ -736,197 +769,203 @@ func GetShaderInfoLog(s Shader) string {
 	return c.Call("getShaderInfoLog", s.Value).String()
 }
 
-func GetShaderPrecisionFormat(shadertype, precisiontype Enum) (rangeMin, rangeMax, precision int) {
-	println("GetShaderPrecisionFormat: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	format := c.Call("getShaderPrecisionFormat", shadertype, precisiontype)
-	rangeMin = format.Get("rangeMin").Int()
-	rangeMax = format.Get("rangeMax").Int()
-	precision = format.Get("precision").Int()
-	return
-}
+// func GetShaderPrecisionFormat(shadertype, precisiontype Enum) (rangeMin, rangeMax, precision int) {
+// 	println("GetShaderPrecisionFormat: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	format := c.Call("getShaderPrecisionFormat", shadertype, precisiontype)
+// 	rangeMin = format.Get("rangeMin").Int()
+// 	rangeMax = format.Get("rangeMax").Int()
+// 	precision = format.Get("precision").Int()
+// 	return
+// }
 
 func GetShaderSource(s Shader) string {
 	return c.Call("getShaderSource", s.Value).String()
 }
 
 func GetString(pname Enum) string {
+	// return fnGetParameter.Invoke(int(pname)).String()
 	return c.Call("getParameter", int(pname)).String()
 }
 
-func GetTexParameterfv(dst []float32, target, pname Enum) {
-	dst[0] = float32(c.Call("getTexParameter", int(pname)).Float())
-}
+// func GetTexParameterfv(dst []float32, target, pname Enum) {
+// 	dst[0] = float32(c.Call("getTexParameter", int(pname)).Float())
+// }
 
-func GetTexParameteriv(dst []int32, target, pname Enum) {
-	dst[0] = int32(c.Call("getTexParameter", int(pname)).Int())
-}
+// func GetTexParameteriv(dst []int32, target, pname Enum) {
+// 	dst[0] = int32(c.Call("getTexParameter", int(pname)).Int())
+// }
 
-func GetUniformfv(dst []float32, src Uniform, p Program) {
-	println("GetUniformfv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	result := c.Call("getUniform")
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		dst[i] = float32(result.Index(i).Float())
-	}
-}
+// func GetUniformfv(dst []float32, src Uniform, p Program) {
+// 	println("GetUniformfv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	result := c.Call("getUniform")
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		dst[i] = float32(result.Index(i).Float())
+// 	}
+// }
 
-func GetUniformiv(dst []int32, src Uniform, p Program) {
-	println("GetUniformiv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	result := c.Call("getUniform")
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		dst[i] = int32(result.Index(i).Int())
-	}
-}
+// func GetUniformiv(dst []int32, src Uniform, p Program) {
+// 	println("GetUniformiv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	result := c.Call("getUniform")
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		dst[i] = int32(result.Index(i).Int())
+// 	}
+// }
 
 func GetUniformLocation(p Program, name string) Uniform {
-	return Uniform{Value: c.Call("getUniformLocation", p.Value, name)}
+	return Uniform{Value: fnGetUniformLocation.Invoke(p.Value, name)}
+	// return Uniform{Value: c.Call("getUniformLocation", p.Value, name)}
 }
 
-func GetVertexAttribf(src Attrib, pname Enum) float32 {
-	return float32(c.Call("getVertexAttrib", src.Value, int(pname)).Float())
-}
+// func GetVertexAttribf(src Attrib, pname Enum) float32 {
+// 	return float32(c.Call("getVertexAttrib", src.Value, int(pname)).Float())
+// }
 
-func GetVertexAttribfv(dst []float32, src Attrib, pname Enum) {
-	println("GetVertexAttribfv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	result := c.Call("getVertexAttrib")
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		dst[i] = float32(result.Index(i).Float())
-	}
-}
+// func GetVertexAttribfv(dst []float32, src Attrib, pname Enum) {
+// 	println("GetVertexAttribfv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	result := c.Call("getVertexAttrib")
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		dst[i] = float32(result.Index(i).Float())
+// 	}
+// }
 
-func GetVertexAttribi(src Attrib, pname Enum) int32 {
-	return int32(c.Call("getVertexAttrib", src.Value, int(pname)).Int())
-}
+// func GetVertexAttribi(src Attrib, pname Enum) int32 {
+// 	return int32(c.Call("getVertexAttrib", src.Value, int(pname)).Int())
+// }
 
-func GetVertexAttribiv(dst []int32, src Attrib, pname Enum) {
-	println("GetVertexAttribiv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	result := c.Call("getVertexAttrib")
-	length := result.Length()
-	for i := 0; i < length; i++ {
-		dst[i] = int32(result.Index(i).Int())
-	}
-}
+// func GetVertexAttribiv(dst []int32, src Attrib, pname Enum) {
+// 	println("GetVertexAttribiv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	result := c.Call("getVertexAttrib")
+// 	length := result.Length()
+// 	for i := 0; i < length; i++ {
+// 		dst[i] = int32(result.Index(i).Int())
+// 	}
+// }
 
-func Hint(target, mode Enum) {
-	c.Call("hint", int(target), int(mode))
-}
+// func Hint(target, mode Enum) {
+// 	c.Call("hint", int(target), int(mode))
+// }
 
-func IsBuffer(b Buffer) bool {
-	return c.Call("isBuffer", b.Value).Bool()
-}
+// func IsBuffer(b Buffer) bool {
+// 	return c.Call("isBuffer", b.Value).Bool()
+// }
 
-func IsEnabled(cap Enum) bool {
-	return c.Call("isEnabled", int(cap)).Bool()
-}
+// func IsEnabled(cap Enum) bool {
+// 	return c.Call("isEnabled", int(cap)).Bool()
+// }
 
-func IsFramebuffer(fb Framebuffer) bool {
-	return c.Call("isFramebuffer", fb.Value).Bool()
-}
+// func IsFramebuffer(fb Framebuffer) bool {
+// 	return c.Call("isFramebuffer", fb.Value).Bool()
+// }
 
-func IsProgram(p Program) bool {
-	return c.Call("isProgram", p.Value).Bool()
-}
+// func IsProgram(p Program) bool {
+// 	return c.Call("isProgram", p.Value).Bool()
+// }
 
-func IsRenderbuffer(rb Renderbuffer) bool {
-	return c.Call("isRenderbuffer", rb.Value).Bool()
-}
+// func IsRenderbuffer(rb Renderbuffer) bool {
+// 	return c.Call("isRenderbuffer", rb.Value).Bool()
+// }
 
-func IsShader(s Shader) bool {
-	return c.Call("isShader", s.Value).Bool()
-}
+// func IsShader(s Shader) bool {
+// 	return c.Call("isShader", s.Value).Bool()
+// }
 
-func IsTexture(t Texture) bool {
-	return c.Call("isTexture", t.Value).Bool()
-}
+// func IsTexture(t Texture) bool {
+// 	return c.Call("isTexture", t.Value).Bool()
+// }
 
-func LineWidth(width float32) {
-	c.Call("lineWidth", width)
-}
+// func LineWidth(width float32) {
+// 	c.Call("lineWidth", width)
+// }
 
 func LinkProgram(p Program) {
-	c.Call("linkProgram", p.Value)
+	fnLinkProgram.Invoke(p.Value)
+	// c.Call("linkProgram", p.Value)
 }
 
-func PixelStorei(pname Enum, param int32) {
-	c.Call("pixelStorei", int(pname), param)
-}
+// func PixelStorei(pname Enum, param int32) {
+// 	c.Call("pixelStorei", int(pname), param)
+// }
 
-func PolygonOffset(factor, units float32) {
-	c.Call("polygonOffset", factor, units)
-}
+// func PolygonOffset(factor, units float32) {
+// 	c.Call("polygonOffset", factor, units)
+// }
 
-func ReadPixels(dst []byte, x, y, width, height int, format, ty Enum) {
-	println("ReadPixels: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	if ty == Enum(UNSIGNED_BYTE) {
-		c.Call("readPixels", x, y, width, height, format, int(ty), dst)
-	} else {
-		tmpDst := make([]float32, len(dst)/4)
-		c.Call("readPixels", x, y, width, height, format, int(ty), tmpDst)
-		for i, f := range tmpDst {
-			binary.LittleEndian.PutUint32(dst[i*4:], math.Float32bits(f))
-		}
-	}
-}
+// func ReadPixels(dst []byte, x, y, width, height int, format, ty Enum) {
+// 	println("ReadPixels: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	if ty == Enum(UNSIGNED_BYTE) {
+// 		c.Call("readPixels", x, y, width, height, format, int(ty), dst)
+// 	} else {
+// 		tmpDst := make([]float32, len(dst)/4)
+// 		c.Call("readPixels", x, y, width, height, format, int(ty), tmpDst)
+// 		for i, f := range tmpDst {
+// 			binary.LittleEndian.PutUint32(dst[i*4:], math.Float32bits(f))
+// 		}
+// 	}
+// }
 
 func ReleaseShaderCompiler() {
 	// do nothing
 }
 
-func RenderbufferStorage(target, internalFormat Enum, width, height int) {
-	c.Call("renderbufferStorage", target, internalFormat, width, height)
-}
+// func RenderbufferStorage(target, internalFormat Enum, width, height int) {
+// 	c.Call("renderbufferStorage", target, internalFormat, width, height)
+// }
 
-func SampleCoverage(value float32, invert bool) {
-	c.Call("sampleCoverage", value, invert)
-}
+// func SampleCoverage(value float32, invert bool) {
+// 	c.Call("sampleCoverage", value, invert)
+// }
 
-func Scissor(x, y, width, height int32) {
-	c.Call("scissor", x, y, width, height)
-}
+// func Scissor(x, y, width, height int32) {
+// 	c.Call("scissor", x, y, width, height)
+// }
 
 func ShaderSource(s Shader, src string) {
 	c.Call("shaderSource", s.Value, src)
 }
 
-func StencilFunc(fn Enum, ref int, mask uint32) {
-	c.Call("stencilFunc", fn, ref, mask)
-}
+// func StencilFunc(fn Enum, ref int, mask uint32) {
+// 	c.Call("stencilFunc", fn, ref, mask)
+// }
 
-func StencilFuncSeparate(face, fn Enum, ref int, mask uint32) {
-	c.Call("stencilFuncSeparate", face, fn, ref, mask)
-}
+// func StencilFuncSeparate(face, fn Enum, ref int, mask uint32) {
+// 	c.Call("stencilFuncSeparate", face, fn, ref, mask)
+// }
 
-func StencilMask(mask uint32) {
-	c.Call("stencilMask", mask)
-}
+// func StencilMask(mask uint32) {
+// 	c.Call("stencilMask", mask)
+// }
 
-func StencilMaskSeparate(face Enum, mask uint32) {
-	c.Call("stencilMaskSeparate", face, mask)
-}
+// func StencilMaskSeparate(face Enum, mask uint32) {
+// 	c.Call("stencilMaskSeparate", face, mask)
+// }
 
-func StencilOp(fail, zfail, zpass Enum) {
-	c.Call("stencilOp", fail, zfail, zpass)
-}
+// func StencilOp(fail, zfail, zpass Enum) {
+// 	c.Call("stencilOp", fail, zfail, zpass)
+// }
 
-func StencilOpSeparate(face, sfail, dpfail, dppass Enum) {
-	c.Call("stencilOpSeparate", face, sfail, dpfail, dppass)
-}
+// func StencilOpSeparate(face, sfail, dpfail, dppass Enum) {
+// 	c.Call("stencilOpSeparate", face, sfail, dpfail, dppass)
+// }
 
 func TexImage2D(target Enum, level int, width, height int, format Enum, ty Enum, data interface{}) {
 	array, length := SliceToTypedArray(data)
 	subarray := array.Call("subarray", 0, length)
-	c.Call("texImage2D", int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
+	fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
+	// c.Call("texImage2D", int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
 }
 
 func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, format Enum, ty Enum, data interface{}) {
 	array, length := SliceToTypedArray(data)
 	if !array.IsNull() {
 		subarray := array.Call("subarray", 0, length)
-		c.Call("texImage2D", int(target), level, int(format1), width, height, 0, int(format), int(ty), subarray)
+		fnTexImage2D.Invoke(int(target), level, int(format1), width, height, 0, int(format), int(ty), subarray)
+		// c.Call("texImage2D", int(target), level, int(format1), width, height, 0, int(format), int(ty), subarray)
 	} else {
-		c.Call("texImage2D", int(target), level, int(format1), width, height, 0, int(format), int(ty), nil)
+		fnTexImage2D.Invoke(int(target), level, int(format1), width, height, 0, int(format), int(ty), nil)
+		// c.Call("texImage2D", int(target), level, int(format1), width, height, 0, int(format), int(ty), nil)
 	}
 }
 
@@ -937,110 +976,110 @@ func TexSubImage2D(target Enum, level int, x, y, width, height int, format, ty E
 	c.Call("texSubImage2D", int(target), level, x, y, width, height, format, int(ty), subarray)
 }
 
-func TexParameterf(target, pname Enum, param float32) {
-	c.Call("texParameterf", int(target), int(pname), param)
-}
+// func TexParameterf(target, pname Enum, param float32) {
+// 	c.Call("texParameterf", int(target), int(pname), param)
+// }
 
-func TexParameterfv(target, pname Enum, params []float32) {
-	println("TexParameterfv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	for _, param := range params {
-		c.Call("texParameterf", int(target), int(pname), param)
-	}
-}
+// func TexParameterfv(target, pname Enum, params []float32) {
+// 	println("TexParameterfv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	for _, param := range params {
+// 		c.Call("texParameterf", int(target), int(pname), param)
+// 	}
+// }
 
 func TexParameteri(target, pname Enum, param int) {
 	c.Call("texParameteri", int(target), int(pname), param)
 }
 
-func TexParameteriv(target, pname Enum, params []int32) {
-	println("TexParameteriv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
-	for _, param := range params {
-		c.Call("texParameteri", int(target), int(pname), param)
-	}
-}
-
-func Uniform1f(dst Uniform, v float32) {
-	c.Call("uniform1f", dst.Value, v)
-}
-
-// func Uniform1fv(dst Uniform, src []float32) {
-// 	array, length := SliceToTypedArray(src)
-// 	subarray := array.Call("subarray", 0, length)
-// 	c.Call("uniform1fv", dst.Value, subarray)
+// func TexParameteriv(target, pname Enum, params []int32) {
+// 	println("TexParameteriv: not yet tested (TODO: remove this after it's confirmed to work. Your feedback is welcome.)")
+// 	for _, param := range params {
+// 		c.Call("texParameteri", int(target), int(pname), param)
+// 	}
 // }
 
-func Uniform1i(dst Uniform, v int) {
-	c.Call("uniform1i", dst.Value, v)
-}
+// func Uniform1f(dst Uniform, v float32) {
+// 	c.Call("uniform1f", dst.Value, v)
+// }
 
-func Uniform1iv(dst Uniform, src []int32) {
-	c.Call("uniform1iv", dst.Value, src)
-}
+// // func Uniform1fv(dst Uniform, src []float32) {
+// // 	array, length := SliceToTypedArray(src)
+// // 	subarray := array.Call("subarray", 0, length)
+// // 	c.Call("uniform1fv", dst.Value, subarray)
+// // }
 
-func Uniform2f(dst Uniform, v0, v1 float32) {
-	c.Call("uniform2f", dst.Value, v0, v1)
-}
+// func Uniform1i(dst Uniform, v int) {
+// 	c.Call("uniform1i", dst.Value, v)
+// }
 
-func Uniform2fv(dst Uniform, src []float32) {
-	// c.Call("uniform2fv", dst.Value, src)
+// func Uniform1iv(dst Uniform, src []int32) {
+// 	c.Call("uniform1iv", dst.Value, src)
+// }
 
-	SliceToTypedArray(src)
-	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec2)
-}
+// func Uniform2f(dst Uniform, v0, v1 float32) {
+// 	c.Call("uniform2f", dst.Value, v0, v1)
+// }
 
-func Uniform2i(dst Uniform, v0, v1 int) {
-	c.Call("uniform2i", dst.Value, v0, v1)
-}
+// func Uniform2fv(dst Uniform, src []float32) {
+// 	// c.Call("uniform2fv", dst.Value, src)
 
-func Uniform2iv(dst Uniform, src []int32) {
-	c.Call("uniform2iv", dst.Value, src)
-}
+// 	SliceToTypedArray(src)
+// 	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec2)
+// }
 
-func Uniform3f(dst Uniform, v0, v1, v2 float32) {
-	c.Call("uniform3f", dst.Value, v0, v1, v2)
-}
+// func Uniform2i(dst Uniform, v0, v1 int) {
+// 	c.Call("uniform2i", dst.Value, v0, v1)
+// }
 
-func Uniform3fv(dst Uniform, src []float32) {
-	// c.Call("uniform3fv", dst.Value, src)
+// func Uniform2iv(dst Uniform, src []int32) {
+// 	c.Call("uniform2iv", dst.Value, src)
+// }
 
-	SliceToTypedArray(src)
-	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec3)
+// func Uniform3f(dst Uniform, v0, v1, v2 float32) {
+// 	c.Call("uniform3f", dst.Value, v0, v1, v2)
+// }
 
-	// array, length := SliceToTypedArray(src)
-	// subarray := array.Call("subarray", 0, length)
-	// c.Call("uniform3fv", dst.Value, subarray)
-}
+// func Uniform3fv(dst Uniform, src []float32) {
+// 	// c.Call("uniform3fv", dst.Value, src)
 
-func Uniform3i(dst Uniform, v0, v1, v2 int32) {
-	c.Call("uniform3i", dst.Value, v0, v1, v2)
-}
+// 	SliceToTypedArray(src)
+// 	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec3)
 
-func Uniform3iv(dst Uniform, src []int32) {
-	c.Call("uniform3iv", dst.Value, src)
-}
+// 	// array, length := SliceToTypedArray(src)
+// 	// subarray := array.Call("subarray", 0, length)
+// 	// c.Call("uniform3fv", dst.Value, subarray)
+// }
 
-func Uniform4f(dst Uniform, v0, v1, v2, v3 float32) {
-	c.Call("uniform4f", dst.Value, v0, v1, v2, v3)
-}
+// func Uniform3i(dst Uniform, v0, v1, v2 int32) {
+// 	c.Call("uniform3i", dst.Value, v0, v1, v2)
+// }
 
-func Uniform4fv(dst Uniform, src []float32) {
-	// c.Call("uniform4fv", dst.Value, src)
+// func Uniform3iv(dst Uniform, src []int32) {
+// 	c.Call("uniform3iv", dst.Value, src)
+// }
 
-	SliceToTypedArray(src)
-	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec4)
+// func Uniform4f(dst Uniform, v0, v1, v2, v3 float32) {
+// 	c.Call("uniform4f", dst.Value, v0, v1, v2, v3)
+// }
 
-	// array, length := SliceToTypedArray(src)
-	// subarray := array.Call("subarray", 0, length)
-	// c.Call("uniform4fv", dst.Value, subarray) // TODO - I think probably most uniforms need this
-}
+// func Uniform4fv(dst Uniform, src []float32) {
+// 	// c.Call("uniform4fv", dst.Value, src)
 
-func Uniform4i(dst Uniform, v0, v1, v2, v3 int32) {
-	c.Call("uniform4i", dst.Value, v0, v1, v2, v3)
-}
+// 	SliceToTypedArray(src)
+// 	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec4)
 
-func Uniform4iv(dst Uniform, src []int32) {
-	c.Call("uniform4iv", dst.Value, src)
-}
+// 	// array, length := SliceToTypedArray(src)
+// 	// subarray := array.Call("subarray", 0, length)
+// 	// c.Call("uniform4fv", dst.Value, subarray) // TODO - I think probably most uniforms need this
+// }
+
+// func Uniform4i(dst Uniform, v0, v1, v2, v3 int32) {
+// 	c.Call("uniform4i", dst.Value, v0, v1, v2, v3)
+// }
+
+// func Uniform4iv(dst Uniform, src []int32) {
+// 	c.Call("uniform4iv", dst.Value, src)
+// }
 
 // func UniformMatrix2fv(dst Uniform, src []float32) {
 // 	array, length := SliceToTypedArray(src)
@@ -1068,53 +1107,54 @@ func UseProgram(p Program) {
 	if p.Value.Equal(js.Value{}) {
 		p.Value = js.Null()
 	}
-	c.Call("useProgram", p.Value)
+	fnUseProgram.Invoke(p.Value)
+	// c.Call("useProgram", p.Value)
 }
 
-func ValidateProgram(p Program) {
-	c.Call("validateProgram", p.Value)
-}
+// func ValidateProgram(p Program) {
+// 	c.Call("validateProgram", p.Value)
+// }
 
-func VertexAttrib1f(dst Attrib, x float32) {
-	c.Call("vertexAttrib1f", dst.Value, x)
-}
+// func VertexAttrib1f(dst Attrib, x float32) {
+// 	c.Call("vertexAttrib1f", dst.Value, x)
+// }
 
-func VertexAttrib1fv(dst Attrib, src []float32) {
-	c.Call("vertexAttrib1fv", dst.Value, src)
-}
+// func VertexAttrib1fv(dst Attrib, src []float32) {
+// 	c.Call("vertexAttrib1fv", dst.Value, src)
+// }
 
-func VertexAttrib2f(dst Attrib, x, y float32) {
-	c.Call("vertexAttrib2f", dst.Value, x, y)
-}
+// func VertexAttrib2f(dst Attrib, x, y float32) {
+// 	c.Call("vertexAttrib2f", dst.Value, x, y)
+// }
 
-func VertexAttrib2fv(dst Attrib, src []float32) {
-	c.Call("vertexAttrib2fv", dst.Value, src)
-}
+// func VertexAttrib2fv(dst Attrib, src []float32) {
+// 	c.Call("vertexAttrib2fv", dst.Value, src)
+// }
 
-func VertexAttrib3f(dst Attrib, x, y, z float32) {
-	c.Call("vertexAttrib3f", dst.Value, x, y, z)
-}
+// func VertexAttrib3f(dst Attrib, x, y, z float32) {
+// 	c.Call("vertexAttrib3f", dst.Value, x, y, z)
+// }
 
-func VertexAttrib3fv(dst Attrib, src []float32) {
-	c.Call("vertexAttrib3fv", dst.Value, src)
-}
+// func VertexAttrib3fv(dst Attrib, src []float32) {
+// 	c.Call("vertexAttrib3fv", dst.Value, src)
+// }
 
-func VertexAttrib4f(dst Attrib, x, y, z, w float32) {
-	c.Call("vertexAttrib4f", dst.Value, x, y, z, w)
-}
+// func VertexAttrib4f(dst Attrib, x, y, z, w float32) {
+// 	c.Call("vertexAttrib4f", dst.Value, x, y, z, w)
+// }
 
-func VertexAttrib4fv(dst Attrib, src []float32) {
-	c.Call("vertexAttrib4fv", dst.Value, src)
-}
+// func VertexAttrib4fv(dst Attrib, src []float32) {
+// 	c.Call("vertexAttrib4fv", dst.Value, src)
+// }
 
 func VertexAttribPointer(dst Attrib, size int, ty Enum, normalized bool, stride, offset int) {
 	fnVertexAttribPointer.Invoke(dst.Value, size, int(ty), normalized, stride, offset)
 	// c.Call("vertexAttribPointer", dst.Value, size, int(ty), normalized, stride, offset)
 }
 
-func VertexAttribIPointer(dst Attrib, size int, ty Enum, stride, offset int) {
-	c.Call("vertexAttribIPointer", dst.Value, size, int(ty), stride, offset)
-}
+// func VertexAttribIPointer(dst Attrib, size int, ty Enum, stride, offset int) {
+// 	c.Call("vertexAttribIPointer", dst.Value, size, int(ty), stride, offset)
+// }
 
 func Viewport(x, y, width, height int) {
 	// c.Call("viewport", x, y, width, height)

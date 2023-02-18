@@ -162,6 +162,12 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		win.window.SwapBuffers()
 		glfw.PollEvents()
 
+		// errorEnum := gl.GetError()
+		// if errorEnum != 0 {
+		// 	fmt.Println("GL ERROR: ", errorEnum)
+		// 	panic("GL ERROR")
+		// }
+
 		win.mainthreadCacheMousePosition()
 	}
 

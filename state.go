@@ -10,6 +10,9 @@ type stateTracker struct {
 	fbo gl.Framebuffer
 	fboBounds Rect
 	fboBinder func()
+
+	depthTest bool
+	depthFunc gl.Enum
 }
 
 var state *stateTracker
@@ -32,4 +35,15 @@ func (s stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	state.fboBounds = bounds
 
 	mainthreadCall(s.fboBinder)
+}
+
+func (s stateTracker) enableDepthTest(depthFunc gl.Enum) {
+	if s.depthTest && s.depthFunc == depthFunc {
+		return // Skip if already enabled and depth functions match
+	}
+
+	mainthreadCall(func() {
+		gl.Enable(gl.DEPTH_TEST)
+		gl.DepthFunc(depthFunc)
+	})
 }

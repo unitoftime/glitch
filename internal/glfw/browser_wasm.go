@@ -373,6 +373,9 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 	// Request first animation frame.
 	// raf.Invoke(animationFrameCallback)
 
+	// Alternative 3 RAF strategy
+	// start()
+
 	return w, nil
 }
 
@@ -608,23 +611,50 @@ func (w *Window) SwapBuffers() error {
 	// <-animationFrameChan
 	// raf.Invoke(animationFrameCallback)
 
+	// Alternative 3 RAF strategy
+	<-animationFrameChan
+
 	return nil
 }
+
+// Alternative 3 RAF strategy
+// func start() {
+// 	type testStruct struct {
+// 		call func()
+// 	}
+// 	t := &testStruct{}
+
+// 	cb := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+// 		t.call()
+// 		animationFrameChan <- struct{}{}
+// 		return nil
+// 	})
+// 	t.call = func() {
+// 		raf.Invoke(cb)
+// 	}
+
+// 	t.call()
+// }
 
 var raf = js.Global().Get("requestAnimationFrame")
 var animationFrameChan = make(chan struct{})
 var lastFrame float64
 var animationFrameCallback = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	go func() {
-		newFrame := args[0].Float()
-		if (newFrame - lastFrame) > 18 {
-			fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
-		}
-		lastFrame = newFrame
-		animationFrameChan <- struct{}{}
-	}()
+	// go func() {
+	// 	newFrame := args[0].Float()
+	// 	if (newFrame - lastFrame) > 18 {
+	// 		fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
+	// 	}
+	// 	lastFrame = newFrame
+	// 	animationFrameChan <- struct{}{}
+	// }()
 
-	// animationFrameChan <- struct{}{}
+	newFrame := args[0].Float()
+	if (newFrame - lastFrame) > 18 {
+		fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
+	}
+	lastFrame = newFrame
+	animationFrameChan <- struct{}{}
 	return nil
 })
 
