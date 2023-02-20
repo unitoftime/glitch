@@ -27,7 +27,7 @@ func init() {
 	}
 }
 
-func (s stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
+func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	if s.fbo.Equal(fbo) && s.fboBounds == bounds {
 		return
 	}
@@ -37,10 +37,12 @@ func (s stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	mainthreadCall(s.fboBinder)
 }
 
-func (s stateTracker) enableDepthTest(depthFunc gl.Enum) {
+func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
 	if s.depthTest && s.depthFunc == depthFunc {
 		return // Skip if already enabled and depth functions match
 	}
+	s.depthTest = true
+	s.depthFunc = depthFunc
 
 	mainthreadCall(func() {
 		gl.Enable(gl.DEPTH_TEST)

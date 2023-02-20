@@ -293,10 +293,10 @@ func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	pass.Add(t.mesh, mat, mask, t.material)
 }
 
-func (t *Text) AppendStringVerts(text string) Rect{
+func (t *Text) AppendStringVerts(text string) Rect {
 	// maxAscent := float32(0) // Tracks the maximum y point of the text block
 
-	initialDot := t.Dot
+	// initialDot := t.Dot
 
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
@@ -332,15 +332,19 @@ func (t *Text) AppendStringVerts(text string) Rect{
 	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
 	// 	dot[1] - (2 * fixedToFloat(a.descent)))
 
-	// TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
-	bounds := R(initialDot[0],
-		initialDot[1] - (fixedToFloat(t.atlas.ascent)),
-		t.Dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-		t.Dot[1] - (fixedToFloat(t.atlas.descent))).
-			Norm().
-			Moved(Vec2{0, fixedToFloat(t.atlas.ascent)})
+	// TODO - this used the glyphs to determine bounds, below I use the mesh
+	// // TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
+	// bounds := R(initialDot[0],
+	// 	initialDot[1] - (fixedToFloat(t.atlas.ascent)),
+	// 	t.Dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// 	t.Dot[1] - (fixedToFloat(t.atlas.descent))).
+	// 		Norm().
+	// 		Moved(Vec2{0, fixedToFloat(t.atlas.ascent)})
+	// return bounds
 
-	return bounds
+	// Attempt 2 - Use mesh bounds
+	return t.mesh.Bounds().Rect()
+
 
 
 	// fmt.Println(bounds)

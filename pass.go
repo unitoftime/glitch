@@ -81,7 +81,7 @@ type RenderPass struct {
 	// Stats
 	stats RenderStats
 
-	mainthreadDepthTest func()
+	// mainthreadDepthTest func()
 }
 
 type SoftwareSortMode uint8
@@ -264,7 +264,7 @@ func (r *RenderPass) Draw(target Target) {
 	target.Bind()
 
 	// mainthreadCall(r.mainthreadDepthTest)
-	state.enableDepthTest(gl.LEQUAL)
+	state.enableDepthTest(gl.LEQUAL)// TODO - rehook for depthtest flags
 
 	r.shader.Bind()
 	for k,v := range r.uniforms {

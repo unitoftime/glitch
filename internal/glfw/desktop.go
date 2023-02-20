@@ -693,7 +693,8 @@ func GetMonitors() []*Monitor {
 }
 
 func (m *Monitor) GetVideoMode() *VidMode {
-	return m.GetVideoMode()
+	vm := m.Monitor.GetVideoMode()
+	return &VidMode{int(vm.Width), int(vm.Height), int(vm.RedBits), int(vm.GreenBits), int(vm.BlueBits), int(vm.RefreshRate)}
 }
 
 func (m *Monitor) GetVideoModes() []*VidMode {

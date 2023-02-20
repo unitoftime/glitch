@@ -157,8 +157,9 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 
 	win.mainthreadUpdate = func() {
 		// TODO - I think this is only useful for webgl because of how my RAF works I think in Firefox it sometimes swaps buffer before finishing the opengl stuff. Weird!
-		gl.Flush()
-		gl.Finish()
+		// TODO - using gl.Finish is bad? https://www.khronos.org/opengl/wiki/Swap_Interval
+		// gl.Flush()
+		// gl.Finish()
 		win.window.SwapBuffers()
 		glfw.PollEvents()
 
@@ -335,3 +336,34 @@ func (w *Window) BrowserHidden() bool {
 	return w.window.BrowserHidden()
 }
 
+// TODO - rename. Also potentially allow for multiple swaps?
+func (w *Window) SetVSync(enable bool) {
+	mainthreadCall(func() {
+		if enable {
+			glfw.SwapInterval(1)
+		} else {
+			glfw.SwapInterval(0)
+		}
+	})
+}
+
+// TODO - rename. also maybe do modes - window, borderless, full, etc.
+func (w *Window) SetFullscreen(enable bool) {
+	mainthreadCall(func() {
+		// w.restore.xpos, w.restore.ypos = w.window.GetPos()
+		// w.restore.width, w.restore.height = w.window.GetSize()
+
+		// mode := monitor.monitor.GetVideoMode()
+		monitor := glfw.GetPrimaryMonitor()
+		mode := monitor.GetVideoMode()
+
+		w.window.SetMonitor(
+			monitor,
+			0,
+			0,
+			mode.Width,
+			mode.Height,
+			mode.RefreshRate,
+		)
+	})
+}

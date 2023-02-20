@@ -590,11 +590,13 @@ func (w *Window) SwapBuffers() error {
 		})
 	} else {
 		raf.Invoke(animationFrameCallback)
+
+		// TODO - vsync disabled. Requires gl.Flush and gl.Finish
+		// time.AfterFunc(1 * time.Nanosecond, func() {
+		// 	animationFrameChan <- struct{}{}
+		// })
 	}
 
-	// time.AfterFunc(1, func() {
-	// 	animationFrameChan <- struct{}{}
-	// })
 	start := time.Now()
 	<-animationFrameChan
 	dt := time.Since(start)
@@ -1136,6 +1138,11 @@ func (w *Window) Destroy() {
 			w.fullscreen = false
 		}
 	}
+}
+
+
+func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int) {
+	// TODO: Not sure?
 }
 
 type CloseCallback func(w *Window)
