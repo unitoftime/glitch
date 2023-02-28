@@ -2,10 +2,7 @@
 
 package glitch
 
-// import "fmt"
-
-// Note: From - "github.com/faiface/mainthread"
-
+// Note: Adapted from - "github.com/faiface/mainthread"
 import (
 	"errors"
 	"runtime"
@@ -67,14 +64,6 @@ func mainthreadCall(f func()) {
 	checkRun()
 	blockingQueue <- f
 	<-blockingQueueDone
-
-	// checkRun()
-	// done := make(chan struct{})
-	// callQueue <- func() {
-	// 	f()
-	// 	done <- struct{}{}
-	// }
-	// <-done
 }
 
 func mainthreadCallNonBlock(f func()) {
@@ -90,26 +79,3 @@ func mainthreadCallErr(f func() error) error {
 	}
 	return <-errChan
 }
-
-/*
-import (
-	"github.com/faiface/mainthread"
-)
-
-func mainthreadRun(run func()) {
-	mainthread.Run(run)
-}
-
-func mainthreadCall(f func()) {
-	mainthread.Call(f)
-}
-
-func mainthreadCallNonBlock(f func()) {
-	mainthread.CallNonBlock(f)
-}
-
-func mainthreadCallErr(f func() error) error {
-	return mainthread.CallErr(f)
-}
-*/
-

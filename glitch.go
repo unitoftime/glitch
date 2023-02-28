@@ -54,27 +54,27 @@ func Run(function func()) {
 // 	// - Con: Simple for user. Not much control over batching though
 // }
 
-const batchSizeTris int = 1000
-const batchSizeVerts int = 1000
+// const batchSizeTris int = 1000
+// const batchSizeVerts int = 1000
 
-type renderContext struct {
-	target *Window
-	shader *Shader
-	textureUnit []*Texture
-	bufferPool map[*Shader]*VertexBuffer
-	vertexBuffer *VertexBuffer
-}
+// type renderContext struct {
+// 	target *Window
+// 	shader *Shader
+// 	textureUnit []*Texture
+// 	bufferPool map[*Shader]*VertexBuffer
+// 	vertexBuffer *VertexBuffer
+// }
 
-var context renderContext
+// var context renderContext
 
 func init() {
-	context = renderContext{
-		target: nil,
-		shader: nil,
-		textureUnit: make([]*Texture, 16), // TODO - can I get this from opengl?
-		bufferPool: make(map[*Shader]*VertexBuffer),
-		vertexBuffer: nil,
-	}
+	// context = renderContext{
+	// 	target: nil,
+	// 	shader: nil,
+	// 	textureUnit: make([]*Texture, 16), // TODO - can I get this from opengl?
+	// 	bufferPool: make(map[*Shader]*VertexBuffer),
+	// 	vertexBuffer: nil,
+	// }
 
 	targetClearer.Func = func() {
 		targetClearer.Run()
@@ -82,10 +82,10 @@ func init() {
 }
 
 // Sets the current target
-func SetTarget(win *Window) {
-	context.target = win
-	// TODO - set framebuffer or w/e
-}
+// func SetTarget(win *Window) {
+// 	context.target = win
+// 	// TODO - set framebuffer or w/e
+// }
 
 // Clears the current target
 // TODO - depthbuffer and stuff?
@@ -102,9 +102,8 @@ var targetClearer targetClear
 func (t *targetClear) Run() {
 	color := t.color
 	gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
-	// gl.Clear(gl.COLOR_BUFFER_BIT)
+	// gl.Clear(gl.COLOR_BUFFER_BIT) // Make configurable?
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	// TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 }
 
 func Clear(target Target, color RGBA) {
@@ -113,60 +112,6 @@ func Clear(target Target, color RGBA) {
 	targetClearer.color = color
 	mainthreadCall(targetClearer.Func)
 }
-
-// func Clear(target Target, color RGBA) {
-// 	target.Bind()
-// 	mainthreadCall(func() {
-// 		gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
-// 		// gl.Clear(gl.COLOR_BUFFER_BIT)
-// 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-// // TODO - depth buffer bit?		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-// 	})
-// }
-
-/*
-func FinalizeDraw() {
-	context.vertexBuffer.Bind()
-	context.vertexBuffer.Draw()
-}
-
-func SetShader(shader *Shader) {
-	context.shader = shader
-	context.shader.Bind()
-	_, ok := context.bufferPool[shader]
-	if !ok {
-		context.bufferPool[shader] = NewVertexBuffer(shader, batchSizeVerts, batchSizeTris)
-	}
-	context.vertexBuffer, _ = context.bufferPool[shader]
-}
-
-// Instead of set camera?
-// Why have this? Why not do shader.SetUniform()?
-// func SetUniform(name string, value interface{}) {
-// 	context.shader.SetUniform(name, value)
-// }
-
-// https://www.khronos.org/opengl/wiki/Shader#Resource_limitations
-func SetTexture(position int, texture *Texture) {
-	if position >= len(context.textureUnit) {
-		panic("Can't support this many texture units!")
-	}
-	context.textureUnit[position] = texture
-	context.textureUnit[position].Bind(position)
-}
-
-// Draws a mesh based on the currently set shader
-func Draw(mesh *Mesh, mat Mat4) {
-	positions := make([]float32, len(mesh.positions) * 3) // 3 b/c vec3
-	for i := range mesh.positions {
-		vec := mat.MulVec3(&mesh.positions[i])
-		positions[(i * 3) + 0] = vec[0]
-		positions[(i * 3) + 1] = vec[1]
-		positions[(i * 3) + 2] = vec[2]
-	}
-	context.vertexBuffer.Add(positions, mesh.colors, mesh.texCoords, mesh.indices)
-}
-*/
 
 type Material interface {
 	Bind()
@@ -192,8 +137,3 @@ func DefaultMaterial() SpriteMaterial {
 		texture: WhiteTexture(),
 	}
 }
-
-// type Model struct {
-// 	meshes []Mesh
-// 	materials []Material
-// }

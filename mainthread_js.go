@@ -1,8 +1,8 @@
 // +build js
-
 package glitch
 
-// TODO - Would this be faster?
+// Note: This is an optimization for browsers, which only have one thread.
+
 func mainthreadRun(run func()) {
 	run()
 }

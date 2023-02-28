@@ -8,6 +8,8 @@ import (
 	"github.com/unitoftime/glitch/internal/gl"
 )
 
+// Notes: Uniforms are specific to a program: https://stackoverflow.com/questions/10857602/do-uniform-values-remain-in-glsl-shader-if-unbound
+
 type ShaderConfig struct {
 	VertexShader, FragmentShader string
 	VertexFormat VertexFormat
