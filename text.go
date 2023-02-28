@@ -5,7 +5,7 @@ import (
 	// "image/png"
 	"fmt"
 	"image"
-	// "image/color"
+	"image/color"
 	"image/draw"
 
 	"golang.org/x/image/font"
@@ -31,7 +31,7 @@ func DefaultAtlas() (*Atlas, error) {
 		Size: 64,
 		// GlyphCacheEntries: 1,
 	})
-	atlas := NewAtlas(fontFace, runes, true)
+	atlas := NewAtlas(fontFace, runes, true, 0)
 	return atlas, nil
 }
 
@@ -41,6 +41,7 @@ type Glyph struct {
 	BoundsUV Rect
 }
 
+// TODO - instead of creating a single atlas ahead of time. I should just load the font and then dynamically create the atlas as needed. This should probably change once you add automatic texture batching.
 type Atlas struct {
 	face font.Face
 	mapping map[rune]Glyph
@@ -48,6 +49,8 @@ type Atlas struct {
 	descent fixed.Int26_6 // Distance from bottom of line to baseline
 	lineGap fixed.Int26_6 // The recommended gap between two lines
 	texture *Texture
+	border int // Specifies a border on the font.
+	pixelPerfect bool // if true anti-aliasing will be disabled
 }
 
 func fixedToFloat(val fixed.Int26_6) float64 {
@@ -58,7 +61,7 @@ func fixedToFloat(val fixed.Int26_6) float64 {
 	return float64(val) / (1 << 6)
 }
 
-func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
+func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	metrics := face.Metrics()
 	atlas := &Atlas{
 		face: face,
@@ -66,6 +69,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		ascent: metrics.Ascent,
 		descent: metrics.Descent,
 		lineGap: metrics.Height,
+		border: int(border),
+		pixelPerfect: !smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
 	}
 
 	size := 512
@@ -77,8 +82,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
-	padding := fixed.I(2) // Padding for runes drawn to atlas
-	startDot := fixed.P(0, (atlas.ascent + padding).Floor()) // Starting point of the dot
+	padding := fixed.I(2 + (2 * atlas.border)) // Padding for runes drawn to atlas
+	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
 		bounds, mask, maskp, adv, ok := face.Glyph(dot, r)
@@ -111,8 +116,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
 			BoundsUV: R(
-				float64(bounds.Min.X)/fSize, float64(bounds.Min.Y)/fSize,
-				float64(bounds.Max.X)/fSize, float64(bounds.Max.Y)/fSize),
+				float64(bounds.Min.X - atlas.border)/fSize, float64(bounds.Min.Y - atlas.border)/fSize,
+				float64(bounds.Max.X + atlas.border)/fSize, float64(bounds.Max.Y + atlas.border)/fSize),
 		}
 
 		// Usual next dot location
@@ -132,6 +137,45 @@ func NewAtlas(face font.Face, runes []rune, smooth bool) *Atlas {
 		}
 		// log.Println(nextDotX, nextDotY)
 		dot = fixed.Point26_6{nextDotX, nextDotY}
+	}
+
+	// This just disables anti-aliasing by snapping pixels to either white or transparent
+	if atlas.pixelPerfect {
+		imgBounds := img.Bounds()
+		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+				rgba := img.RGBAAt(x, y)
+				if rgba.A > 0 {
+					rgba.A = 255
+					img.Set(x, y, color.White)
+				}
+			}
+		}
+	}
+
+	// TODO - border messes up glyph advance I think. Makes kerning and lineheight different
+	// This runs a box filter based on the border side
+	if atlas.border != 0 {
+		imgBounds := img.Bounds()
+		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+				rgba := img.RGBAAt(x, y)
+				if (rgba != color.RGBA{255, 255, 255, 255}) {
+					continue // If the pixel is transparent then it doesn't trigger a border
+				}
+
+				box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+				for xx := box.Min.X; xx <= box.Max.X; xx++ {
+					for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+						rgba := img.RGBAAt(xx, yy)
+						if rgba.A == 0 {
+							// Only add a border to transparent pixels
+							img.Set(xx, yy, color.Black)
+						}
+					}
+				}
+			}
+		}
 	}
 
 	// // outputFile is a File type which satisfies Writer interface
@@ -267,21 +311,21 @@ func (t *Text) Write(p []byte) (n int, err error) {
 	return len(p), nil
 }
 
-func (t *Text) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(t.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, t.material)
+func (t *Text) Draw(target BatchTarget, matrix Mat4) {
+	target.Add(t.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, t.material)
 }
 
-func (t *Text) DrawColorMask(pass *RenderPass, matrix Mat4, color RGBA) {
-	pass.Add(t.mesh, matrix, color, t.material)
+func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
+	target.Add(t.mesh, matrix, color, t.material)
 }
 
-func (t *Text) DrawRect(pass *RenderPass, rect Rect, color RGBA) {
+func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
 	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
-	pass.Add(t.mesh, mat, color, t.material)
+	target.Add(t.mesh, mat, color, t.material)
 }
 
-func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
+func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	mat := Mat4Ident
 	// TODO why shouldn't I be shifting to the middle?
 	// mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
@@ -290,7 +334,7 @@ func (t *Text) RectDrawColorMask(pass *RenderPass, bounds Rect, mask RGBA) {
 	// TODO!!! - There's something wrong with this
 	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
 
-	pass.Add(t.mesh, mat, mask, t.material)
+	target.Add(t.mesh, mat, mask, t.material)
 }
 
 func (t *Text) AppendStringVerts(text string) Rect {
