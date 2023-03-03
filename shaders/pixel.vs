@@ -7,14 +7,14 @@ layout (location = 2) in vec2 texCoordIn;
 out vec4 ourColor;
 out vec2 TexCoord;
 
-// uniform mat4 model;
+uniform mat4 model;
 uniform mat4 projection;
 uniform mat4 view;
 //uniform mat4 transform;
 
 void main()
 {
-  gl_Position = projection * view * vec4(positionIn, 1.0);
+  gl_Position = projection * view * model * vec4(positionIn, 1.0);
 
   /* // Snap pixels */
   /* vec2 pos = vec2(round(positionIn.x), round(positionIn.y)); */

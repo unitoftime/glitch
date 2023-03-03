@@ -442,17 +442,17 @@ func (b *BufferPool) Reserve(material Material, indices []uint32, numVerts int, 
 // 	}
 // }
 
-func openglDraw(buffers []*VertexBuffer) {
-	lastMaterial := Material(nil)
-	for i := range buffers {
-		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
-		if lastMaterial != buffers[i].material {
-			lastMaterial = buffers[i].material
-			if lastMaterial != nil {
-				// fmt.Println("Binding New Material", lastMaterial)
-				lastMaterial.Bind()
-			}
-		}
-		buffers[i].Draw()
-	}
-}
+// func openglDraw(buffers []*VertexBuffer) {
+// 	lastMaterial := Material(nil)
+// 	for i := range buffers {
+// 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
+// 		if lastMaterial != buffers[i].material {
+// 			lastMaterial = buffers[i].material
+// 			if lastMaterial != nil {
+// 				// fmt.Println("Binding New Material", lastMaterial)
+// 				lastMaterial.Bind()
+// 			}
+// 		}
+// 		buffers[i].Draw()
+// 	}
+// }

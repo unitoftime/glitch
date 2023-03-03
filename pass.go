@@ -55,10 +55,10 @@ func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	return meshBuf
 }
 
-// type drawCall struct {
-// 	buffer *VertexBuffer
-// 	model Mat4
-// }
+type drawCall struct {
+	buffer *VertexBuffer
+	model Mat4
+}
 
 // This is essentially a generalized 2D render pass
 type RenderPass struct {
@@ -76,7 +76,7 @@ type RenderPass struct {
 	minimumCacheSize int // The minimum number of verts a mesh must have before we cache it
 	meshCache *lru.Cache[*Mesh, meshBuffer]
 
-	buffersToDraw []*VertexBuffer
+	drawCalls []drawCall
 
 	// Stats
 	stats RenderStats
@@ -116,7 +116,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		meshCache: meshCache,
 		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
 		minimumCacheSize: 128,
-		buffersToDraw: make([]*VertexBuffer, 0),
+		drawCalls: make([]drawCall, 0),
 	}
 	// r.mainthreadDepthTest = func() {
 	// 	r.enableDepthTest()
@@ -152,7 +152,7 @@ NumVertexBuffers: %d
 
 func (r *RenderPass) Stats() RenderStats {
 	r.stats.MeshCacheSize = r.meshCache.Len()
-	r.stats.DrawCalls = len(r.buffersToDraw)
+	r.stats.DrawCalls = len(r.drawCalls)
 
 	return r.stats
 }
@@ -168,7 +168,7 @@ func (r *RenderPass) Clear() {
 		r.commands[l] = r.commands[l][:0]
 	}
 
-	r.buffersToDraw = r.buffersToDraw[:0]
+	r.drawCalls = r.drawCalls[:0]
 }
 
 // TODO - I think I could use a linked list of layers and just use an int here
@@ -209,7 +209,7 @@ func (r *RenderPass) Batch() {
 					if !success {
 						panic("Something went wrong")
 					}
-					r.batchToBuffers(c, destBuffs)
+					r.copyToBuffer(c, destBuffs)
 				} else {
 
 					// If here we know we have a valid meshBuf, which either:
@@ -227,7 +227,7 @@ func (r *RenderPass) Batch() {
 								panic("Something went wrong")
 							}
 						}
-						r.batchToBuffers(c, destBuffs)
+						r.copyToBuffer(c, destBuffs)
 
 						// Update the cache
 						meshBuf.generation = c.mesh.generation
@@ -237,7 +237,9 @@ func (r *RenderPass) Batch() {
 
 				// At this point we have a meshBuf with the mesh data already written to it.
 				// We can just append it to our list of things to draw
-				r.buffersToDraw = append(r.buffersToDraw, meshBuf.buffer)
+				r.drawCalls = append(r.drawCalls,
+					drawCall{meshBuf.buffer, c.matrix})
+
 				r.stats.CachedVerts += len(c.mesh.positions)
 				r.stats.CachedIndices += len(c.mesh.indices)
 
@@ -248,8 +250,9 @@ func (r *RenderPass) Batch() {
 				r.batchToBuffers(c, destBuffs)
 
 				// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
-				if len(r.buffersToDraw) <= 0 || r.buffersToDraw[len(r.buffersToDraw) - 1] != vertexBuffer {
-					r.buffersToDraw = append(r.buffersToDraw, vertexBuffer)
+				if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
+					// Append the draw call to our list. Because we've already pre-applied the model matrix, we use Mat4Ident here
+					r.drawCalls = append(r.drawCalls, drawCall{vertexBuffer, Mat4Ident})
 				}
 			}
 		}
@@ -274,7 +277,7 @@ func (r *RenderPass) Draw(target Target) {
 		}
 	}
 
-	openglDraw(r.buffersToDraw)
+	openglDraw(r.shader, r.drawCalls)
 }
 // func (r *RenderPass) enableDepthTest() {
 // 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
@@ -361,6 +364,13 @@ func (r *RenderPass) SortInSoftware() {
 			})
 		}
 	}
+}
+
+// This is like batchToBuffer but doesn't pre-apply the model matrix of the mesh
+func (r *RenderPass) copyToBuffer(c drawCommand, destBuffs []interface{}) {
+	// For now I'm just going to modify the drawCommand to use Mat4Ident and then pass to batchToBuffers
+	c.matrix = Mat4Ident
+	r.batchToBuffers(c, destBuffs)
 }
 
 func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
@@ -493,4 +503,26 @@ func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
 	// 		texBuf[i] = c.mesh.texCoords[i]
 	// 	}
 	//================================================================================
+}
+
+func openglDraw(shader *Shader, draws []drawCall) {
+	lastMaterial := Material(nil)
+	for i := range draws {
+		buffer := draws[i].buffer
+		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
+		if lastMaterial != buffer.material {
+			lastMaterial = buffer.material
+			if lastMaterial != nil {
+				// fmt.Println("Binding New Material", lastMaterial)
+				lastMaterial.Bind()
+			}
+		}
+
+		ok := shader.SetUniform("model", draws[i].model)
+		if !ok {
+			panic("Error setting model uniform - all shaders must have 'model' uniform")
+		}
+
+		buffer.Draw()
+	}
 }
