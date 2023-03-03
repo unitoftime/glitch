@@ -320,7 +320,7 @@ func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 		mat[i4_3_2] -= float64(r.currentLayer)
 		// fmt.Println("Depth: ", mat[i4_3_2])
 
-		r.commands[0] = append(r.commands[0], drawCommand{
+		r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
 			0, mesh, mat, mask, material,
 		})
 	} else {
