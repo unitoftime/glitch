@@ -10,7 +10,7 @@ import (
 	// "encoding/binary"
 	"fmt"
 	"strings"
-	// "math"
+	"math"
 	"reflect"
 	"runtime"
 	"syscall/js"
@@ -31,15 +31,28 @@ var (
 // TODO - Cache all of the .Get("").Call("")s to improve performance? https://github.com/hajimehoshi/ebiten/blob/main/internal/graphicsdriver/opengl/gl_js.go
 
 // To prevent constantly reallocating the webgl arrays on javascript side, we just allocate one large-enough buffer and take subarrays from that when we need to copy data. Too many JS allocations was causing me to get this error: "panic: JavaScript error: Array buffer allocation failed"
-// TODO - Make this size configurable?
+var currentJsMemorySize int
 var jsMemory js.Value
 var jsMemoryBuffer, jsMemoryFloat32, jsMemoryInt32, jsMemoryUint32 js.Value
 var jsMemoryBufferVec2, jsMemoryBufferVec3, jsMemoryBufferVec4 js.Value
 var jsMemoryBufferMat4 js.Value
 func init() {
+	// TODO: Reasonable default?
+	resizeJavascriptCopyBuffer(16*1024*1024)  // x * MB
+}
+
+func resizeJavascriptCopyBuffer(size int) {
+	if currentJsMemorySize > size {
+		return // Nothing to do, we are already large enough
+	}
+
+	// Else do a resize. Always remaining a multiple of 2. // TODO: Is it important to be a multiple of 2? Could also just do: currentJsMemorySize = size
+	div := 1 + int(math.Log2(float64(size)))
+	currentJsMemorySize = int(math.Exp2(float64(div)))
+	println("Resize copybuffer: ", size, div, currentJsMemorySize)
+
 	// TODO - Can I do something like this to avoid the extra copy?: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/WebAssembly/Memory
-	jsMemory = uint8Array.New(16*1024*1024) // x * MB
-	runtime.KeepAlive(jsMemory)
+	jsMemory = uint8Array.New(currentJsMemorySize)
 
 	jsMemoryBuffer = jsMemory.Get("buffer")
 	jsMemoryFloat32 = float32Array.New(jsMemoryBuffer, jsMemoryBuffer.Get("byteOffset"), jsMemoryBuffer.Get("byteLength").Int()/4)
@@ -50,6 +63,8 @@ func init() {
 	jsMemoryBufferVec3 = jsMemoryFloat32.Call("subarray", 0, 3)
 	jsMemoryBufferVec4 = jsMemoryFloat32.Call("subarray", 0, 4)
 	jsMemoryBufferMat4 = jsMemoryFloat32.Call("subarray", 0, 16)
+
+	runtime.KeepAlive(jsMemory)
 }
 
 var ContextWatcher contextWatcher
@@ -242,6 +257,7 @@ func SliceToTypedArray(s interface{}) (js.Value, int) {
 	// 	buf := a.Get("buffer")
 	// 	return js.Global().Get("Int16Array").New(buf, a.Get("byteOffset"), a.Get("byteLength").Int()/2)
 	case []int32:
+		resizeJavascriptCopyBuffer(4 * len(s))
 		js.CopyBytesToJS(jsMemory, sliceToByteSlice(s))
 		runtime.KeepAlive(s)
 		// return jsMemoryInt32.Call("subarray", 0, len(s))
@@ -253,6 +269,7 @@ func SliceToTypedArray(s interface{}) (js.Value, int) {
 		// buf := a.Get("buffer")
 		// return int32Array.New(buf, a.Get("byteOffset"), a.Get("byteLength").Int()/4)
 	case []uint8:
+		resizeJavascriptCopyBuffer(1 * len(s))
 		js.CopyBytesToJS(jsMemory, s)
 		runtime.KeepAlive(s)
 		// return jsMemory.Call("subarray", 0, len(s))
@@ -265,6 +282,7 @@ func SliceToTypedArray(s interface{}) (js.Value, int) {
 	// 	buf := a.Get("buffer")
 	// 	return js.Global().Get("Uint16Array").New(buf, a.Get("byteOffset"), a.Get("byteLength").Int()/2)
 	case []uint32:
+		resizeJavascriptCopyBuffer(4 * len(s))
 		js.CopyBytesToJS(jsMemory, sliceToByteSlice(s))
 		runtime.KeepAlive(s)
 		// return jsMemoryUint32.Call("subarray", 0, len(s))
@@ -276,6 +294,7 @@ func SliceToTypedArray(s interface{}) (js.Value, int) {
 		// buf := a.Get("buffer")
 		// return js.Global().Get("Uint32Array").New(buf, a.Get("byteOffset"), a.Get("byteLength").Int()/4)
 	case []float32:
+		resizeJavascriptCopyBuffer(4 * len(s))
 		js.CopyBytesToJS(jsMemory, sliceToByteSlice(s))
 		runtime.KeepAlive(s)
 		// return jsMemoryFloat32.Call("subarray", 0, len(s))
