@@ -740,9 +740,9 @@ func GetAttribLocation(p Program, name string) Attrib {
 // 	return c.Call("getBufferParameter", int(target), int(pname)).Int()
 // }
 
-// func GetError() Enum {
-// 	return Enum(c.Call("getError").Int())
-// }
+func GetError() Enum {
+	return Enum(c.Call("getError").Int())
+}
 
 // func GetBoundFramebuffer() Framebuffer {
 // 	return Framebuffer{Value: c.Call("getParameter", FRAMEBUFFER_BINDING)}
@@ -971,9 +971,12 @@ func ShaderSource(s Shader, src string) {
 
 func TexImage2D(target Enum, level int, width, height int, format Enum, ty Enum, data interface{}) {
 	array, length := SliceToTypedArray(data)
-	subarray := array.Call("subarray", 0, length)
-	fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
-	// c.Call("texImage2D", int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
+	if !array.IsNull() {
+		subarray := array.Call("subarray", 0, length)
+		fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
+	} else {
+		fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), nil)
+	}
 }
 
 func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, format Enum, ty Enum, data interface{}) {
@@ -981,10 +984,8 @@ func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, for
 	if !array.IsNull() {
 		subarray := array.Call("subarray", 0, length)
 		fnTexImage2D.Invoke(int(target), level, int(format1), width, height, 0, int(format), int(ty), subarray)
-		// c.Call("texImage2D", int(target), level, int(format1), width, height, 0, int(format), int(ty), subarray)
 	} else {
 		fnTexImage2D.Invoke(int(target), level, int(format1), width, height, 0, int(format), int(ty), nil)
-		// c.Call("texImage2D", int(target), level, int(format1), width, height, 0, int(format), int(ty), nil)
 	}
 }
 

@@ -25,6 +25,7 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 	// TODO - Note: I'm passing actual data to the texture object, rather than null. That might be suboptimal. This fills the GPU memory, whereas if I pass null I can just allocate it.
 	img := image.NewRGBA(image.Rect(int(bounds.Min[0]), int(bounds.Min[1]), int(bounds.Max[0]), int(bounds.Max[1])))
 	frame.tex = NewTexture(img, smooth)
+	// frame.tex = NewEmptyTexture(int(bounds.W()), int(bounds.H()), smooth)
 
 	// Create mesh (in case we want to draw the fbo to another target)
 	// frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))

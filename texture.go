@@ -45,6 +45,7 @@ func NewTransparentTexture64() *Texture {
 type Texture struct {
 	texture gl.Texture
 	width, height int
+	smooth bool
 	mainthreadBind func()
 }
 
@@ -54,23 +55,41 @@ func toRgba(img image.Image) *image.RGBA {
 	return rgba
 }
 
+func NewEmptyTexture(width, height int, smooth bool) *Texture {
+	// We can only use RGBA images right now.
+	t := &Texture{
+		width: width,
+		height: height,
+		smooth: smooth,
+	}
+
+	t.initialize(nil)
+	return t
+}
+
 func NewTexture(img image.Image, smooth bool) *Texture {
 	// We can only use RGBA images right now.
 	rgba := toRgba(img)
 
 	width := rgba.Bounds().Dx()
 	height := rgba.Bounds().Dy()
-	pixels := rgba.Pix
 	t := &Texture{
 		width: width,
 		height: height,
+		smooth: smooth,
 	}
 
+	t.initialize(rgba.Pix)
+
+	return t
+}
+
+func (t *Texture) initialize(pixels []uint8) {
 	mainthreadCall(func() {
 		t.texture = gl.CreateTexture()
 		gl.BindTexture(gl.TEXTURE_2D, t.texture)
 
-		gl.TexImage2D(gl.TEXTURE_2D, 0, width, height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
+		gl.TexImage2DFull(gl.TEXTURE_2D, 0, gl.RGBA, t.width, t.height, gl.RGBA, gl.UNSIGNED_BYTE, pixels)
 
 		// TODO - webgl doesn't support CLAMP_TO_BORDER
 		// GL_CLAMP_TO_EDGE: The coordinate will simply be clamped between 0 and 1.
@@ -84,7 +103,7 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 		// gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT)
 
 		// TODO - pass smooth in as a parameter
-		if smooth {
+		if t.smooth {
 			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 		} else {
@@ -94,8 +113,6 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 	})
 
 	runtime.SetFinalizer(t, (*Texture).delete)
-
-	return t
 }
 
 // Sets the texture to be this image.
