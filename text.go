@@ -111,7 +111,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 
 		draw.Draw(img, bounds, mask, maskp, draw.Src)
 		atlas.mapping[r] = Glyph{
-			Advance: float64(adv.Floor())/fSize,
+			Advance: float64(adv.Floor() + border)/fSize,
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
