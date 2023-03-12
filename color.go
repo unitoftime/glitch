@@ -1,6 +1,7 @@
 package glitch
 
 import (
+	"math"
 	"image/color"
 )
 
@@ -17,14 +18,24 @@ type RGBA struct {
 // TODO - conversion from golang colors
 func FromUint8(r, g, b, a uint8) RGBA {
 	return RGBA{
-		float64(r)/255.0,
-		float64(g)/255.0,
-		float64(b)/255.0,
-		float64(a)/255.0,
+		float64(r) / float64(math.MaxUint8),
+		float64(g) / float64(math.MaxUint8),
+		float64(b) / float64(math.MaxUint8),
+		float64(a) / float64(math.MaxUint8),
 	}
 }
 
-func FromNRGBA(c color.NRGBA) RGBA {
-	// TODO!!!!!! - premultiply alpha bug?
+func FromRGBA(c color.RGBA) RGBA {
 	return FromUint8(c.R, c.G, c.B, c.A)
+}
+
+func FromColor(c color.Color) RGBA {
+	r, g, b, a := c.RGBA()
+
+	return RGBA{
+		float64(r) / float64(math.MaxUint16),
+		float64(g) / float64(math.MaxUint16),
+		float64(b) / float64(math.MaxUint16),
+		float64(a) / float64(math.MaxUint16),
+	}
 }
