@@ -25,6 +25,10 @@ func FromUint8(r, g, b, a uint8) RGBA {
 	}
 }
 
+func Alpha(a float64) RGBA {
+	return RGBA{a, a, a, a}
+}
+
 func FromRGBA(c color.RGBA) RGBA {
 	return FromUint8(c.R, c.G, c.B, c.A)
 }
