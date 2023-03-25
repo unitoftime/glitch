@@ -153,7 +153,6 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 		}
 	}
 
-	// TODO - border messes up glyph advance I think. Makes kerning and lineheight different
 	// This runs a box filter based on the border side
 	if atlas.border != 0 {
 		imgBounds := img.Bounds()
@@ -189,10 +188,14 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	return atlas
 }
 
-func (a *Atlas) LineHeight() float64 {
+func (a *Atlas) GappedLineHeight() float64 {
 	// TODO - scale?
-	// TODO - I'm not sure why, but I have to multiply by 2 here
-	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap))
+	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap)) + float64(2 * a.border)
+}
+
+func (a *Atlas) UngappedLineHeight() float64 {
+	// TODO - scale?
+	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
 }
 
 func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
@@ -244,7 +247,7 @@ func (a *Atlas) Text(str string) *Text {
 		texture: a.texture,
 		material: NewSpriteMaterial(a.texture),
 		scale: 1.0,
-		LineHeight: a.LineHeight(),
+		LineHeight: a.UngappedLineHeight(),
 		mesh: NewMesh(),
 		tmpMesh: NewMesh(),
 
@@ -341,12 +344,12 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 func (t *Text) AppendStringVerts(text string) Rect {
 	// maxAscent := float32(0) // Tracks the maximum y point of the text block
 
-	// initialDot := t.Dot
+	initialDot := t.Dot
 
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			t.Dot[1] -= t.atlas.LineHeight()/2
+			t.Dot[1] -= t.atlas.UngappedLineHeight()
 			t.Dot[0] = t.Orig[0]
 			continue
 		}
@@ -387,9 +390,11 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// return bounds
 
 	// Attempt 2 - Use mesh bounds
-	return t.mesh.Bounds().Rect()
+	// return t.mesh.Bounds().Rect()
 
-
+	// Attempt 3 - use mesh bounds for X and line height for Y
+	meshBounds := t.mesh.Bounds().Rect()
+	return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] - (t.atlas.UngappedLineHeight()))
 
 	// fmt.Println(bounds)
 
