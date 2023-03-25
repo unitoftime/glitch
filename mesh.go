@@ -267,21 +267,25 @@ func (m *Mesh) Append(m2 *Mesh) {
 }
 
 // Changes the origin point of the mesh by translating all the geometry to the new origin. This shouldn't be called frequently
-func (m *Mesh) SetOrigin(newOrigin Vec3) {
-	if m.origin == newOrigin { return } // Skip if we've already translated this amount
+// Returns a newly allocated mesh and does not modify the original
+func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
+	if originalMesh.origin == newOrigin { return originalMesh } // Skip if we've already translated this amount
 	// delta := pos.Sub(m.translation)
 
+	newMesh := NewMesh()
+	newMesh.Append(originalMesh)
 	// TODO - should I do this in a different order?
-	delta := m.origin.Sub(newOrigin).gl()
-	for i := range m.positions {
-		m.positions[i] = delta.Add(m.positions[i])
+	delta := newMesh.origin.Sub(newOrigin).gl()
+	for i := range newMesh.positions {
+		newMesh.positions[i] = delta.Add(newMesh.positions[i])
 	}
 
-	m.origin = newOrigin
+	newMesh.origin = newOrigin
 
 	// TODO - recalculate mesh bounds/box
 
-	m.generation++
+	newMesh.generation++
+	return newMesh
 }
 
 // Sets the color of every vertex

@@ -37,9 +37,11 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 }
 
 // Changes the origin point of the sprite by translating all the geometry to the new origin. This shouldn't be called frequently. The default origin is around the center of the sprite
-func (s *Sprite) SetOrigin(origin Vec3) {
-	// TODO - push logic to mesh?
-	s.mesh.SetOrigin(origin)
+// Returns a newly allocated mesh and does not modify the original
+func (s Sprite) WithSetOrigin(origin Vec3) Sprite {
+
+	s.mesh = s.mesh.WithSetOrigin(origin)
+	return s
 }
 
 func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
