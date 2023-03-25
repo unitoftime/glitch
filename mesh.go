@@ -306,8 +306,7 @@ func (m *Mesh) SetColor(col RGBA) {
 // 	m.texCoords = append(m.texCoords, m2.texCoords...)
 // }
 
-func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect) {
-	color := RGBA{1.0, 1.0, 1.0, 1.0}
+func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect, color RGBA) {
 	positions := []glVec3{
 		glVec3{float32(bounds.Max[0]), float32(bounds.Max[1]), float32(0.0)},
 		glVec3{float32(bounds.Max[0]), float32(bounds.Min[1]), float32(0.0)},

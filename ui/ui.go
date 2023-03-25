@@ -106,7 +106,7 @@ func (g *Group) getText(str string) *glitch.Text {
 
 	idx := g.currentTextBufferIndex
 	g.currentTextBufferIndex++
-	g.textBuffer[idx].Clear()
+	// g.textBuffer[idx].Clear()
 	g.textBuffer[idx].Set(str)
 	return g.textBuffer[idx]
 }

@@ -195,7 +195,7 @@ func (a *Atlas) LineHeight() float64 {
 	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap))
 }
 
-func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64) (Vec2, float64) {
+func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
 	// multiplying by texture sizes converts from UV to pixel coords
 	scaleX := scale * float64(a.texture.width)
 	scaleY := scale * float64(a.texture.height)
@@ -229,7 +229,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64) (Vec2, fl
 	y1 := dot[1] + (scaleY * glyph.Bearing[1])// - (2*fixedToFloat(a.descent))
 	y2 := y1 + (scaleY * (v2 - v1))
 
-	mesh.AppendQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
+	mesh.AppendQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2), color)
 	// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 
 	dot[0] += (scaleX * glyph.Advance)
@@ -283,6 +283,7 @@ func (t *Text) MeshBounds() Rect {
 func (t *Text) Clear() {
 	t.Orig = Vec2{}
 	t.Dot = t.Orig
+	t.mesh.Clear()
 }
 
 // This resets the text and sets it to the passed in string (if the passed in string is different!)
@@ -290,7 +291,7 @@ func (t *Text) Clear() {
 func (t *Text) Set(str string) {
 	if t.currentString != str {
 		t.currentString = str
-		t.mesh.Clear()
+		t.Clear()
 		t.bounds = t.AppendStringVerts(str)
 	}
 }
@@ -352,8 +353,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 
 		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
 		// fmt.Println("dot", *dot)
-		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale)
-		// t.tmpMesh.SetColor(t.Color) // TODO - enable this back
+		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.Color)
 
 		t.Dot = newDot
 
