@@ -70,6 +70,17 @@ type Group struct {
 	currentTextBufferIndex int
 	graphBuffer []*graph.Graph
 	currentGraphBufferIndex int
+
+	// hot, active *Elem
+	// active *Elem
+	// tmpHover *Elem
+	// hover, held, selectDown, selectUp *Elem
+
+	hover, down, active any
+	tmpHover any
+	// hover, held, selectDown, selectUp any
+
+	mousePos, mouseDownPos glitch.Vec2
 }
 
 func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
@@ -149,6 +160,14 @@ func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 }
 
 func (g *Group) Clear() {
+	// fmt.Println("State: ", g.hover, g.down, g.active)
+
+	mX, mY := g.mousePosition()
+	g.mousePos = glitch.Vec2{mX, mY}
+
+	g.hover = g.tmpHover
+	g.tmpHover = nil
+
 	g.currentTextBufferIndex = 0
 	g.currentGraphBufferIndex = 0
 
@@ -164,6 +183,8 @@ func (g *Group) Draw() {
 
 	// Draw the union rect
 	if g.Debug {
+		// fmt.Println("Active: ", g.active, " | Hover: ", g.hover)
+
 		if !g.unionBoundsSet {
 			g.debugRect(g.unionBounds)
 		}
@@ -175,6 +196,12 @@ func (g *Group) Draw() {
 
 func (g *Group) SetColor(color glitch.RGBA) {
 	g.color = color
+}
+
+func (g *Group) PanelColorMask(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
+	sprite.RectDrawColorMask(g.pass, rect, color)
+	g.appendUnionBounds(rect)
+	g.debugRect(rect)
 }
 
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
@@ -394,3 +421,200 @@ func (g *Group) debugRect(rect glitch.Rect) {
 
 // 	c.DebugRect(destRect)
 // }
+
+
+// type DragDropper interface {
+// 	Drag(any)
+// 	Drop(any)
+// }
+
+type Elem struct {
+	id uint64 // TODO - Not needed, was only for testing
+	group *Group
+}
+var idCounter uint64
+func (g *Group) NewElem() *Elem {
+	idCounter++
+	return &Elem{
+		id: idCounter,
+		group: g,
+	}
+}
+
+func (g *Group) trackHover(elem any, rect glitch.Rect) {
+	// TODO - centralize in group
+	mX, mY := g.mousePosition()
+	if rect.Contains(mX, mY) {
+		g.tmpHover = elem
+	}
+}
+
+// func (g *Group) trackHeld(elem *Elem, rect glitch.Rect) {
+// 	if !g.win.Pressed(glitch.MouseButtonLeft) { // TODO - multiple keybinds?
+// 		return
+// 	}
+// 	// TODO - centralize in group
+// 	mX, mY := g.mousePosition()
+// 	if rect.Contains(mX, mY) {
+// 		g.held = elem
+// 	}
+// }
+
+// func (g *Group) trackSelectDown(elem *Elem, rect glitch.Rect) {
+// 	if !g.win.JustPressed(glitch.MouseButtonLeft) { // TODO - multiple keybinds?
+// 		g.selectDown = nil
+// 		return
+// 	}
+
+// 	// TODO - centralize in group
+// 	mX, mY := g.mousePosition()
+// 	if rect.Contains(mX, mY) {
+// 		g.selectDown = elem
+// 	}
+// }
+
+// func (g *Group) trackSelectUp(elem *Elem, rect glitch.Rect) {
+// 	if !g.win.JustReleased(glitch.MouseButtonLeft) { // TODO - multiple keybinds?
+// 		g.selectUp = nil
+// 		return
+// 	}
+
+// 	// TODO - centralize in group
+// 	mX, mY := g.mousePosition()
+// 	if rect.Contains(mX, mY) {
+// 		g.selectUp = elem
+// 	}
+// }
+
+// func (g *Group) trackState(elem *Elem, rect glitch.Rect) {
+// 	g.trackHover(elem, rect)
+// 	// g.trackSelectDown(elem, rect)
+// 	// g.trackSelectUp(elem, rect)
+// }
+
+func (g *Group) Button2(elem any, normal, hovered, pressed Drawer, rect glitch.Rect) bool {
+	ret := false
+	if g.active == elem {
+		if g.win.JustReleased(glitch.MouseButtonLeft) {
+			g.active = nil
+			if g.hover == elem {
+				ret = true
+			}
+		}
+	} else if g.hover == elem {
+		if g.win.JustPressed(glitch.MouseButtonLeft) {
+			g.active = elem
+		}
+	}
+
+	g.trackHover(elem, rect)
+
+	if g.active == elem {
+		g.Panel(pressed, rect)
+	} else if g.hover == elem {
+		g.Panel(hovered, rect)
+	} else {
+		g.Panel(normal, rect)
+	}
+
+	return ret
+}
+
+func (g *Group) DragAndDropSlot(elem any, drawer Drawer, rect glitch.Rect) {
+	// var ret *Elem
+	// if g.active == elem {
+	// } else if g.hover == elem {
+	// }
+
+	if g.active != nil {
+		g.trackHover(elem, rect)
+	}
+
+	g.PanelColorMask(drawer, rect, glitch.White)
+	// if g.active == elem {
+	// 	PanelColorMask(drawer, rect, glitch.White)
+	// } else if g.hover == elem {
+	// 	PanelColorMask(drawer, rect, glitch.White)
+	// } else {
+	// 	PanelColorMask(drawer, rect, glitch.White)
+	// }
+	// return ret
+}
+
+func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, any) {
+	buttonClick := false
+	if g.active == elem {
+		mX, mY := g.mousePosition()
+		g.PanelColorMask(drawer, rect.CenterAt(glitch.Vec2{mX, mY}), glitch.RGBA{0.5, 0.5, 0.5, 0.5})
+	} else if g.down == elem {
+		g.PanelColorMask(drawer, rect, glitch.RGBA{0.5, 0.5, 0.5, 0.5})
+	} else if g.hover == elem {
+		g.PanelColorMask(drawer, rect, glitch.White)
+	} else {
+		g.PanelColorMask(drawer, rect, glitch.White)
+	}
+
+	// var ret any
+	// if g.active == elem {
+	// 	if g.win.JustReleased(glitch.MouseButtonLeft) {
+	// 		fmt.Println("Drop:", elem)
+	// 		// dropper, ok := g.hover.(Dropper)
+	// 		// if ok {
+	// 		// 	dropper.Drop(elem)
+	// 		// }
+	// 		ret = g.hover
+	// 		g.active = nil
+	// 	}
+	// } else if g.down == elem {
+	// 	if g.mousePos.Sub(g.mouseDownPos).Len() > 3.0 { // TODO - arbitrary
+	// 		fmt.Println("Drag:", elem)
+	// 		g.active = elem
+	// 		g.down = nil
+	// 	}
+
+	// 	g.trackHover(elem, rect)
+	// } else if g.hover == elem {
+	// 	if g.win.JustPressed(glitch.MouseButtonLeft) {
+	// 		fmt.Println("Down:", elem)
+	// 		g.down = elem
+	// 		g.mouseDownPos = g.mousePos
+	// 	}
+	// } else {
+	// 	g.trackHover(elem, rect)
+	// }
+
+	g.trackHover(elem, rect)
+
+	var ret any
+	if g.active == elem {
+		if g.win.JustReleased(glitch.MouseButtonLeft) {
+			fmt.Println("Drop:", elem)
+			// dropper, ok := g.hover.(Dropper)
+			// if ok {
+			// 	dropper.Drop(elem)
+			// }
+			ret = g.hover
+			g.active = nil
+		}
+	} else if g.down == elem {
+		if g.mousePos.Sub(g.mouseDownPos).Len() > 3.0 { // TODO - arbitrary
+			fmt.Println("Drag:", elem)
+			g.active = elem
+			g.down = nil
+		} else if g.win.JustReleased(glitch.MouseButtonLeft) {
+			fmt.Println("Click:", elem)
+			buttonClick = true
+			g.down = nil
+		}
+
+		g.trackHover(elem, rect)
+	} else if g.hover == elem {
+		if g.win.JustPressed(glitch.MouseButtonLeft) {
+			fmt.Println("Down:", elem)
+			g.down = elem
+			g.mouseDownPos = g.mousePos
+		}
+	}
+
+	return buttonClick, ret
+}

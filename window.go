@@ -246,6 +246,10 @@ func (w *Window) JustPressed(key Key) bool {
 	return w.input.justPressed[key]
 }
 
+func (w *Window) JustReleased(key Key) bool {
+	return w.input.justReleased[key]
+}
+
 func (w *Window) Repeated(key Key) bool {
 	return w.input.repeated[key]
 }
