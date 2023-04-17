@@ -33,10 +33,15 @@ func Contains(point glitch.Vec2) bool {
 	return global.mouseCaught
 }
 
+// Returns true if the mouse is captured by a group
+func MouseCaptured() bool {
+	return global.mouseCaught
+}
+
 func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
-	if global.mouseCaught {
-		return false
-	}
+	// if global.mouseCaught {
+	// 	return false
+	// }
 	if rect.Contains(point[0], point[1]) {
 		global.mouseCaught = true
 		return true
@@ -443,8 +448,13 @@ func (g *Group) NewElem() *Elem {
 
 func (g *Group) trackHover(elem any, rect glitch.Rect) {
 	// TODO - centralize in group
+	// mX, mY := g.mousePosition()
+	// if rect.Contains(mX, mY) {
+	// 	g.tmpHover = elem
+	// }
+
 	mX, mY := g.mousePosition()
-	if rect.Contains(mX, mY) {
+	if mouseCheck(rect, glitch.Vec2{mX, mY}) {
 		g.tmpHover = elem
 	}
 }
@@ -517,6 +527,9 @@ func (g *Group) Button2(elem any, normal, hovered, pressed Drawer, rect glitch.R
 		g.Panel(normal, rect)
 	}
 
+	g.appendUnionBounds(rect)
+	g.debugRect(rect)
+
 	return ret
 }
 
@@ -539,12 +552,17 @@ func (g *Group) DragAndDropSlot(elem any, drawer Drawer, rect glitch.Rect) {
 	// 	PanelColorMask(drawer, rect, glitch.White)
 	// }
 	// return ret
+
+	// Note: This is only so that the mouseCaught boolean is tracked for this rect
+	mX, mY := g.mousePosition()
+	mouseCheck(rect, glitch.Vec2{mX, mY})
 }
 
 func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, any) {
 	buttonClick := false
 	if g.active == elem {
 		mX, mY := g.mousePosition()
+		global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
 		g.PanelColorMask(drawer, rect.CenterAt(glitch.Vec2{mX, mY}), glitch.RGBA{0.5, 0.5, 0.5, 0.5})
 	} else if g.down == elem {
 		g.PanelColorMask(drawer, rect, glitch.RGBA{0.5, 0.5, 0.5, 0.5})
