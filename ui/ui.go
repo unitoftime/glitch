@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/unitoftime/glitch"
-	"github.com/unitoftime/glitch/shaders"
+	// "github.com/unitoftime/glitch/shaders"
 	"github.com/unitoftime/glitch/graph"
 )
 
@@ -88,13 +88,13 @@ type Group struct {
 	mousePos, mouseDownPos glitch.Vec2
 }
 
-func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
+func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas, pass *glitch.RenderPass) *Group {
 	// TODO - it probably makes sense to pass the RenderPass in on the Draw() func and in the meantime just batch all the commands together.
-	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil { panic(err) }
-	pass := glitch.NewRenderPass(shader)
-	pass.SoftwareSort = glitch.SoftwareSortY
-	pass.DepthTest = true
+	// shader, err := glitch.NewShader(shaders.SpriteShader)
+	// if err != nil { panic(err) }
+	// pass := glitch.NewRenderPass(shader)
+	// pass.SoftwareSort = glitch.SoftwareSortY
+	// pass.DepthTest = true
 
 	return &Group{
 		win: win,
@@ -176,7 +176,7 @@ func (g *Group) Clear() {
 	g.currentTextBufferIndex = 0
 	g.currentGraphBufferIndex = 0
 
-	g.pass.Clear()
+	// g.pass.Clear()
 	g.unionBoundsSet = false
 	g.allBounds = g.allBounds[:0]
 }
@@ -195,7 +195,7 @@ func (g *Group) Draw() {
 		}
 	}
 
-	g.pass.Draw(g.win)
+	// g.pass.Draw(g.win)
 	// g.pass.Draw(targ)
 }
 
