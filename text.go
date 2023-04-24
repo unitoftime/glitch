@@ -18,6 +18,7 @@ import (
 )
 
 // TODO: Look into this: https://steamcdn-a.akamaihd.net/apps/valve/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf
+// TODO: And this: https://blog.mapbox.com/drawing-text-with-signed-distance-fields-in-mapbox-gl-b0933af6f817
 
 func DefaultAtlas() (*Atlas, error) {
 	runes := make([]rune, unicode.MaxASCII - 32)
@@ -65,6 +66,7 @@ func fixedToFloat(val fixed.Int26_6) float64 {
 
 func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	metrics := face.Metrics()
+	// fmt.Println("Metrics: ", fixedToFloat(metrics.Height), fixedToFloat(metrics.Ascent), fixedToFloat(metrics.Descent))
 	atlas := &Atlas{
 		face: face,
 		mapping: make(map[rune]Glyph),
@@ -88,6 +90,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
+		// https://developer.apple.com/library/archive/documentation/TextFonts/Conceptual/CocoaTextArchitecture/Art/glyphterms_2x.png
 		bounds, mask, maskp, adv, ok := face.Glyph(dot, r)
 		if !ok { panic("Missing rune!") }
 		bearingRect, _, _ := face.GlyphBounds(r)
@@ -191,14 +194,15 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	return atlas
 }
 
-func (a *Atlas) GappedLineHeight() float64 {
-	// TODO - scale?
-	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap)) + float64(2 * a.border)
-}
+// func (a *Atlas) GappedLineHeight() float64 {
+// 	// TODO - scale?
+// 	return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap)) + float64(2 * a.border)
+// }
 
 func (a *Atlas) UngappedLineHeight() float64 {
 	// TODO - scale?
-	return 2 * (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
+	// return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
+	return (fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
 }
 
 func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
@@ -232,7 +236,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	x2 := x1 + (scaleX * (u2 - u1))
 
 	// Note: Commented out the downard shift here, and I'm doing it in the above func
-	y1 := dot[1] + (scaleY * glyph.Bearing[1])// - (2*fixedToFloat(a.descent))
+	y1 := dot[1] + (scaleY * glyph.Bearing[1]) + fixedToFloat(a.descent)
 	y2 := y1 + (scaleY * (v2 - v1))
 
 	mesh.AppendQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2), color)
@@ -352,7 +356,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			t.Dot[1] -= t.atlas.UngappedLineHeight()
+			t.Dot[1] += t.atlas.UngappedLineHeight()
 			t.Dot[0] = t.Orig[0]
 			continue
 		}
@@ -397,7 +401,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 
 	// Attempt 3 - use mesh bounds for X and line height for Y
 	meshBounds := t.mesh.Bounds().Rect()
-	return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] - (t.atlas.UngappedLineHeight()))
+	return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] + (t.atlas.UngappedLineHeight()))
 
 	// fmt.Println(bounds)
 
