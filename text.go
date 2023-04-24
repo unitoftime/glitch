@@ -4,6 +4,7 @@ import (
 	// "os"
 	// "image/png"
 	"fmt"
+	"math"
 	"image"
 	"image/color"
 	"image/draw"
@@ -19,6 +20,7 @@ import (
 
 // TODO: Look into this: https://steamcdn-a.akamaihd.net/apps/valve/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf
 // TODO: And this: https://blog.mapbox.com/drawing-text-with-signed-distance-fields-in-mapbox-gl-b0933af6f817
+// TODO: And this: https://www.youtube.com/watch?v=Y1kuhXtVAc4
 
 func DefaultAtlas() (*Atlas, error) {
 	runes := make([]rune, unicode.MaxASCII - 32)
@@ -81,6 +83,9 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	fixedSize := fixed.I(size)
 	fSize := float64(size)
 
+	blackImg := image.NewRGBA(image.Rect(0, 0, size, size))
+	draw.Draw(blackImg, blackImg.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
+
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Alpha{0}), image.ZP, draw.Src)
 	// Note: In case you want to see the boundary of each rune, uncomment this
@@ -114,7 +119,45 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 		// log.Println("Rune: ", string(r), " - BearingY: ", float32(-bearingRect.Max.Y.Floor())/fSize)
 		// log.Println("Rune: ", string(r), " - BearingY: ", bearingY)
 
-		draw.Draw(img, bounds, mask, maskp, draw.Src)
+		// Before: Single draw which wouldn't have a border
+		// draw.Draw(img, bounds, mask, maskp, draw.Src)
+
+		// After: 9 offset draws in every direction, then a normal draw
+		// TODO: Move to SDF
+		// for xx := -border; xx <= border; xx++ {
+		// 	for yy := -border; yy <= border; yy++ {
+		// 		offsetBounds := bounds.Add(image.Point{xx, yy})
+		// 		draw.DrawMask(img, offsetBounds, blackImg, image.Point{}, mask, maskp, draw.Over)
+		// 	}
+		// }
+
+		// for yy := -border; yy <= border; yy++ {
+		// 	offsetBounds := bounds.Add(image.Point{0, yy})
+		// 	draw.DrawMask(img, offsetBounds, blackImg, image.Point{}, mask, maskp, draw.Over)
+		// }
+		// for xx := -border; xx <= border; xx++ {
+		// 	offsetBounds := bounds.Add(image.Point{xx, 0})
+		// 	draw.DrawMask(img, offsetBounds, blackImg, image.Point{}, mask, maskp, draw.Over)
+		// }
+
+		// x = dist * cos(pi/2)
+		diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
+		draw.DrawMask(img, bounds.Add(image.Point{border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		draw.DrawMask(img, bounds.Add(image.Point{diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		draw.DrawMask(img, bounds.Add(image.Point{diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+		draw.DrawMask(img, bounds.Add(image.Point{-border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		draw.DrawMask(img, bounds.Add(image.Point{-diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		draw.DrawMask(img, bounds.Add(image.Point{-diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+		draw.DrawMask(img, bounds.Add(image.Point{0, border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		draw.DrawMask(img, bounds.Add(image.Point{0, -border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+
+		draw.Draw(img, bounds, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds, blackImg, image.Point{}, mask, maskp, draw.Src)
+
+
 		atlas.mapping[r] = Glyph{
 			Advance: float64(adv.Floor() + border)/fSize,
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
@@ -158,56 +201,56 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 		}
 	}
 
-	// This runs a box filter based on the border side
-	if atlas.border != 0 {
-		// Finds white pixels and draws borders around the edges
-		imgBounds := img.Bounds()
-		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
-			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
-				rgba := img.RGBAAt(x, y)
-				if (rgba != color.RGBA{255, 255, 255, 255}) {
-					continue // If the pixel is transparent then it doesn't trigger a border
-				}
+	// // This runs a box filter based on the border side
+	// if atlas.border != 0 {
+	// 	// Finds white pixels and draws borders around the edges
+	// 	imgBounds := img.Bounds()
+	// 	for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+	// 		for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+	// 			rgba := img.RGBAAt(x, y)
+	// 			if (rgba != color.RGBA{255, 255, 255, 255}) {
+	// 				continue // If the pixel is transparent then it doesn't trigger a border
+	// 			}
 
-				box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
-				for xx := box.Min.X; xx <= box.Max.X; xx++ {
-					for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
-						rgba := img.RGBAAt(xx, yy)
-						if rgba.A == 0 {
-							// Only add a border to transparent pixels
-							img.Set(xx, yy, color.Black)
-						}
-					}
-				}
-			}
-		}
+	// 			box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+	// 			for xx := box.Min.X; xx <= box.Max.X; xx++ {
+	// 				for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+	// 					rgba := img.RGBAAt(xx, yy)
+	// 					if rgba.A == 0 {
+	// 						// Only add a border to transparent pixels
+	// 						img.Set(xx, yy, color.Black)
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
 
-		// Finds transparent pixels and draws borders inward on non-transparent pixels
-		// imgBounds := img.Bounds()
-		// for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
-		// 	for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
-		// 		rgba := img.RGBAAt(x, y)
-		// 		if rgba.A != 0 {
-		// 			continue // Skip if pixel is not fully transparent
-		// 		}
+	// 	// Finds transparent pixels and draws borders inward on non-transparent pixels
+	// 	// imgBounds := img.Bounds()
+	// 	// for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+	// 	// 	for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+	// 	// 		rgba := img.RGBAAt(x, y)
+	// 	// 		if rgba.A != 0 {
+	// 	// 			continue // Skip if pixel is not fully transparent
+	// 	// 		}
 
-		// 		box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
-		// 		for xx := box.Min.X; xx <= box.Max.X; xx++ {
-		// 			for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
-		// 				rgba := img.RGBAAt(xx, yy)
-		// 				if rgba.A != 0 {
-		// 					// Only add a border to transparent pixels
-		// 					rgba.R = 0
-		// 					rgba.G = 0
-		// 					rgba.B = 0
-		// 					img.Set(xx, yy, rgba)
-		// 				}
-		// 			}
-		// 		}
-		// 	}
-		// }
+	// 	// 		box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+	// 	// 		for xx := box.Min.X; xx <= box.Max.X; xx++ {
+	// 	// 			for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+	// 	// 				rgba := img.RGBAAt(xx, yy)
+	// 	// 				if rgba.A != 0 {
+	// 	// 					// Only add a border to transparent pixels
+	// 	// 					rgba.R = 0
+	// 	// 					rgba.G = 0
+	// 	// 					rgba.B = 0
+	// 	// 					img.Set(xx, yy, rgba)
+	// 	// 				}
+	// 	// 			}
+	// 	// 		}
+	// 	// 	}
+	// 	// }
 
-	}
+	// }
 
 	// // outputFile is a File type which satisfies Writer interface
 	// outputFile, err := os.Create("test.png")
