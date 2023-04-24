@@ -115,6 +115,15 @@ func (t *Texture) initialize(pixels []uint8) {
 	runtime.SetFinalizer(t, (*Texture).delete)
 }
 
+// TODO: This needs to be combined into the NewTexture function, or this needs to bind the texture
+func (t *Texture) GenerateMipmap() {
+	mainthreadCall(func() {
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+		gl.GenerateMipmap(gl.TEXTURE_2D);
+	})
+}
+
 // Sets the texture to be this image.
 // Texture size must match img size or this will panic!
 // TODO - Should I just try and set it? or do nothing?

@@ -110,6 +110,7 @@ var (
 	fnDeleteFramebuffer js.Value
 	fnDeleteShader js.Value
 	fnFramebufferTexture2D js.Value
+	fnGenerateMipmap js.Value
 	fnGetUniformLocation js.Value
 	fnLinkProgram js.Value
 	fnTexImage2D js.Value
@@ -171,6 +172,7 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnDeleteFramebuffer = c.Get("deleteFramebuffer").Call("bind", c)
 	fnDeleteShader = c.Get("deleteShader").Call("bind", c)
 	fnFramebufferTexture2D = c.Get("framebufferTexture2D").Call("bind", c)
+	fnGenerateMipmap = c.Get("generateMipmap").Call("bind", c)
 	fnGetUniformLocation = c.Get("getUniformLocation").Call("bind", c)
 	fnLinkProgram = c.Get("linkProgram").Call("bind", c)
 	fnTexImage2D = c.Get("texImage2D").Call("bind", c)
@@ -674,9 +676,9 @@ func FramebufferTexture2D(target, attachment, texTarget Enum, t Texture, level i
 // 	c.Call("frontFace", int(mode))
 // }
 
-// func GenerateMipmap(target Enum) {
-// 	c.Call("generateMipmap", int(target))
-// }
+func GenerateMipmap(target Enum) {
+	fnGenerateMipmap.Invoke(int(target))
+}
 
 // func GetActiveAttrib(p Program, index uint32) (name string, size int, ty Enum) {
 // 	ai := c.Call("getActiveAttrib", p.Value, index)

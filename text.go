@@ -17,6 +17,8 @@ import (
 	"golang.org/x/image/font/gofont/goregular"
 )
 
+// TODO: Look into this: https://steamcdn-a.akamaihd.net/apps/valve/2007/SIGGRAPH2007_AlphaTestedMagnification.pdf
+
 func DefaultAtlas() (*Atlas, error) {
 	runes := make([]rune, unicode.MaxASCII - 32)
 	for i := range runes {
@@ -82,7 +84,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
-	padding := fixed.I(2 + (2 * atlas.border)) // Padding for runes drawn to atlas
+	padding := fixed.I(4 + (4 * atlas.border)) // Padding for runes drawn to atlas
 	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
@@ -184,6 +186,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	// outputFile.Close()
 
 	atlas.texture = NewTexture(img, smooth)
+	// atlas.texture.GenerateMipmap()
 	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
 }
