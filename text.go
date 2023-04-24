@@ -86,7 +86,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
-	padding := fixed.I(4 + (4 * atlas.border)) // Padding for runes drawn to atlas
+	padding := fixed.I(2 + (2 * atlas.border)) // Padding for runes drawn to atlas
 	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
@@ -160,6 +160,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 
 	// This runs a box filter based on the border side
 	if atlas.border != 0 {
+		// Finds white pixels and draws borders around the edges
 		imgBounds := img.Bounds()
 		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
 			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
@@ -180,6 +181,32 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 				}
 			}
 		}
+
+		// Finds transparent pixels and draws borders inward on non-transparent pixels
+		// imgBounds := img.Bounds()
+		// for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+		// 	for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+		// 		rgba := img.RGBAAt(x, y)
+		// 		if rgba.A != 0 {
+		// 			continue // Skip if pixel is not fully transparent
+		// 		}
+
+		// 		box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+		// 		for xx := box.Min.X; xx <= box.Max.X; xx++ {
+		// 			for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+		// 				rgba := img.RGBAAt(xx, yy)
+		// 				if rgba.A != 0 {
+		// 					// Only add a border to transparent pixels
+		// 					rgba.R = 0
+		// 					rgba.G = 0
+		// 					rgba.B = 0
+		// 					img.Set(xx, yy, rgba)
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+
 	}
 
 	// // outputFile is a File type which satisfies Writer interface
