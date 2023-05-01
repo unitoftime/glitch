@@ -753,7 +753,7 @@ type Key int
 
 // Docs: https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code
 const (
-	KeySpace Key = Key(iota)
+	KeySpace Key = Key(iota) + 32 // TODO: Do more research, +32 is to shift it up above the mouse positions because that's how glfw does it
 	KeyApostrophe
 	KeyComma
 	KeyMinus
