@@ -280,7 +280,7 @@ func (g *Group) FullFixedText(str string, rect glitch.Rect, anchor, anchor2 glit
 	g.debugRect(r)
 }
 
-func (g *Group) TextInput(str *string, rect glitch.Rect, anchor glitch.Vec2, scale float64) {
+func (g *Group) TextInput(prefix, postfix string, str *string, rect glitch.Rect, anchor glitch.Vec2, scale float64) {
 	if str == nil { return }
 
 	runes := g.win.Typed()
@@ -314,7 +314,7 @@ func (g *Group) TextInput(str *string, rect glitch.Rect, anchor glitch.Vec2, sca
 	// }
 	*str = tStr
 
-	g.FixedText(*str, rect, anchor, scale)
+	g.FixedText(prefix + *str + postfix, rect, anchor, scale)
 	// return ret
 }
 
