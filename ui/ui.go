@@ -38,6 +38,7 @@ func MouseCaptured() bool {
 	return global.mouseCaught
 }
 
+// Returns true if the rect contains the point
 func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
 	// if global.mouseCaught {
 	// 	return false
@@ -210,7 +211,9 @@ func (g *Group) PanelColorMask(sprite Drawer, rect glitch.Rect, color glitch.RGB
 }
 
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect) {
-	sprite.RectDrawColorMask(g.pass, rect, g.color)
+	if sprite != nil {
+		sprite.RectDrawColorMask(g.pass, rect, g.color)
+	}
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
 }
@@ -225,7 +228,7 @@ func (g *Group) PanelizeBounds(sprite Drawer, padding glitch.Rect) {
 
 func (g *Group) Hover(normal, hovered Drawer, rect glitch.Rect) bool {
 	mX, mY := g.mousePosition()
-	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
+	if mouseCheck(rect, glitch.Vec2{mX, mY}) {
 		g.Panel(hovered, rect)
 		return true
 	}
@@ -558,8 +561,10 @@ func (g *Group) DragAndDropSlot(elem any, drawer Drawer, rect glitch.Rect) {
 	mouseCheck(rect, glitch.Vec2{mX, mY})
 }
 
-func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, any) {
+// returns (Clicked, hovered, drop elem)
+func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, bool, any) {
 	buttonClick := false
+	buttonHover := false
 	if g.active == elem {
 		mX, mY := g.mousePosition()
 		global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
@@ -615,6 +620,7 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 			g.active = nil
 		}
 	} else if g.down == elem {
+		buttonHover = true
 		if g.mousePos.Sub(g.mouseDownPos).Len() > 3.0 { // TODO - arbitrary
 			fmt.Println("Drag:", elem)
 			g.active = elem
@@ -627,6 +633,7 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 
 		g.trackHover(elem, rect)
 	} else if g.hover == elem {
+		buttonHover = true
 		if g.win.JustPressed(glitch.MouseButtonLeft) {
 			fmt.Println("Down:", elem)
 			g.down = elem
@@ -634,5 +641,5 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 		}
 	}
 
-	return buttonClick, ret
+	return buttonClick, buttonHover, ret
 }
