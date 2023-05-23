@@ -561,8 +561,8 @@ func (g *Group) DragAndDropSlot(elem any, drawer Drawer, rect glitch.Rect) {
 	mouseCheck(rect, glitch.Vec2{mX, mY})
 }
 
-// returns (Clicked, hovered, drop elem)
-func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, bool, any) {
+// returns (Clicked, hovered, isdragging, drop elem)
+func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, bool, bool, any) {
 	buttonClick := false
 	buttonHover := false
 	if g.active == elem {
@@ -641,5 +641,8 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 		}
 	}
 
-	return buttonClick, buttonHover, ret
+	// This item is currently dragging if the active element is itself
+	currentlyDragging := (g.active == elem)
+
+	return buttonClick, buttonHover, currentlyDragging, ret
 }
