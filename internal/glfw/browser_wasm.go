@@ -597,14 +597,14 @@ func (w *Window) SwapBuffers() error {
 		// })
 	}
 
-	start := time.Now()
+	// start := time.Now()
 	<-animationFrameChan
-	dt := time.Since(start)
-	if dt > 18 * time.Millisecond {
-		fmt.Println("Warning: Long rAF Pause: ", dt)
-	} else if dt < 3 * time.Millisecond {
-		fmt.Println("Warning: Short rAF Pause: ", dt)
-	}
+	// dt := time.Since(start)
+	// if dt > 18 * time.Millisecond {
+	// 	fmt.Println("Warning: Long rAF Pause: ", dt)
+	// } else if dt < 3 * time.Millisecond {
+	// 	fmt.Println("Warning: Short rAF Pause: ", dt)
+	// }
 
 	// raf.Invoke(animationFrameCallback)
 	// <-animationFrameChan
@@ -652,9 +652,9 @@ var animationFrameCallback = js.FuncOf(func(this js.Value, args []js.Value) inte
 	// }()
 
 	newFrame := args[0].Float()
-	if (newFrame - lastFrame) > 18 {
-		fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
-	}
+	// if (newFrame - lastFrame) > 18 {
+	// 	fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
+	// }
 	lastFrame = newFrame
 	animationFrameChan <- struct{}{}
 	return nil
