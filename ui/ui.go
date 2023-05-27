@@ -611,7 +611,7 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 	var ret any
 	if g.active == elem {
 		if g.win.JustReleased(glitch.MouseButtonLeft) {
-			fmt.Println("Drop:", elem)
+			// fmt.Println("Drop:", elem)
 			// dropper, ok := g.hover.(Dropper)
 			// if ok {
 			// 	dropper.Drop(elem)
@@ -622,11 +622,11 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 	} else if g.down == elem {
 		buttonHover = true
 		if g.mousePos.Sub(g.mouseDownPos).Len() > 3.0 { // TODO - arbitrary
-			fmt.Println("Drag:", elem)
+			// fmt.Println("Drag:", elem)
 			g.active = elem
 			g.down = nil
 		} else if g.win.JustReleased(glitch.MouseButtonLeft) {
-			fmt.Println("Click:", elem)
+			// fmt.Println("Click:", elem)
 			buttonClick = true
 			g.down = nil
 		}
@@ -635,7 +635,7 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 	} else if g.hover == elem {
 		buttonHover = true
 		if g.win.JustPressed(glitch.MouseButtonLeft) {
-			fmt.Println("Down:", elem)
+			// fmt.Println("Down:", elem)
 			g.down = elem
 			g.mouseDownPos = g.mousePos
 		}
