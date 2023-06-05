@@ -365,6 +365,15 @@ func (r Rect) ScaledToFit(r2 Rect) Rect {
 	return r.Scaled(min)
 }
 
+// Returns the largest square that fits inside the rectangle
+func (r Rect) SubSquare() Rect {
+	w := r.W()
+	h := r.H()
+	min, _ := minMax(w, h)
+	m2 := min/2
+	return R(-m2, -m2, m2, m2).Moved(r.Center())
+}
+
 // TODO - this only works if you're centered on (0, 0)
 func (r Rect) Scaled(scale float64) Rect {
 	// center := r.Center()
