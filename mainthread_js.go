@@ -1,4 +1,5 @@
 // +build js
+
 package glitch
 
 // Note: This is an optimization for browsers, which only have one thread.

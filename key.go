@@ -172,3 +172,151 @@ func isMouseKey(k Key) bool {
 		k == MouseButtonRight ||
 		k == MouseButtonMiddle
 }
+
+func GetKeyName(k Key) string {
+	// From GLFW Docs:
+	// GetKeyName returns the localized name of the specified printable key.
+	// If the key is glfw.KeyUnknown, the scancode is used, otherwise the scancode is ignored.
+	return glfw.GetKeyName(glfw.Key(k), 0)
+}
+
+// Same thing as GetKeyName, but gives better descriptions for non-text keys
+// TODO: This won't work for wasm yet
+func GetKeyDescription(k Key) string {
+	keyName := GetKeyName(k)
+	if keyName != "" {
+		return keyName
+	}
+
+	name, ok := keyDescription[k]
+	if !ok {
+		// TODO: Use scancode to lookup
+		return "Unknown"
+	}
+	return name
+}
+var keyDescription map[Key]string = map[Key]string{
+	KeySpace:        "Space",
+	KeyApostrophe:        "'", //???
+	KeyComma:        ",",
+	KeyMinus:        "-",
+	KeyPeriod:       ".",
+	KeySlash:        "/",
+	Key0:       "0",
+	Key1:       "1",
+	Key2:       "2",
+	Key3:       "3",
+	Key4:       "4",
+	Key5:       "5",
+	Key6:       "6",
+	Key7:       "7",
+	Key8:       "8",
+	Key9:       "9",
+	KeySemicolon:    ";",
+	KeyEqual:        "=",
+	KeyA:         "A",
+	KeyB:         "B",
+	KeyC:         "C",
+	KeyD:         "D",
+	KeyE:         "E",
+	KeyF:         "F",
+	KeyG:         "G",
+	KeyH:         "H",
+	KeyI:         "I",
+	KeyJ:         "J",
+	KeyK:         "K",
+	KeyL:         "L",
+	KeyM:         "M",
+	KeyN:         "N",
+	KeyO:         "O",
+	KeyP:         "P",
+	KeyQ:         "Q",
+	KeyR:         "R",
+	KeyS:         "S",
+	KeyT:         "T",
+	KeyU:         "U",
+	KeyV:         "V",
+	KeyW:         "W",
+	KeyX:         "X",
+	KeyY:         "Y",
+	KeyZ:         "Z",
+	KeyLeftBracket:  "[",
+	KeyBackslash:    "\\",
+	KeyRightBracket: "[",
+	//	"KeyGraveAccent": KeyGraveAccent,
+	// "KeyWorld1": KeyWorld1,
+	// "KeyWorld2": KeyWorld2,
+	KeyEscape:      "Esc",
+	KeyEnter:       "Enter",
+	KeyTab:         "Tab",
+	KeyBackspace:   "Backspace",
+	KeyInsert:      "Insert",
+	KeyDelete:      "Delete",
+	KeyRight:  "ArrowRight",
+	KeyLeft:   "ArrowLeft",
+	KeyDown:   "ArrowDown",
+	KeyUp:     "ArrowUp",
+	KeyPageUp:      "PageUp",
+	KeyPageDown:    "PageDown",
+	KeyHome:        "Home",
+	KeyEnd:         "End",
+	KeyCapsLock:    "CapsLock",
+	KeyScrollLock:  "ScrollLock",
+	KeyNumLock:     "NumLock",
+	KeyPrintScreen: "PrintScreen",
+	KeyPause:       "Pause",
+	KeyF1:          "F1",
+	KeyF2:          "F2",
+	KeyF3:          "F3",
+	KeyF4:          "F4",
+	KeyF5:          "F5",
+	KeyF6:          "F6",
+	KeyF7:          "F7",
+	KeyF8:          "F8",
+	KeyF9:          "F9",
+	KeyF10:         "F10",
+	KeyF11:         "F11",
+	KeyF12:         "F12",
+	KeyF13:         "F13",
+	KeyF14:         "F14",
+	KeyF15:         "F15",
+	KeyF16:         "F16",
+	KeyF17:         "F17",
+	KeyF18:         "F18",
+	KeyF19:         "F19",
+	KeyF20:         "F20",
+	KeyF21:         "F21",
+	KeyF22:         "F22",
+	KeyF23:         "F23",
+	KeyF24:         "F24",
+	// "F25": KeyF25,
+	KeyKP0:        "Num0",
+	KeyKP1:        "Num1",
+	KeyKP2:        "Num2",
+	KeyKP3:        "Num3",
+	KeyKP4:        "Num4",
+	KeyKP5:        "Num5",
+	KeyKP6:        "Num6",
+	KeyKP7:        "Num7",
+	KeyKP8:        "Num8",
+	KeyKP9:        "Num9",
+	KeyKPDecimal:  "NumDecimal",
+	KeyKPDivide:   "NumDivide",
+	KeyKPMultiply: "NumMultiply",
+	KeyKPSubtract: "NumSubtract",
+	KeyKPAdd:      "NumAdd",
+	KeyKPEnter:    "NumEnter",
+	KeyKPEqual:    "NumEqual",
+	KeyLeftShift:      "ShiftLeft",
+	KeyLeftControl:    "ControlLeft",
+	KeyLeftAlt:        "AltLeft",
+	// KeyLeftSuper:         "OSLeft",
+	KeyLeftSuper:       "MetaLeft",
+	KeyRightShift:     "ShiftRight",
+	KeyRightControl:   "ControlRight",
+	KeyRightAlt:       "AltRight",
+	// KeyRightSuper:        "OSRight",
+	KeyRightSuper:      "MetaRight",
+	KeyMenu:    "ContextMenu", // ????
+}
+
