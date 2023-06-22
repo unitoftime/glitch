@@ -60,6 +60,11 @@ func (v Vec2) Sub(u Vec2) Vec2 {
 	return Vec2{v[0] - u[0], v[1] - u[1]}
 }
 
+func (v Vec2) Unit() Vec2 {
+	len := v.Len()
+	return Vec2{v[0]/len, v[1]/len}
+}
+
 func (v Vec2) Len() float64 {
 	return math.Hypot(float64(v[0]), float64(v[1]))
 }

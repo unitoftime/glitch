@@ -322,14 +322,24 @@ func (g *Group) TextInput(prefix, postfix string, str *string, rect glitch.Rect,
 }
 
 // TODO - tooltips only seem to work for single lines
-func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect, anchor glitch.Vec2) {
+func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect) {
 	mX, mY := g.mousePosition()
-	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
+	mousePos := glitch.Vec2{mX, mY}
+	if !mouseCheck(rect, mousePos) {
 		return // If mouse not contained by rect, then don't draw
 	}
 
+	movement := g.win.Bounds().Center().Sub(mousePos).Unit()
+
 	text := g.getText(tip)
-	tipRect := rect.Anchor(text.Bounds(), anchor)
+	// tipRect := rect.Anchor(text.Bounds(), anchor)
+	tipRect := text.Bounds()
+	tipRect = tipRect.CenterAt(mousePos)
+	tipRect = tipRect.
+		Moved(glitch.Vec2{
+		tipRect.W() * movement[0],
+		tipRect.H() * movement[1],
+	})
 
 	g.Panel(panel, tipRect)
 
@@ -383,8 +393,7 @@ func (g *Group) debugRect(rect glitch.Rect) {
 // 	return bounds
 // }
 
-// // TODO - tooltips only seem to work for single lines
-// func (c *Context) Tooltip(name string, tip string, startRect Rect, position, anchor pixel.Vec) {
+// func (g *Group) Tooltip(name string, tip string, startRect Rect, position, anchor pixel.Vec) {
 // 	padding := 5.0
 // 	c.HoverLambda(startRect,
 // 		func() {
