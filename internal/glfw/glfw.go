@@ -25,3 +25,9 @@ type VidMode struct {
 	BlueBits    int // The bit depth of the blue channel of the video mode.
 	RefreshRate int // The refresh rate, in Hz, of the video mode.
 }
+
+type ScreenModeType uint8
+const (
+	ScreenModeFull ScreenModeType = iota
+	ScreenModeWindowed
+)

@@ -351,23 +351,19 @@ func (w *Window) SetVSync(enable bool) {
 	})
 }
 
+type ScreenModeType glfw.ScreenModeType
+const (
+	ScreenModeFull = ScreenModeType(glfw.ScreenModeFull)
+	ScreenModeWindowed = ScreenModeType(glfw.ScreenModeWindowed)
+)
+
 // TODO - rename. also maybe do modes - window, borderless, full, etc.
-func (w *Window) SetFullscreen(enable bool) {
+func (w *Window) SetScreenMode(smt ScreenModeType) {
 	mainthreadCall(func() {
-		// w.restore.xpos, w.restore.ypos = w.window.GetPos()
-		// w.restore.width, w.restore.height = w.window.GetSize()
-
-		// mode := monitor.monitor.GetVideoMode()
-		monitor := glfw.GetPrimaryMonitor()
-		mode := monitor.GetVideoMode()
-
-		w.window.SetMonitor(
-			monitor,
-			0,
-			0,
-			mode.Width,
-			mode.Height,
-			mode.RefreshRate,
-		)
+		w.window.SetScreenMode(glfw.ScreenModeType(smt))
 	})
+}
+
+func (w *Window) ScreenMode() ScreenModeType {
+	return ScreenModeType(w.window.ScreenMode())
 }

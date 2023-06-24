@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 	// "runtime"
-	"fmt"
+	// "fmt"
 
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
@@ -45,7 +45,15 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 		return nil, err
 	}
 
-	window := &Window{Window: w}
+	window := &Window{
+		Window: w,
+		currentScreenMode: ScreenModeWindowed,
+		lastWindow: winRect{
+			// TODO: xpos, ypos - fill from monitor info
+			width: width,
+			height: height,
+		},
+	}
 
 	return window, err
 }
@@ -66,8 +74,15 @@ func DetachCurrentContext() {
 	contextWatcher.OnDetach()
 }
 
+type winRect struct {
+	xpos, ypos, width, height int
+}
+
 type Window struct {
 	*glfw.Window
+
+	currentScreenMode ScreenModeType
+	lastWindow winRect
 }
 
 
@@ -496,12 +511,51 @@ func (w *Window) SetClipboardString(str string) {
 }
 
 func (w *Window) GetClipboardString() string {
-        return glfw.GetClipboardString()
+	return glfw.GetClipboardString()
+}
+
+func (w *Window) ScreenMode() ScreenModeType {
+	return w.currentScreenMode
+}
+
+func (w *Window) SetScreenMode(smt ScreenModeType) {
+
+	if smt == ScreenModeFull {
+		if w.currentScreenMode == ScreenModeWindowed {
+			w.lastWindow.xpos, w.lastWindow.ypos = w.GetPos()
+			w.lastWindow.width, w.lastWindow.height = w.GetSize()
+		}
+
+		monitor := GetPrimaryMonitor()
+		mode := monitor.GetVideoMode()
+
+		w.SetMonitor(
+			monitor,
+			0,
+			0,
+			mode.Width,
+			mode.Height,
+			mode.RefreshRate,
+		)
+	} else if smt == ScreenModeWindowed {
+		monitor := GetPrimaryMonitor() // TODO: Should this be like: GetCurrentMonitor, getwindowmonitor? https://www.glfw.org/docs/3.3/monitor_guide.html
+		mode := monitor.GetVideoMode()
+
+		w.SetMonitor(
+			nil,
+			w.lastWindow.xpos,
+			w.lastWindow.ypos,
+			w.lastWindow.width,
+			w.lastWindow.height,
+			mode.RefreshRate,
+		)
+	}
+
+	w.currentScreenMode = smt
 }
 
 func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int) {
 	if monitor == nil {
-		fmt.Println("HERE", xpos, ypos, width, height, refreshRate)
 		w.Window.SetMonitor(nil, xpos, ypos, width, height, refreshRate)
 	} else {
 		w.Window.SetMonitor(monitor.Monitor, xpos, ypos, width, height, refreshRate)

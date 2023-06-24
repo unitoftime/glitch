@@ -438,8 +438,32 @@ func (w *Window) goFullscreenIfRequested() {
 		return
 	}
 	w.requestFullscreen = false
-	w.canvas.Call("webkitRequestFullscreen")
+	// https://developer.mozilla.org/en-US/docs/Web/API/Element/requestFullscreen
+	w.canvas.Call("requestFullscreen")
 	w.fullscreen = true
+}
+
+func (w *Window) ScreenMode() ScreenModeType {
+	fullscreenElem := document.Get("fullscreenElement")
+	canvasIsFull := fullscreenElem.Equal(w.canvas)
+
+	if canvasIsFull {
+		return ScreenModeFull
+	} else {
+		return ScreenModeWindowed
+	}
+}
+
+func (w *Window) SetScreenMode(smt ScreenModeType) {
+	if smt == ScreenModeFull {
+		w.requestFullscreen = true
+	} else if smt == ScreenModeWindowed {
+		current := w.ScreenMode()
+		if current != ScreenModeWindowed {
+			document.Call("exitFullscreen")
+			w.fullscreen = false
+		}
+	}
 }
 
 type Monitor struct{}
