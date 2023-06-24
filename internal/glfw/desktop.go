@@ -554,6 +554,7 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 	w.currentScreenMode = smt
 }
 
+// Note: Passing in nil here gives you a window instead of fullscreen
 func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int) {
 	if monitor == nil {
 		w.Window.SetMonitor(nil, xpos, ypos, width, height, refreshRate)
