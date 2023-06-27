@@ -322,6 +322,7 @@ func (g *Group) TextInput(prefix, postfix string, str *string, rect glitch.Rect,
 }
 
 // TODO - tooltips only seem to work for single lines
+// TODO: Configurable padding
 func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect) {
 	mX, mY := g.mousePosition()
 	mousePos := glitch.Vec2{mX, mY}
@@ -329,7 +330,21 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect) {
 		return // If mouse not contained by rect, then don't draw
 	}
 
-	movement := g.win.Bounds().Center().Sub(mousePos).Unit()
+	padding := 10.0
+	quadrant := g.win.Bounds().Center().Sub(mousePos).Unit()
+
+	var movement glitch.Vec2
+	if quadrant[0] < 0 {
+		movement[0] = -1
+	} else {
+		movement[0] = 1
+	}
+
+	if quadrant[1] < 0 {
+		movement[1] = -1
+	} else {
+		movement[1] = 1
+	}
 
 	text := g.getText(tip)
 	// tipRect := rect.Anchor(text.Bounds(), anchor)
@@ -337,8 +352,8 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect) {
 	tipRect = tipRect.CenterAt(mousePos)
 	tipRect = tipRect.
 		Moved(glitch.Vec2{
-		tipRect.W() * movement[0],
-		tipRect.H() * movement[1],
+		(padding + (tipRect.W() / 2)) * movement[0],
+		(padding + (tipRect.H() / 2)) * movement[1],
 	})
 
 	g.Panel(panel, tipRect)
