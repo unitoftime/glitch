@@ -33,6 +33,10 @@ func Greyscale(g float64) RGBA {
 	return RGBA{g, g, g, 1.0}
 }
 
+func FromStraightRGBA(r, g, b float64, a float64) RGBA {
+	return RGBA{r * a, g * a, b * a, a}
+}
+
 func FromRGBA(c color.RGBA) RGBA {
 	return FromUint8(c.R, c.G, c.B, c.A)
 }
@@ -45,5 +49,13 @@ func FromColor(c color.Color) RGBA {
 		float64(g) / float64(math.MaxUint16),
 		float64(b) / float64(math.MaxUint16),
 		float64(a) / float64(math.MaxUint16),
+	}
+}
+func (c1 RGBA) Mult(c2 RGBA) RGBA {
+	return RGBA{
+		c1.R * c2.R,
+		c1.G * c2.G,
+		c1.B * c2.B,
+		c1.A * c2.A,
 	}
 }
