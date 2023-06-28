@@ -30,12 +30,13 @@ type Target interface {
 // - Depth bits
 // - Material / Uniforms / Textures
 // - Sort by: x, y, z, depth?
+// I also feel like I'm finding myself mirroring this: https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#DrawImageOptions
 type drawCommand struct {
 	command uint64
 	mesh *Mesh
 	matrix Mat4
 	mask RGBA
-	material Material
+	state BufferState
 }
 
 type meshBuffer struct {
@@ -69,6 +70,8 @@ type RenderPass struct {
 	buffer *BufferPool
 	commands [][]drawCommand
 	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
+
+	blendMode BlendMode
 
 	DepthTest bool // If set true, enable hardware depth testing. This changes how software sorting works. currently If you change this mid-pass you might get weird behavior.
 	SoftwareSort SoftwareSortMode
@@ -117,6 +120,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
 		minimumCacheSize: 128,
 		drawCalls: make([]drawCall, 0),
+		blendMode: BlendModeNormal,
 	}
 	// r.mainthreadDepthTest = func() {
 	// 	r.enableDepthTest()
@@ -176,6 +180,11 @@ func (r *RenderPass) SetLayer(layer int8) {
 	r.currentLayer = layer
 }
 
+// Sets the blend mode for this render pass
+func (r *RenderPass) SetBlendMode(bm BlendMode) {
+	r.blendMode = bm
+}
+
 func (r *RenderPass) Batch() {
 	r.SortInSoftware()
 
@@ -205,7 +214,7 @@ func (r *RenderPass) Batch() {
 					meshBuf = newMeshBuffer(r.shader, c.mesh)
 					r.meshCache.Add(c.mesh, meshBuf)
 
-					success := meshBuf.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
+					success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
 					if !success {
 						panic("Something went wrong")
 					}
@@ -218,11 +227,11 @@ func (r *RenderPass) Batch() {
 					if c.mesh.generation != meshBuf.generation {
 						// fmt.Println("MeshCache: Mesh has new generation!")
 						meshBuf.buffer.Clear()
-						success := meshBuf.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
+						success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
 						if !success {
 							// If we failed to reserve, then we need to recreate the buffer. Likely the buffer is too small for our current mesh
 							meshBuf = newMeshBuffer(r.shader, c.mesh)
-							success = meshBuf.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
+							success = meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
 							if !success {
 								panic("Something went wrong")
 							}
@@ -246,7 +255,7 @@ func (r *RenderPass) Batch() {
 			} else {
 				r.stats.UncachedDraws++
 				// Else we are auto-batching the mesh because the mesh is small
-				vertexBuffer := r.buffer.Reserve(c.material, c.mesh.indices, numVerts, destBuffs)
+				vertexBuffer := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
 				r.batchToBuffers(c, destBuffs)
 
 				// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
@@ -321,11 +330,11 @@ func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 		// fmt.Println("Depth: ", mat[i4_3_2])
 
 		r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
-			0, mesh, mat, mask, material,
+			0, mesh, mat, mask, BufferState{material, r.blendMode},
 		})
 	} else {
 		r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
-			0, mesh, mat, mask, material,
+			0, mesh, mat, mask, BufferState{material, r.blendMode},
 		})
 	}
 }
@@ -335,6 +344,7 @@ func (r *RenderPass) SortInSoftware() {
 		// TODO - do special sort function for depth test code:
 		// 1. Fully Opaque or fully transparent groups of meshes: Don't sort inside that group
 		// 2. Partially transparent groups of meshes: sort inside that group
+		// 3. Take into account blendMode
 		return
 	}
 	if r.SoftwareSort == SoftwareSortNone { return } // Skip if sorting disabled
@@ -506,16 +516,13 @@ func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
 }
 
 func openglDraw(shader *Shader, draws []drawCall) {
-	lastMaterial := Material(nil)
+	lastState := BufferState{}
 	for i := range draws {
 		buffer := draws[i].buffer
 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
-		if lastMaterial != buffer.material {
-			lastMaterial = buffer.material
-			if lastMaterial != nil {
-				// fmt.Println("Binding New Material", lastMaterial)
-				lastMaterial.Bind()
-			}
+		if lastState != buffer.state {
+			lastState = buffer.state
+			lastState.Bind()
 		}
 
 		ok := shader.SetUniform("model", draws[i].model)

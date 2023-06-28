@@ -29,6 +29,10 @@ func Alpha(a float64) RGBA {
 	return RGBA{a, a, a, a}
 }
 
+func Greyscale(g float64) RGBA {
+	return RGBA{g, g, g, 1.0}
+}
+
 func FromRGBA(c color.RGBA) RGBA {
 	return FromUint8(c.R, c.G, c.B, c.A)
 }
