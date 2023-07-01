@@ -320,9 +320,9 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 			// If they are leaving the page, clear all the inputs
 			if state == "hidden" {
 				// Trigger another frame in case the RAF is blocked
-				// time.AfterFunc(100 * time.Millisecond, func() {
-				// 	animationFrameChan <- struct{}{}
-				// })
+				time.AfterFunc(100 * time.Millisecond, func() {
+					animationFrameChan <- struct{}{}
+				})
 
 				w.hidden = true
 
@@ -333,6 +333,7 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 				// animationFrameChan <- struct{}{}
 			} else if state == "visible" {
 				w.hidden = false
+				<-animationFrameChan // Just one frame from the channel because we might have put ourselves into a state where one is already there
 				// select {
 				// 	case <-animationFrameChan: // Just one frame from the channel because we might have put ourselves into a state where one is already there
 				// 	default:
@@ -374,7 +375,7 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 	*/
 
 	// Request first animation frame.
-	raf.Invoke(animationFrameCallback)
+	// raf.Invoke(animationFrameCallback)
 
 	// Alternative 3 RAF strategy
 	// start()
@@ -610,14 +611,15 @@ func (w *Window) SetShouldClose(value bool) {
 
 func (w *Window) SwapBuffers() error {
 	// start := time.Now()
-	select {
-	case <-animationFrameChan:
-		// fmt.Println("RAF Swap")
-		raf.Invoke(animationFrameCallback)
 
-		case <-time.After(100 * time.Millisecond): // TODO - arbitrarily selected 100 ms. Browsers will limit anyways
-		// fmt.Println("Timer Swap")
-	}
+	// select {
+	// case <-animationFrameChan:
+	// 	// fmt.Println("RAF Swap")
+	// 	raf.Invoke(animationFrameCallback)
+
+	// 	case <-time.After(100 * time.Millisecond): // TODO - arbitrarily selected 100 ms. Browsers will limit anyways
+	// 	// fmt.Println("Timer Swap")
+	// }
 
 	// dt := time.Since(start)
 	// if dt > 18 * time.Millisecond {
@@ -626,31 +628,31 @@ func (w *Window) SwapBuffers() error {
 	// 	fmt.Println("Warning: Short rAF Pause: ", dt)
 	// }
 
-	// if w.hidden {
-	// 	// Just to keep the game running in the background
-	// 	// TODO - arbitrarily selected 100 ms. Browsers will limit anyways
-	// 	fmt.Println("Timer Swap")
-	// 	time.AfterFunc(100 * time.Millisecond, func() {
-	// 		animationFrameChan <- struct{}{}
-	// 	})
-	// } else {
-	// 	fmt.Println("RAF Swap")
-	// 	raf.Invoke(animationFrameCallback)
+	if w.hidden {
+		// Just to keep the game running in the background
+		// TODO - arbitrarily selected 100 ms. Browsers will limit anyways
+		// fmt.Println("Timer Swap")
+		time.AfterFunc(100 * time.Millisecond, func() {
+			animationFrameChan <- struct{}{}
+		})
+	} else {
+		// fmt.Println("RAF Swap")
+		raf.Invoke(animationFrameCallback)
 
-	// 	// TODO - vsync disabled. Requires gl.Flush and gl.Finish
-	// 	// time.AfterFunc(1 * time.Nanosecond, func() {
-	// 	// 	animationFrameChan <- struct{}{}
-	// 	// })
+		// TODO - vsync disabled. Requires gl.Flush and gl.Finish
+		// time.AfterFunc(1 * time.Nanosecond, func() {
+		// 	animationFrameChan <- struct{}{}
+		// })
+	}
+
+	// start := time.Now()
+	<-animationFrameChan
+	// dt := time.Since(start)
+	// if dt > 18 * time.Millisecond {
+	// 	fmt.Println("Warning: Long rAF Pause: ", dt)
+	// } else if dt < 3 * time.Millisecond {
+	// 	fmt.Println("Warning: Short rAF Pause: ", dt)
 	// }
-
-	// // start := time.Now()
-	// <-animationFrameChan
-	// // dt := time.Since(start)
-	// // if dt > 18 * time.Millisecond {
-	// // 	fmt.Println("Warning: Long rAF Pause: ", dt)
-	// // } else if dt < 3 * time.Millisecond {
-	// // 	fmt.Println("Warning: Short rAF Pause: ", dt)
-	// // }
 
 	// raf.Invoke(animationFrameCallback)
 	// <-animationFrameChan
