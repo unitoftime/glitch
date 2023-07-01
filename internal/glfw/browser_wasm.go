@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"syscall/js"
 	"time"
+	"sync"
 )
 
 // Useful: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
@@ -319,11 +320,6 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 
 			// If they are leaving the page, clear all the inputs
 			if state == "hidden" {
-				// Trigger another frame in case the RAF is blocked
-				time.AfterFunc(100 * time.Millisecond, func() {
-					animationFrameChan <- struct{}{}
-				})
-
 				w.hidden = true
 
 				// TODO - clear mouse input too?
@@ -333,11 +329,6 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 				// animationFrameChan <- struct{}{}
 			} else if state == "visible" {
 				w.hidden = false
-				<-animationFrameChan // Just one frame from the channel because we might have put ourselves into a state where one is already there
-				// select {
-				// 	case <-animationFrameChan: // Just one frame from the channel because we might have put ourselves into a state where one is already there
-				// 	default:
-				// }
 			}
 		}()
 		return nil
@@ -419,6 +410,7 @@ type Window struct {
 	focusCallback           FocusCallback
 
 	hidden bool // Used to track if the window is hidden or visible
+	rafOnce sync.Once
 
 	touches js.Value // Hacky mouse-emulation-via-touch.
 }
@@ -610,101 +602,36 @@ func (w *Window) SetShouldClose(value bool) {
 }
 
 func (w *Window) SwapBuffers() error {
-	// start := time.Now()
-
-	// select {
-	// case <-animationFrameChan:
-	// 	// fmt.Println("RAF Swap")
-	// 	raf.Invoke(animationFrameCallback)
-
-	// 	case <-time.After(100 * time.Millisecond): // TODO - arbitrarily selected 100 ms. Browsers will limit anyways
-	// 	// fmt.Println("Timer Swap")
-	// }
-
-	// dt := time.Since(start)
-	// if dt > 18 * time.Millisecond {
-	// 	fmt.Println("Warning: Long rAF Pause: ", dt)
-	// } else if dt < 3 * time.Millisecond {
-	// 	fmt.Println("Warning: Short rAF Pause: ", dt)
-	// }
-
-	if w.hidden {
-		// Just to keep the game running in the background
-		// TODO - arbitrarily selected 100 ms. Browsers will limit anyways
-		// fmt.Println("Timer Swap")
-		time.AfterFunc(100 * time.Millisecond, func() {
-			animationFrameChan <- struct{}{}
-		})
-	} else {
-		// fmt.Println("RAF Swap")
+	// How this works (because its kind of complicated):
+	// 1. RAF is invoked once, and once the raf is consumed (by reading from aimationFrameChan), the w.rafOnce object is reset so it can be invoked again
+	// 2. If the browser window is hidden, usually RAF gets halted. To keep the game running, we have a 100ms timeout that executes. Eventually the game is visibile again, causing the animationFrameChan to get consumed, and `rafOnce` to be reset
+	// Note: One thing I tried is calling `raf.Invoke(animationFrameCallback)` *after* reading from the channel (this effectively synchronizes in the opposite direction, causing the raf to be blocked for until the next swapbuffers call). This seemed to cause a lot of weird stability isuess in wasm, so I moved away from it.
+	// Note: Its *very* important that we dont accidentally start multiple "raf loops"
+	w.rafOnce.Do(func() {
 		raf.Invoke(animationFrameCallback)
+	})
 
-		// TODO - vsync disabled. Requires gl.Flush and gl.Finish
-		// time.AfterFunc(1 * time.Nanosecond, func() {
-		// 	animationFrameChan <- struct{}{}
-		// })
+	select {
+	case <-animationFrameChan:
+		w.rafOnce = sync.Once{} // Reset rafOnce
+	case <-time.After(100 * time.Millisecond): // TODO: would be nice to make this timeout configurable
 	}
-
-	// start := time.Now()
-	<-animationFrameChan
-	// dt := time.Since(start)
-	// if dt > 18 * time.Millisecond {
-	// 	fmt.Println("Warning: Long rAF Pause: ", dt)
-	// } else if dt < 3 * time.Millisecond {
-	// 	fmt.Println("Warning: Short rAF Pause: ", dt)
-	// }
-
-	// raf.Invoke(animationFrameCallback)
-	// <-animationFrameChan
-
-	// Old
-	// <-animationFrameChan
-	// raf.Invoke(animationFrameCallback)
-
-	// // Alternative 3 RAF strategy
-	// <-animationFrameChan
 
 	return nil
 }
-
-// Alternative 3 RAF strategy
-// func start() {
-// 	type testStruct struct {
-// 		call func()
-// 	}
-// 	t := &testStruct{}
-
-// 	cb := js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-// 		t.call()
-// 		animationFrameChan <- struct{}{}
-// 		return nil
-// 	})
-// 	t.call = func() {
-// 		raf.Invoke(cb)
-// 	}
-
-// 	t.call()
-// }
 
 var raf = js.Global().Get("requestAnimationFrame")
 var animationFrameChan = make(chan struct{})
 var lastFrame float64
 var animationFrameCallback = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	// go func() {
-	// 	newFrame := args[0].Float()
-	// 	if (newFrame - lastFrame) > 18 {
-	// 		fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
-	// 	}
-	// 	lastFrame = newFrame
-	// 	animationFrameChan <- struct{}{}
-	// }()
-
 	newFrame := args[0].Float()
 	// if (newFrame - lastFrame) > 18 {
 	// 	fmt.Println("Warning: Possible Dropped Frame: ", newFrame - lastFrame)
 	// }
 	lastFrame = newFrame
+
 	animationFrameChan <- struct{}{}
+
 	return nil
 })
 
