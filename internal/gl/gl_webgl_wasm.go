@@ -137,6 +137,7 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 		}
 	}
 
+	// TODO: Some APIs need to be unsupported in webgl1 mode
 	fnBufferSubData = c.Get("bufferSubData").Call("bind", c)
 	fnBufferData = c.Get("bufferData").Call("bind", c)
 	fnBindVertexArray = c.Get("bindVertexArray").Call("bind", c)

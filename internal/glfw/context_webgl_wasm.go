@@ -3,14 +3,50 @@
 package glfw
 
 import (
-	"errors"
+	"fmt"
 	"syscall/js"
 )
 
-func newContext(canvas js.Value, ca *contextAttributes) (context js.Value, err error) {
-	if js.Global().Get("WebGLRenderingContext").Equal(js.Undefined()) {
-		return js.Value{}, errors.New("Your browser doesn't appear to support WebGL.")
+
+type webglSupport struct {
+	WebGLRenderingContext bool // WebGL1
+	WebGLRenderingContext2 bool // WebGl2
+}
+func (s webglSupport) String() string {
+	return fmt.Sprintf(
+		"WebGLRenderingContext: %v | WebGLRenderingContext2: %v",
+		s.WebGLRenderingContext, s.WebGLRenderingContext2,
+	)
+}
+
+func getWebglSupport() webglSupport {
+	support := webglSupport{}
+
+	{
+		webgl := js.Global().Get("WebGLRenderingContext")
+		support.WebGLRenderingContext = false
+		if !webgl.Equal(js.Null()) {
+			if !webgl.Equal(js.Undefined()) {
+				support.WebGLRenderingContext = true
+			}
+		}
 	}
+
+	{
+		webgl2 := js.Global().Get("WebGLRenderingContext2")
+		support.WebGLRenderingContext2 = false
+		if !webgl2.Equal(js.Null()) {
+			if !webgl2.Equal(js.Undefined()) {
+				support.WebGLRenderingContext2 = true
+			}
+		}
+	}
+
+	return support
+}
+
+func newContext(canvas js.Value, ca *contextAttributes) (js.Value, error) {
+	support := getWebglSupport()
 
 	attrs := map[string]interface{}{
 		"alpha":                           ca.Alpha,
@@ -24,7 +60,6 @@ func newContext(canvas js.Value, ca *contextAttributes) (context js.Value, err e
 	}
 
 	gl := canvas.Call("getContext", "webgl2", attrs)
-
 	if !gl.Equal(js.Null()) {
 		return gl, nil
 	}
@@ -37,25 +72,30 @@ func newContext(canvas js.Value, ca *contextAttributes) (context js.Value, err e
 	// 	log.Println("DepthTexture Extension: ", ext)
 	// }
 
-	// if gl.Equal(js.Null()) {
-	// 	// If gl context is null, then webgl2 creation failed. Let's try webgl1
-	// 	log.Println("Failed to create Webgl2, trying webgl1")
-	// 	gl = canvas.Call("getContext", "webgl", attrs)
+	// --- Fallbacks ---
+	fmt.Println("Failed to create webgl2 context, trying webgl1")
+	gl = canvas.Call("getContext", "webgl", attrs)
+	if !gl.Equal(js.Null()) {
+		return gl, nil
+	}
+
+	fmt.Println("Failed to create webgl2 and webgl1 context, trying experimental-webgl")
+	gl = canvas.Call("getContext", "experimental-webgl", attrs)
+	if !gl.Equal(js.Null()) {
+		return gl, nil
+	}
+
+	// TODO: Not sure what WebGLDebugUtils is, or if its worth falling back to
+	// if !gl.Equal(js.Null()) {
+	// 	debug := js.Global().Get("WebGLDebugUtils")
+	// 	if debug.Equal(js.Undefined()) {
+	// 		return gl, errors.New("No debugging for WebGL.")
+	// 	}
+	// 	gl = debug.Call("makeDebugContext", gl)
+	// 	return gl, nil
 	// }
 
-	if !gl.Equal(js.Null()) {
-		debug := js.Global().Get("WebGLDebugUtils")
-		if debug.Equal(js.Undefined()) {
-			return gl, errors.New("No debugging for WebGL.")
-		}
-		gl = debug.Call("makeDebugContext", gl)
-		return gl, nil
-	} else if gl := canvas.Call("getContext", "experimental-webgl", attrs); gl.Equal(js.Null()) {
-		// log.Println("Failed to create, trying experimental-webgl")
-		return gl, nil
-	} else {
-		return js.Value{}, errors.New("Creating a WebGL context has failed.")
-	}
+	return js.Value{}, fmt.Errorf("webgl context creation error. Browser Support: %s", support.String())
 }
 
 type contextAttributes struct {

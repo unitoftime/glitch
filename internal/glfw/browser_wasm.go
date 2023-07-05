@@ -80,6 +80,9 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 
 	// Create GL context.
 	context, err := newContext(canvas, attrs)
+	if err != nil {
+		return nil, err
+	}
 	if context.Equal(js.Value{}) {
 		return nil, err
 	}
