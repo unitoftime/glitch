@@ -129,7 +129,7 @@ func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 	}
 	gl.ShaderSource(shader, src)
 	gl.CompileShader(shader)
-	if gl.GetShaderi(shader, gl.COMPILE_STATUS) == 0 {
+	if gl.GetShaderi(shader, gl.COMPILE_STATUS) == gl.FALSE {
 		defer gl.DeleteShader(shader)
 		return gl.Shader{}, fmt.Errorf("loadShader: %s", gl.GetShaderInfoLog(shader))
 	}

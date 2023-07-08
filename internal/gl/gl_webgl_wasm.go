@@ -776,15 +776,31 @@ func GetProgramInfoLog(p Program) string {
 // }
 
 func GetShaderi(s Shader, pname Enum) int {
+	val := c.Call("getShaderParameter", s.Value, int(pname))
+	if val.IsNull() {
+		return FALSE
+	}
+
 	switch pname {
 	case DELETE_STATUS, COMPILE_STATUS:
-		if c.Call("getShaderParameter", s.Value, int(pname)).Bool() {
+		if val.Bool() {
 			return TRUE
 		}
 		return FALSE
 	default:
-		return c.Call("getShaderParameter", s.Value, int(pname)).Int()
+		return val.Int()
 	}
+
+	// Bug: syscall/js: call of Value.Bool on null (Line: 	// 	if c.Call("getShaderParameter", s.Value, int(pname)).Bool() {)
+	// switch pname {
+	// case DELETE_STATUS, COMPILE_STATUS:
+	// 	if c.Call("getShaderParameter", s.Value, int(pname)).Bool() {
+	// 		return TRUE
+	// 	}
+	// 	return FALSE
+	// default:
+	// 	return c.Call("getShaderParameter", s.Value, int(pname)).Int()
+	// }
 }
 
 func GetShaderInfoLog(s Shader) string {
