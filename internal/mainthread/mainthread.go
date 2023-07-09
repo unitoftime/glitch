@@ -1,6 +1,6 @@
 // +build !js
 
-package glitch
+package mainthread
 
 // Note: Adapted from - "github.com/faiface/mainthread"
 import (
@@ -26,7 +26,7 @@ func checkRun() {
 	}
 }
 
-func mainthreadRun(run func()) {
+func Run(run func()) {
 	callQueue = make(chan func(), CallQueueCap)
 	blockingQueue = make(chan func())
 	blockingQueueDone = make(chan struct{})
@@ -60,18 +60,18 @@ func mainthreadRun(run func()) {
 	}
 }
 
-func mainthreadCall(f func()) {
+func Call(f func()) {
 	checkRun()
 	blockingQueue <- f
 	<-blockingQueueDone
 }
 
-func mainthreadCallNonBlock(f func()) {
+func CallNonBlock(f func()) {
 	checkRun()
 	callQueue <- f
 }
 
-func mainthreadCallErr(f func() error) error {
+func CallErr(f func() error) error {
 	checkRun()
 	errChan := make(chan error)
 	callQueue <- func() {

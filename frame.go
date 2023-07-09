@@ -5,6 +5,7 @@ import (
 	"runtime"
 
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 type Frame struct {
@@ -33,7 +34,7 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 	frame.material = NewSpriteMaterial(frame.tex)
 
 	// frame.tex.Bind(0)///??????
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		frame.fbo = gl.CreateFramebuffer()
 		gl.BindFramebuffer(gl.FRAMEBUFFER, frame.fbo)
 		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, frame.tex.texture, 0)
@@ -69,7 +70,7 @@ func (f *Frame) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 }
 
 func (f *Frame) delete() {
-	mainthreadCallNonBlock(func() {
+	mainthread.CallNonBlock(func() {
 		gl.DeleteFramebuffer(f.fbo)
 	})
 }

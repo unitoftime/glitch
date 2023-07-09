@@ -5,6 +5,7 @@ import (
 
 	"github.com/unitoftime/glitch/internal/glfw"
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 
@@ -45,7 +46,7 @@ type Window struct {
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
 	win := &Window{}
 
-	err := mainthreadCallErr(func() error {
+	err := mainthread.CallErr(func() error {
 		err := glfw.Init(gl.ContextWatcher)
 		if err != nil {
 			return err
@@ -182,7 +183,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 }
 
 func (w *Window) Update() {
-	mainthreadCall(w.mainthreadUpdate)
+	mainthread.Call(w.mainthreadUpdate)
 
 	w.input = w.tmpInput
 	w.tmpInput.scroll.X = 0
@@ -202,7 +203,7 @@ func (w *Window) Update() {
 
 func (w *Window) Closed() bool {
 	shouldClose := false
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		shouldClose = w.window.ShouldClose()
 	})
 	if shouldClose {
@@ -213,7 +214,7 @@ func (w *Window) Closed() bool {
 
 func (w *Window) Close() {
 	w.closed = true
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		w.window.SetShouldClose(true)
 	})
 }
@@ -271,7 +272,7 @@ func (w *Window) Bind() {
 
 func (w *Window) Pressed(key Key) bool {
 	w.pressedKeyCheck = key
-	mainthreadCall(w.mainthreadPressed)
+	mainthread.Call(w.mainthreadPressed)
 	return w.pressedKeyReturn
 }
 
@@ -324,7 +325,7 @@ const (
 	CursorDisabled // Hides and locks the cursor
 )
 func (w *Window) SetCursor(mode CursorMode) {
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		if mode == CursorNormal {
 			w.window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
 		} else if mode == CursorHidden {
@@ -342,7 +343,7 @@ func (w *Window) BrowserHidden() bool {
 
 // TODO - rename. Also potentially allow for multiple swaps?
 func (w *Window) SetVSync(enable bool) {
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		if enable {
 			glfw.SwapInterval(1)
 		} else {
@@ -359,7 +360,7 @@ const (
 
 // TODO - rename. also maybe do modes - window, borderless, full, etc.
 func (w *Window) SetScreenMode(smt ScreenModeType) {
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		w.window.SetScreenMode(glfw.ScreenModeType(smt))
 	})
 }

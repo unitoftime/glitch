@@ -8,6 +8,7 @@ import (
 	"runtime"
 
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 // TODO - Should I use this as default? Or is there a way to do null textures for textureless things?
@@ -85,7 +86,7 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 }
 
 func (t *Texture) initialize(pixels []uint8) {
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		t.texture = gl.CreateTexture()
 		gl.BindTexture(gl.TEXTURE_2D, t.texture)
 
@@ -117,7 +118,7 @@ func (t *Texture) initialize(pixels []uint8) {
 
 // TODO: This needs to be combined into the NewTexture function, or this needs to bind the texture
 func (t *Texture) GenerateMipmap() {
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 		gl.GenerateMipmap(gl.TEXTURE_2D);
@@ -152,7 +153,7 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 	}
 	t.Bind(0)
 
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		gl.TexSubImage2D(
 			gl.TEXTURE_2D,
 			0,
@@ -173,7 +174,7 @@ func (t *Texture) Bounds() Rect {
 
 func (t *Texture) Bind(position int) {
 	// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
-	mainthreadCall(t.bind)
+	mainthread.Call(t.bind)
 }
 
 func (t *Texture) bind() {
@@ -183,7 +184,7 @@ func (t *Texture) bind() {
 }
 
 func (t *Texture) delete() {
-	mainthreadCallNonBlock(func() {
+	mainthread.CallNonBlock(func() {
 		gl.DeleteTexture(t.texture)
 	})
 }

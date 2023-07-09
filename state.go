@@ -4,6 +4,7 @@ package glitch
 
 import (
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 type stateTracker struct {
@@ -34,7 +35,7 @@ func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	state.fbo = fbo
 	state.fboBounds = bounds
 
-	mainthreadCall(s.fboBinder)
+	mainthread.Call(s.fboBinder)
 }
 
 func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
@@ -44,7 +45,7 @@ func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
 	s.depthTest = true
 	s.depthFunc = depthFunc
 
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		gl.Enable(gl.DEPTH_TEST)
 		gl.DepthFunc(depthFunc)
 	})

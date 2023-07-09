@@ -7,6 +7,7 @@ import (
 	"runtime"
 
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 const sof int = 4 // SizeOf(Float)
@@ -22,7 +23,7 @@ func (b *BufferState) Bind() {
 	if b.material != nil {
 		b.material.Bind()
 	}
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		gl.BlendFunc(b.blend.src, b.blend.dst)
 	})
 }
@@ -204,7 +205,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	// vertices := make([]float32, 8 * sof * numVerts)
 	// fakeVertices := make([]float32, 4 * numVerts * b.stride) // 4 = sof
 
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		b.vao = gl.GenVertexArrays()
 		b.vbo = gl.GenBuffers()
 		b.ebo = gl.GenBuffers()
@@ -258,14 +259,14 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 }
 
 func (v *VertexBuffer) delete() {
-	mainthreadCallNonBlock(func() {
+	mainthread.CallNonBlock(func() {
 		gl.DeleteVertexArrays(v.vao)
 		gl.DeleteBuffers(v.vbo)
 	})
 }
 
 func (v *VertexBuffer) Bind() {
-	mainthreadCall(func() {
+	mainthread.Call(func() {
 		gl.BindVertexArray(v.vao)
 	})
 }
@@ -355,7 +356,7 @@ func (v *VertexBuffer) Draw() {
 		return
 	}
 
-	mainthreadCall(v.mainthreadDraw)
+	mainthread.Call(v.mainthreadDraw)
 
 	// mainthreadCall(func() {
 	// 	gl.BindVertexArray(v.vao)

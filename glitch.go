@@ -2,11 +2,11 @@ package glitch
 
 import (
 	"github.com/unitoftime/glitch/internal/gl"
-
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 func Run(function func()) {
-	mainthreadRun(function)
+	mainthread.Run(function)
 }
 
 // ***** Should these all be a part of the shader object?
@@ -110,7 +110,7 @@ func Clear(target Target, color RGBA) {
 	target.Bind()
 
 	targetClearer.color = color
-	mainthreadCall(targetClearer.Func)
+	mainthread.Call(targetClearer.Func)
 }
 
 type Material interface {

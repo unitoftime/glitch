@@ -6,6 +6,7 @@ import (
 	// "github.com/go-gl/mathgl/mgl32"
 
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 // Notes: Uniforms are specific to a program: https://stackoverflow.com/questions/10857602/do-uniform-values-remain-in-glsl-shader-if-unbound
@@ -41,7 +42,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 		attrFmt: attrFmt,
 		tmpFloat32Slice: make([]float32, 0),
 	}
-	err := mainthreadCallErr(func() error {
+	err := mainthread.CallErr(func() error {
 		var err error
 		shader.program, err = createProgram(vertexSource, fragmentSource)
 		if err != nil {
@@ -83,7 +84,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 }
 
 func (s *Shader) Bind() {
-	mainthreadCall(s.mainthreadBind)
+	mainthread.Call(s.mainthreadBind)
 }
 // func (s *Shader) Bind() {
 // 	mainthreadCall(func() {
@@ -192,7 +193,7 @@ func (s *Shader) SetUniform(uniformName string, value Mat4) bool {
 	tmpUniformSetter.name = uniformName
 	tmpUniformSetter.value = value
 
-	mainthreadCall(tmpUniformSetter.FUNC)
+	mainthread.Call(tmpUniformSetter.FUNC)
 	return true // TODO - wrong
 }
 type uniformSetter struct {

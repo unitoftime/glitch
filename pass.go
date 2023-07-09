@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/golang-lru/v2"
 
 	"github.com/unitoftime/glitch/internal/gl"
+	// "github.com/unitoftime/glitch/internal/mainthread"
 )
 
 // TODO - This whole file needs to be rewritten. I'm thinking:
@@ -275,7 +276,7 @@ func (r *RenderPass) Draw(target Target) {
 	// Bind render target
 	target.Bind()
 
-	// mainthreadCall(r.mainthreadDepthTest)
+	// mainthread.Call(r.mainthreadDepthTest)
 	state.enableDepthTest(gl.LEQUAL)// TODO - rehook for depthtest flags
 
 	r.shader.Bind()
