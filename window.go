@@ -41,10 +41,19 @@ type Window struct {
 	mainthreadPressed func()
 	pressedKeyCheck Key
 	pressedKeyReturn bool
+
+	scrollCallbacks []glfw.ScrollCallback
+	keyCallbacks []glfw.KeyCallback
+	mouseButtonCallbacks []glfw.MouseButtonCallback
+	charCallbacks []glfw.CharCallback
 }
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
-	win := &Window{}
+	win := &Window{
+		scrollCallbacks: make([]glfw.ScrollCallback, 0),
+		keyCallbacks: make([]glfw.KeyCallback, 0),
+		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
+	}
 
 	err := mainthread.CallErr(func() error {
 		err := glfw.Init(gl.ContextWatcher)
@@ -106,12 +115,14 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			gl.Viewport(0, 0, int(win.width), int(win.height))
 		})
 
-		win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
+		win.AddScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
+		// win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
 			win.tmpInput.scroll.X += xoff
 			win.tmpInput.scroll.Y += yoff
 		})
 
-		win.window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+		win.AddMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+		// win.window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 			switch action {
 			case glfw.Press:
 				win.tmpInput.justPressed[Key(button)] = true
@@ -120,7 +131,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			}
 		})
 
-		win.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		win.AddKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+		// win.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 			if key == glfw.KeyUnknown {
 				return
 			}
@@ -135,8 +147,30 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			}
 		})
 
-		win.window.SetCharCallback(func(w *glfw.Window, char rune) {
+		win.AddCharCallback(func(w *glfw.Window, char rune) {
+		// win.window.SetCharCallback(func(w *glfw.Window, char rune) {
 			win.typedBack = append(win.typedBack, char)
+		})
+
+		win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
+			for _, c := range win.scrollCallbacks {
+				c(w, xoff, yoff)
+			}
+		})
+		win.window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+			for _, c := range win.mouseButtonCallbacks {
+				c(w, button, action, mods)
+			}
+		})
+		win.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+			for _, c := range win.keyCallbacks {
+				c(w, key, scancode, action, mods)
+			}
+		})
+		win.window.SetCharCallback(func(w *glfw.Window, char rune) {
+			for _, c := range win.charCallbacks {
+				c(w, char)
+			}
 		})
 
 		// TODO - other callbacks?
@@ -367,4 +401,42 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 
 func (w *Window) ScreenMode() ScreenModeType {
 	return ScreenModeType(w.window.ScreenMode())
+}
+
+
+// --- Dear Imgui required ---
+func (w *Window) GetMouse() (x, y float64) {
+	return w.window.GetCursorPos()
+}
+
+func (w *Window) GetMouseButton(b glfw.MouseButton) glfw.Action {
+	return w.window.GetMouseButton(b)
+}
+
+func (w *Window) DisplaySize() [2]float32 {
+	// width, height := w.Window.GetSize()
+	return [2]float32{float32(w.width), float32(w.height)}
+}
+func (w *Window) FramebufferSize() [2]float32 {
+	return w.DisplaySize()
+}
+
+func (w *Window) AddScrollCallback(cb glfw.ScrollCallback) {
+	w.scrollCallbacks = append(w.scrollCallbacks, cb)
+	// fmt.Println("Adding new scroll callback. Currently: ", len(w.scrollCallbacks))
+}
+
+func (w *Window) AddKeyCallback(cb glfw.KeyCallback) {
+	w.keyCallbacks = append(w.keyCallbacks, cb)
+	// fmt.Println("Adding new key callback. Currently: ", len(w.keyCallbacks))
+}
+
+func (w *Window) AddCharCallback(cb glfw.CharCallback) {
+	w.charCallbacks = append(w.charCallbacks, cb)
+	// fmt.Println("Adding new char callback. Currently: ", len(w.charCallbacks))
+}
+
+func (w *Window) AddMouseButtonCallback(cb glfw.MouseButtonCallback) {
+	w.mouseButtonCallbacks = append(w.mouseButtonCallbacks, cb)
+	// fmt.Println("Adding new mouse button callback. Currently: ", len(w.mouseButtonCallbacks))
 }

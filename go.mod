@@ -8,6 +8,7 @@ require (
 	github.com/go-gl/mathgl v1.0.0
 	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0
 	github.com/hashicorp/golang-lru/v2 v2.0.2
+	github.com/inkyblackness/imgui-go/v4 v4.7.0
 	golang.org/x/image v0.7.0
 	golang.org/x/mobile v0.0.0-20210208171126-f462b3930c8f
 )

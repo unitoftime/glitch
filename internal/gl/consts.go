@@ -328,6 +328,10 @@ const (
 	RENDERBUFFER_BINDING                         = 0x8CA7
 	MAX_RENDERBUFFER_SIZE                        = 0x84E8
 	INVALID_FRAMEBUFFER_OPERATION                = 0x0506
+
+	// Added for imgui
+	UNPACK_ROW_LENGTH                                          = 0x0CF2
+	RED                                                        = 0x1903
 )
 
 const (

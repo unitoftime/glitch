@@ -68,6 +68,10 @@ func BufferData(target Enum, size int, data interface{}, usage Enum) {
 	gl.BufferData(uint32(target), size, gl.Ptr(data), uint32(usage))
 }
 
+func BufferDataImguiPassthrough(target Enum, size int, data unsafe.Pointer, usage Enum) {
+	gl.BufferData(uint32(target), size, data, uint32(usage))
+}
+
 func BlitFramebuffer(srcX0 int32, srcY0 int32, srcX1 int32, srcY1 int32, dstX0 int32, dstY0 int32, dstX1 int32, dstY1 int32, mask uint32, filter uint32) {
 	gl.BlitFramebuffer(srcX0, srcY0, srcX1, srcY1, dstX0, dstY0, dstX1, dstY1, mask, filter)
 }
@@ -1060,6 +1064,10 @@ func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, for
 	if len(data) > 0 {
 		p = gl.Ptr(&data[0])
 	}
+	gl.TexImage2D(uint32(target), int32(level), int32(format1), int32(width), int32(height), 0, uint32(format), uint32(ty), p)
+}
+
+func TexImage2DFullImguiPassthrough(target Enum, level int, format1 Enum, width, height int, format Enum, ty Enum, p unsafe.Pointer) {
 	gl.TexImage2D(uint32(target), int32(level), int32(format1), int32(width), int32(height), 0, uint32(format), uint32(ty), p)
 }
 
