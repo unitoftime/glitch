@@ -349,7 +349,7 @@ func (g *Group) Tooltip(panel Drawer, tip string, rect glitch.Rect) {
 	text := g.getText(tip)
 	// tipRect := rect.Anchor(text.Bounds(), anchor)
 	tipRect := text.Bounds()
-	tipRect = tipRect.CenterAt(mousePos)
+	tipRect = tipRect.WithCenter(mousePos)
 	tipRect = tipRect.
 		Moved(glitch.Vec2{
 		(padding + (tipRect.W() / 2)) * movement[0],
@@ -592,7 +592,7 @@ func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool
 	if g.active == elem {
 		mX, mY := g.mousePosition()
 		global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
-		g.PanelColorMask(drawer, rect.CenterAt(glitch.Vec2{mX, mY}), glitch.RGBA{0.5, 0.5, 0.5, 0.5})
+		g.PanelColorMask(drawer, rect.WithCenter(glitch.Vec2{mX, mY}), glitch.RGBA{0.5, 0.5, 0.5, 0.5})
 	} else if g.down == elem {
 		g.PanelColorMask(drawer, rect, glitch.RGBA{0.5, 0.5, 0.5, 0.5})
 	} else if g.hover == elem {
