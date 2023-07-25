@@ -421,6 +421,17 @@ func (r Rect) Intersects(r2 Rect) bool {
 			r.Max[1] >= r2.Min[1])
 }
 
+// Layous out 'n' rectangles horizontally with specified padding between them and returns that rect
+// The returned rectangle has a min point of 0,0
+func (r Rect) LayoutHorizontal(n int, padding float64) Rect {
+	return R(
+		0,
+		0,
+		float64(n) * r.W() + float64(n-1) * padding,
+		r.H(),
+	)
+}
+
 func (r *Rect) CutLeft(amount float64) Rect {
 	cutRect := *r
 	cutRect.Max[0] = cutRect.Min[0] + amount
