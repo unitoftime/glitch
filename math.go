@@ -384,7 +384,14 @@ func (r Rect) SubSquare() Rect {
 	return R(-m2, -m2, m2, m2).Moved(r.Center())
 }
 
-// TODO - this only works if you're centered on (0, 0)
+func (r Rect) CenterScaled(scale float64) Rect {
+	c := r.Center()
+	w := r.W() * scale / 2.0
+	h := r.H() * scale / 2.0
+	return R(c[0] - w, c[1] - h, c[0] + w, c[1] + h)
+}
+
+// TODO: I need to deprecate this. This currently just indepentently scales the min and max point which is only useful if the center, min, or max is on (0, 0)
 func (r Rect) Scaled(scale float64) Rect {
 	// center := r.Center()
 	// r = r.Moved(center.Scaled(-1))
