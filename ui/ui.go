@@ -255,6 +255,25 @@ func (g *Group) Button(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 	return false
 }
 
+// Same thing as a button but returns true for the duration that the button is pressed
+func (g *Group) PressedButton(normal, hovered, pressed Drawer, rect glitch.Rect) bool {
+	mX, mY := g.mousePosition()
+
+	if !mouseCheck(rect, glitch.Vec2{mX, mY}) {
+		g.Panel(normal, rect)
+		return false
+	}
+
+	// If we are here, then we know we are at least hovering
+	if g.win.Pressed(glitch.MouseButtonLeft) {
+		g.Panel(pressed, rect)
+		return true
+	}
+
+	g.Panel(hovered, rect)
+	return false
+}
+
 // TODO! - text masking around rect?
 func (g *Group) Text(str string, rect glitch.Rect, anchor glitch.Vec2) {
 	text := g.getText(str)
