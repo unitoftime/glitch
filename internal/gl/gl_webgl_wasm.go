@@ -138,17 +138,17 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	}
 
 	// TODO: Some APIs need to be unsupported in webgl1 mode
+
+	// WebGL1
+	// TODO: Some of these have webgl1 and webgl2 usages, you'd have to check where it gets used to see how we use it
 	fnBufferSubData = c.Get("bufferSubData").Call("bind", c)
 	fnBufferData = c.Get("bufferData").Call("bind", c)
-	fnBindVertexArray = c.Get("bindVertexArray").Call("bind", c)
-	fnCreateVertexArray = c.Get("createVertexArray").Call("bind", c)
 	fnCreateBuffer = c.Get("createBuffer").Call("bind", c)
 	fnBindBuffer = c.Get("bindBuffer").Call("bind", c)
 	fnBindTexture = c.Get("bindTexture").Call("bind", c)
 	fnGetAttribLocation = c.Get("getAttribLocation").Call("bind", c)
 	fnVertexAttribPointer = c.Get("vertexAttribPointer").Call("bind", c)
 	fnEnableVertexAttribArray = c.Get("enableVertexAttribArray").Call("bind", c)
-	fnDeleteVertexArray = c.Get("deleteVertexArray").Call("bind", c)
 	fnDeleteBuffer = c.Get("deleteBuffer").Call("bind", c)
 	fnDrawElements = c.Get("drawElements").Call("bind", c)
 	fnEnable = c.Get("enable").Call("bind", c)
@@ -157,16 +157,12 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnUniformMatrix4fv = c.Get("uniformMatrix4fv").Call("bind", c)
 	fnBindFramebuffer = c.Get("bindFramebuffer").Call("bind", c)
 	fnViewport = c.Get("viewport").Call("bind", c)
-
 	fnClear = c.Get("clear").Call("bind", c)
 	fnClearColor = c.Get("clearColor").Call("bind", c)
-
 	fnFinish = c.Get("finish").Call("bind", c)
 	fnFlush = c.Get("flush").Call("bind", c)
-
 	fnUseProgram = c.Get("useProgram").Call("bind", c)
 	fnGetParameter = c.Get("getParameter").Call("bind", c)
-
 	fnCreateFramebuffer = c.Get("createFramebuffer").Call("bind", c)
 	fnCreateProgram = c.Get("createProgram").Call("bind", c)
 	fnCreateTexture = c.Get("createTexture").Call("bind", c)
@@ -178,6 +174,10 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnLinkProgram = c.Get("linkProgram").Call("bind", c)
 	fnTexImage2D = c.Get("texImage2D").Call("bind", c)
 
+	// WebGL2 Only
+	fnBindVertexArray = c.Get("bindVertexArray").Call("bind", c)
+	fnCreateVertexArray = c.Get("createVertexArray").Call("bind", c)
+	fnDeleteVertexArray = c.Get("deleteVertexArray").Call("bind", c)
 }
 func (contextWatcher) OnDetach() {
 	c = js.Null()
