@@ -17,7 +17,7 @@ import (
 
 
 type BatchTarget interface {
-	Add(*Mesh, Mat4, RGBA, Material)
+	Add(*Mesh, Mat4, RGBA, Material, bool)
 }
 
 type Target interface {
@@ -38,6 +38,55 @@ type drawCommand struct {
 	matrix Mat4
 	mask RGBA
 	state BufferState
+}
+
+func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
+	if sortMode == SoftwareSortNone { return } // Skip if sorting disabled
+
+	if sortMode == SoftwareSortX {
+		sort.Slice(buf, func(i, j int) bool {
+			return buf[i].matrix[i4_3_0] > buf[j].matrix[i4_3_0] // sort by x
+		})
+	} else if sortMode == SoftwareSortY {
+		sort.Slice(buf, func(i, j int) bool {
+			return buf[i].matrix[i4_3_1] > buf[j].matrix[i4_3_1] // Sort by y
+		})
+	} else if sortMode == SoftwareSortZ {
+		sort.Slice(buf, func(i, j int) bool {
+			return buf[i].matrix[i4_3_2] > buf[j].matrix[i4_3_2] // Sort by z
+		})
+	} else if sortMode == SoftwareSortCommand {
+		sort.Slice(buf, func(i, j int) bool {
+			return buf[i].command > buf[j].command // Sort by command
+		})
+	}
+}
+
+
+type cmdList struct{
+	Opaque []drawCommand
+	Translucent []drawCommand
+}
+
+func (c *cmdList) Add(translucent bool, cmd drawCommand) {
+	if translucent {
+		c.Translucent = append(c.Translucent, cmd)
+	} else {
+		c.Opaque = append(c.Opaque, cmd)
+	}
+}
+
+func (c *cmdList) SortTranslucent(sortMode SoftwareSortMode) {
+	SortDrawCommands(c.Translucent, sortMode)
+}
+
+func (c *cmdList) SortOpaque(sortMode SoftwareSortMode) {
+	SortDrawCommands(c.Opaque, sortMode)
+}
+
+func (c *cmdList) Clear() {
+	c.Opaque = c.Opaque[:0]
+	c.Translucent = c.Translucent[:0]
 }
 
 type meshBuffer struct {
@@ -69,7 +118,7 @@ type RenderPass struct {
 	// uniforms map[string]interface{}
 	uniforms map[string]Mat4
 	buffer *BufferPool
-	commands [][]drawCommand
+	commands []cmdList
 	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
 
 	blendMode BlendMode
@@ -115,7 +164,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		uniforms: make(map[string]Mat4),
 		// uniforms: make(map[string]interface{}),
 		buffer: NewBufferPool(shader, defaultBatchSize),
-		commands: make([][]drawCommand, 256), // TODO - hardcoding from sizeof(uint8)
+		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
 		// currentLayer: DefaultLayer,
 		meshCache: meshCache,
 		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
@@ -168,9 +217,8 @@ func (r *RenderPass) Clear() {
 
 	// Clear stuff
 	r.buffer.Clear()
-	// r.commands = r.commands[:0]
 	for l := range r.commands {
-		r.commands[l] = r.commands[l][:0]
+		r.commands[l].Clear()
 	}
 
 	r.drawCalls = r.drawCalls[:0]
@@ -189,82 +237,83 @@ func (r *RenderPass) SetBlendMode(bm BlendMode) {
 func (r *RenderPass) Batch() {
 	r.SortInSoftware()
 
-	// destBuffs := make([]any, len(r.shader.attrFmt))
-	// for i, attr := range r.shader.attrFmt {
-	// 	destBuffs[i] = attr.GetBuffer()
-	// }
-	destBuffs := r.shader.tmpBuffers
-
 	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
-		for _, c := range r.commands[l] {
-			if c.mesh == nil { continue } // Skip nil meshes
-			numVerts := len(c.mesh.positions)
+		for _, c := range r.commands[l].Opaque {
+			r.applyDrawCommand(c)
+		}
+		for _, c := range r.commands[l].Translucent {
+			r.applyDrawCommand(c)
+		}
+	}
+}
 
-			// Try to use a previously batched mesh
-			if numVerts > r.minimumCacheSize {
-				r.stats.CachedDraws++
-				// Because we are about to use a custom meshBuffer, we need to make sure the next time we do an autobatch we use a new VertexBuffer, So we call this function to foward the autobuffer to the next clean buffer
-				r.buffer.gotoNextClean()
+func (r *RenderPass) applyDrawCommand(c drawCommand) {
+	if c.mesh == nil { return } // Skip nil meshes
+	numVerts := len(c.mesh.positions)
 
-				// TODO b/c we are a large mesh, don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
-				meshBuf, ok := r.meshCache.Get(c.mesh)
-				if !ok {
+	// Try to use a previously batched mesh
+	if numVerts > r.minimumCacheSize {
+		r.stats.CachedDraws++
+		// Because we are about to use a custom meshBuffer, we need to make sure the next time we do an autobatch we use a new VertexBuffer, So we call this function to foward the autobuffer to the next clean buffer
+		r.buffer.gotoNextClean()
 
-					// fmt.Println("MeshCache: Mesh has never been cached!")
-					// Create and add the meshBuffer to the cache
+		// TODO b/c we are a large mesh, don't do matrix transformation, just apply the model matrix to the buffer in the buffer pool
+		meshBuf, ok := r.meshCache.Get(c.mesh)
+		if !ok {
+
+			// fmt.Println("MeshCache: Mesh has never been cached!")
+			// Create and add the meshBuffer to the cache
+			meshBuf = newMeshBuffer(r.shader, c.mesh)
+			r.meshCache.Add(c.mesh, meshBuf)
+
+			success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
+			if !success {
+				panic("Something went wrong")
+			}
+			r.copyToBuffer(c, r.shader.tmpBuffers)
+		} else {
+
+			// If here we know we have a valid meshBuf, which either:
+			// 1. Has a correct generation - No need to rebuffer it
+			// 2. Has an old generation - we need to clear and rebuffer it
+			if c.mesh.generation != meshBuf.generation {
+				// fmt.Println("MeshCache: Mesh has new generation!")
+				meshBuf.buffer.Clear()
+				success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
+				if !success {
+					// If we failed to reserve, then we need to recreate the buffer. Likely the buffer is too small for our current mesh
 					meshBuf = newMeshBuffer(r.shader, c.mesh)
-					r.meshCache.Add(c.mesh, meshBuf)
-
-					success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
+					success = meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
 					if !success {
 						panic("Something went wrong")
 					}
-					r.copyToBuffer(c, destBuffs)
-				} else {
-
-					// If here we know we have a valid meshBuf, which either:
-					// 1. Has a correct generation - No need to rebuffer it
-					// 2. Has an old generation - we need to clear and rebuffer it
-					if c.mesh.generation != meshBuf.generation {
-						// fmt.Println("MeshCache: Mesh has new generation!")
-						meshBuf.buffer.Clear()
-						success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
-						if !success {
-							// If we failed to reserve, then we need to recreate the buffer. Likely the buffer is too small for our current mesh
-							meshBuf = newMeshBuffer(r.shader, c.mesh)
-							success = meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
-							if !success {
-								panic("Something went wrong")
-							}
-						}
-						r.copyToBuffer(c, destBuffs)
-
-						// Update the cache
-						meshBuf.generation = c.mesh.generation
-						r.meshCache.Add(c.mesh, meshBuf)
-					}
 				}
+				r.copyToBuffer(c, r.shader.tmpBuffers)
 
-				// At this point we have a meshBuf with the mesh data already written to it.
-				// We can just append it to our list of things to draw
-				r.drawCalls = append(r.drawCalls,
-					drawCall{meshBuf.buffer, c.matrix})
-
-				r.stats.CachedVerts += len(c.mesh.positions)
-				r.stats.CachedIndices += len(c.mesh.indices)
-
-			} else {
-				r.stats.UncachedDraws++
-				// Else we are auto-batching the mesh because the mesh is small
-				vertexBuffer := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, destBuffs)
-				r.batchToBuffers(c, destBuffs)
-
-				// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
-				if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
-					// Append the draw call to our list. Because we've already pre-applied the model matrix, we use Mat4Ident here
-					r.drawCalls = append(r.drawCalls, drawCall{vertexBuffer, Mat4Ident})
-				}
+				// Update the cache
+				meshBuf.generation = c.mesh.generation
+				r.meshCache.Add(c.mesh, meshBuf)
 			}
+		}
+
+		// At this point we have a meshBuf with the mesh data already written to it.
+		// We can just append it to our list of things to draw
+		r.drawCalls = append(r.drawCalls,
+			drawCall{meshBuf.buffer, c.matrix})
+
+		r.stats.CachedVerts += len(c.mesh.positions)
+		r.stats.CachedIndices += len(c.mesh.indices)
+
+	} else {
+		r.stats.UncachedDraws++
+		// Else we are auto-batching the mesh because the mesh is small
+		vertexBuffer := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
+		r.batchToBuffers(c, r.shader.tmpBuffers)
+
+		// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
+		if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
+			// Append the draw call to our list. Because we've already pre-applied the model matrix, we use Mat4Ident here
+			r.drawCalls = append(r.drawCalls, drawCall{vertexBuffer, Mat4Ident})
 		}
 	}
 }
@@ -314,7 +363,11 @@ func (r *RenderPass) SetUniform(name string, value Mat4) {
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
 // Option 3: I can batch together these sprites into a single thing that is then rendered
-func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
+func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material, translucent bool) {
+	if mask.A != 0 && mask.A != 1 {
+		translucent = true
+	}
+
 	if r.DepthTest {
 		// If we are doing depth testing, then use the r.CurrentLayer field to determine the depth (normalizing from (0 to 1). Notably the standard ortho cam is (-1, 1) which this range fits into but is easier to normalize to // TODO - make that depth range tweakable?
 		// TODO - hardcoded because layer is a uint8. You probably want to make layer an int and then just set depth based on that
@@ -330,11 +383,11 @@ func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material) {
 		mat[i4_3_2] -= float64(r.currentLayer)
 		// fmt.Println("Depth: ", mat[i4_3_2])
 
-		r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
+		r.commands[r.currentLayer].Add(translucent, drawCommand{
 			0, mesh, mat, mask, BufferState{material, r.blendMode},
 		})
 	} else {
-		r.commands[r.currentLayer] = append(r.commands[r.currentLayer], drawCommand{
+		r.commands[r.currentLayer].Add(translucent, drawCommand{
 			0, mesh, mat, mask, BufferState{material, r.blendMode},
 		})
 	}
@@ -346,34 +399,17 @@ func (r *RenderPass) SortInSoftware() {
 		// 1. Fully Opaque or fully transparent groups of meshes: Don't sort inside that group
 		// 2. Partially transparent groups of meshes: sort inside that group
 		// 3. Take into account blendMode
+
+		// Sort translucent buffer
+		for l := range r.commands {
+			r.commands[l].SortTranslucent(r.SoftwareSort)
+		}
+
 		return
 	}
-	if r.SoftwareSort == SoftwareSortNone { return } // Skip if sorting disabled
 
-	if r.SoftwareSort == SoftwareSortX {
-		for c := range r.commands {
-			sort.Slice(r.commands[c], func(i, j int) bool {
-				return r.commands[c][i].matrix[i4_3_0] > r.commands[c][j].matrix[i4_3_0] // sort by x
-			})
-		}
-	} else if r.SoftwareSort == SoftwareSortY {
-		for c := range r.commands {
-			sort.Slice(r.commands[c], func(i, j int) bool {
-				return r.commands[c][i].matrix[i4_3_1] > r.commands[c][j].matrix[i4_3_1] // Sort by y
-			})
-		}
-	} else if r.SoftwareSort == SoftwareSortZ {
-		for c := range r.commands {
-			sort.Slice(r.commands[c], func(i, j int) bool {
-				return r.commands[c][i].matrix[i4_3_2] > r.commands[c][j].matrix[i4_3_2] // Sort by z
-			})
-		}
-	} else if r.SoftwareSort == SoftwareSortCommand {
-		for c := range r.commands {
-			sort.Slice(r.commands[c], func(i, j int) bool {
-				return r.commands[c][i].command > r.commands[c][j].command // Sort by command
-			})
-		}
+	for l := range r.commands {
+		r.commands[l].SortOpaque(r.SoftwareSort)
 	}
 }
 

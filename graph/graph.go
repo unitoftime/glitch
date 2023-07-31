@@ -34,7 +34,7 @@ func (g *Graph) SetBounds(bounds glitch.Rect) {
 }
 
 func (g *Graph) DrawColorMask(pass *glitch.RenderPass, matrix glitch.Mat4, mask glitch.RGBA) {
-	pass.Add(g.mesh, matrix, mask, glitch.DefaultMaterial())
+	pass.Add(g.mesh, matrix, mask, glitch.DefaultMaterial(), false)
 }
 
 // TODO - Assumes sorted?

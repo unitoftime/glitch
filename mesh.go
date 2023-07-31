@@ -4,6 +4,7 @@ package glitch
 type Batch struct {
 	mesh *Mesh
 	material Material
+	Translucent bool
 }
 
 func NewBatch() *Batch {
@@ -14,7 +15,8 @@ func NewBatch() *Batch {
 }
 
 // TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
-func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
+// TODO: should I maintain a translucent and non-translucent batch mesh?
+func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, translucent bool) {
 	if b.material == nil {
 		b.material = material
 	} else {
@@ -24,6 +26,9 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
 	}
 
 	b.mesh.generation++
+
+	// If anything translucent is added to the batch, then we will consider the entire thing translucent
+	b.Translucent = b.Translucent || translucent
 
 	mat := matrix.gl()
 
@@ -188,14 +193,15 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material) {
 func (b *Batch) Clear() {
 	b.mesh.Clear()
 	b.material = nil
+	b.Translucent = false
 }
 
 func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
-	target.Add(b.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, b.material)
+	target.Add(b.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
 }
 
 func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
-	target.Add(b.mesh, matrix, color, b.material)
+	target.Add(b.mesh, matrix, color, b.material, b.Translucent)
 }
 
 func (b *Batch) Bounds() Box {
@@ -238,12 +244,12 @@ func (m *Mesh) Clear() {
 }
 
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, DefaultMaterial())
+	pass.Add(m, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, DefaultMaterial(), false)
 }
 
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(m, matrix, mask, DefaultMaterial())
+	pass.Add(m, matrix, mask, DefaultMaterial(), false)
 }
 
 func (m *Mesh) Bounds() Box {

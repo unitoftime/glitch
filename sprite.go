@@ -7,6 +7,7 @@ type Sprite struct {
 	texture *Texture
 	material Material
 	// origin Vec3 // This is used to skew the center of the sprite (which helps with sorting sprites who shouldn't be sorted based on their center points.
+	Translucent bool
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
@@ -46,11 +47,11 @@ func (s Sprite) WithSetOrigin(origin Vec3) Sprite {
 
 func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
 	// pass.SetTexture(0, s.texture)
-	target.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+	target.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material, s.Translucent)
 }
 func (s *Sprite) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	target.Add(s.mesh, matrix, mask, s.material)
+	target.Add(s.mesh, matrix, mask, s.material, s.Translucent)
 }
 
 func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
@@ -62,7 +63,7 @@ func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
-	target.Add(s.mesh, matrix, mask, s.material)
+	target.Add(s.mesh, matrix, mask, s.material, false)
 }
 
 func (s *Sprite) Bounds() Rect {
@@ -183,7 +184,7 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 		// fmt.Println(destRects[i].W(), destRects[i].H())
 		matrix = Mat4Ident
 		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min[0], destRects[i].H()/2 + destRects[i].Min[1], 0)
-		pass.Add(s.sprites[i].mesh, matrix, s.Mask, s.sprites[i].material)
+		pass.Add(s.sprites[i].mesh, matrix, s.Mask, s.sprites[i].material, false)
 	}
 }
 

@@ -13,8 +13,8 @@ func NewModel(mesh *Mesh, material Material) *Model {
 }
 
 func (m *Model) Draw(pass *RenderPass, matrix Mat4) {
-	pass.Add(m.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, m.material)
+	pass.Add(m.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, m.material, false)
 }
 func (m *Model) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(m.mesh, matrix, mask, m.material)
+	pass.Add(m.mesh, matrix, mask, m.material, false)
 }
