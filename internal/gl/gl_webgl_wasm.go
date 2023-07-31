@@ -175,9 +175,11 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnTexImage2D = c.Get("texImage2D").Call("bind", c)
 
 	// WebGL2 Only
-	fnBindVertexArray = c.Get("bindVertexArray").Call("bind", c)
-	fnCreateVertexArray = c.Get("createVertexArray").Call("bind", c)
-	fnDeleteVertexArray = c.Get("deleteVertexArray").Call("bind", c)
+	if !webgl1Mode {
+		fnBindVertexArray = c.Get("bindVertexArray").Call("bind", c)
+		fnCreateVertexArray = c.Get("createVertexArray").Call("bind", c)
+		fnDeleteVertexArray = c.Get("deleteVertexArray").Call("bind", c)
+	}
 }
 func (contextWatcher) OnDetach() {
 	c = js.Null()

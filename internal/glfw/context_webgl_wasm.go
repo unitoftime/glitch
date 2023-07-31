@@ -73,6 +73,13 @@ func newContext(canvas js.Value, ca *contextAttributes) (js.Value, error) {
 	// }
 
 	// --- Fallbacks ---
+	// TODO: Is this worth falling back to?
+	// fmt.Println("Failed to create webgl2 context, trying experimental-webgl2")
+	// gl = canvas.Call("getContext", "experimental-webgl2", attrs)
+	// if !gl.Equal(js.Null()) {
+	// 	return gl, nil
+	// }
+
 	fmt.Println("Failed to create webgl2 context, trying webgl1")
 	gl = canvas.Call("getContext", "webgl", attrs)
 	if !gl.Equal(js.Null()) {
