@@ -228,6 +228,9 @@ func (r *RenderPass) Clear() {
 func (r *RenderPass) SetLayer(layer int8) {
 	r.currentLayer = layer
 }
+func (r RenderPass) Layer() int8 {
+	return r.currentLayer
+}
 
 // Sets the blend mode for this render pass
 func (r *RenderPass) SetBlendMode(bm BlendMode) {
