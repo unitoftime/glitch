@@ -53,7 +53,6 @@ func resolveNavigatorKeyboard() {
 	if isNilOrUndefined(navigator) { return }
 
 	navKeyboard = navigator.Get("keyboard")
-	fmt.Println("Navigatorkeyboard", navKeyboard)
 	if isNilOrUndefined(navKeyboard) { return }
 
 	keyboardPromise := navKeyboard.Call("getLayoutMap")

@@ -189,7 +189,7 @@ func GetKeyName(k Key) string {
 func GetKeyDescription(k Key) string {
 	if !isMouseKey(k) {
 		keyName := GetKeyName(k)
-		if keyName != "" {
+		if strings.TrimSpace(keyName) != "" {
 			if len(keyName) == 1 {
 				return strings.ToUpper(keyName)
 			} else {
