@@ -17,6 +17,16 @@ import (
 
 var htmlWindow = js.Global().Get("window")
 var document = js.Global().Get("document")
+var navigator = htmlWindow.Get("navigator")
+var (
+	navKeyboard js.Value
+	keyboardLayoutMap js.Value
+	fnKeyboardLayoutMapGet js.Value
+)
+
+func isNilOrUndefined(val js.Value) bool {
+	return val.IsNull() || val.IsUndefined()
+}
 
 var contextWatcher ContextWatcher
 
@@ -35,6 +45,30 @@ func resolveCanvas() js.Value {
 		canvas = document.Call("querySelector", "canvas")
 	}
 	return canvas
+}
+
+// Constructs the keyboard map based on navigator.Keyboard
+func resolveNavigatorKeyboard() {
+	// Notes: https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
+	if isNilOrUndefined(navigator) { return }
+
+	navKeyboard = navigator.Get("keyboard")
+	fmt.Println("Navigatorkeyboard", navKeyboard)
+	if isNilOrUndefined(navKeyboard) { return }
+
+	keyboardPromise := navKeyboard.Call("getLayoutMap")
+	if isNilOrUndefined(keyboardPromise) { return }
+
+	keyboardPromise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		if len(args) <= 0 { return nil }
+
+		keyboardLayoutMap = args[0]
+		if isNilOrUndefined(keyboardLayoutMap) { return nil }
+
+		// TODO: This is a nice optimization, but I'd have to bind it to something, maybe the window?
+		// fnKeyboardLayoutMapGet = keyboardLayoutMap.Get("get").Bind(???)
+		return nil
+	}))
 }
 
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
@@ -92,6 +126,8 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 		context:          context,
 		devicePixelRatio: devicePixelRatio,
 	}
+
+	resolveNavigatorKeyboard()
 
 	if w.canvas.Get("requestPointerLock").Equal(js.Undefined()) ||
 		document.Get("exitPointerLock").Equal(js.Undefined()) {
@@ -856,9 +892,18 @@ const (
 	KeyLast    Key = KeyMenu
 )
 
+// Experimental: Get String based on KeyCode
+// https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
+
+// KeyboardEvent.key: The Key's text
+// https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
+
+// KeyCode: Physical Positions
+// https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_code_values
+
 // Contains a mapping from javascript
 // TODO - some of these I wasn't sure about
-var keyMap = map[string]Key{
+var keycodeMap = map[string]Key{
 	"Space":        KeySpace,
 	"Quote":        KeyApostrophe, //???
 	"Comma":        KeyComma,
@@ -983,13 +1028,34 @@ var keyMap = map[string]Key{
 	"ContextMenu":    KeyMenu, // ????
 }
 
+// Contains the reverse mapping of the keycodeMap
+var reverseKeycodeMap = make(map[Key]string)
+func init() {
+	for s, k := range keycodeMap {
+		reverseKeycodeMap[k] = s
+	}
+}
+
 func GetKeyScanCode(key Key) int {
 	// TODO - this is wrong
 	return int(key)
 }
 
+// TODO: scancode doesn't work
 func GetKeyName(key Key, scancode int) string {
-	name, ok := keyNameMap[key]
+	if !isNilOrUndefined(keyboardLayoutMap) {
+		str := reverseKeycodeMap[key]
+		val := keyboardLayoutMap.Call("get", str)
+		if !isNilOrUndefined(val) {
+			ret := val.String()
+			if ret != "" {
+				return ret
+			}
+		}
+	}
+
+	// Fallback to qwerty defined map
+	name, ok := qwertyKeyNameMap[key]
 	if !ok {
 		// TODO: Use scancode to lookup
 		return "Unknown"
@@ -1000,7 +1066,7 @@ func GetKeyName(key Key, scancode int) string {
 // toKey extracts Key from given KeyboardEvent.
 func toKey(ke js.Value) Key {
 	keyStr := ke.Get("code").String()
-	key, ok := keyMap[keyStr]
+	key, ok := keycodeMap[keyStr]
 	if !ok {
 		return KeyUnknown
 	}
@@ -1267,8 +1333,8 @@ const (
 	ButtonTriangle
 )
 
-// TODO: You need to verify these
-var keyNameMap map[Key]string = map[Key]string{
+// TODO: Some of these might be wrong
+var qwertyKeyNameMap map[Key]string = map[Key]string{
 	KeySpace:        " ",
 	KeyApostrophe:        "'", //???
 	KeyComma:        ",",
@@ -1287,32 +1353,32 @@ var keyNameMap map[Key]string = map[Key]string{
 	Key9:       "9",
 	KeySemicolon:    ";",
 	KeyEqual:        "=",
-	KeyA:         "A",
-	KeyB:         "B",
-	KeyC:         "C",
-	KeyD:         "D",
-	KeyE:         "E",
-	KeyF:         "F",
-	KeyG:         "G",
-	KeyH:         "H",
-	KeyI:         "I",
-	KeyJ:         "J",
-	KeyK:         "K",
-	KeyL:         "L",
-	KeyM:         "M",
-	KeyN:         "N",
-	KeyO:         "O",
-	KeyP:         "P",
-	KeyQ:         "Q",
-	KeyR:         "R",
-	KeyS:         "S",
-	KeyT:         "T",
-	KeyU:         "U",
-	KeyV:         "V",
-	KeyW:         "W",
-	KeyX:         "X",
-	KeyY:         "Y",
-	KeyZ:         "Z",
+	KeyA:         "a",
+	KeyB:         "b",
+	KeyC:         "c",
+	KeyD:         "d",
+	KeyE:         "e",
+	KeyF:         "f",
+	KeyG:         "g",
+	KeyH:         "h",
+	KeyI:         "i",
+	KeyJ:         "j",
+	KeyK:         "k",
+	KeyL:         "l",
+	KeyM:         "m",
+	KeyN:         "n",
+	KeyO:         "o",
+	KeyP:         "p",
+	KeyQ:         "q",
+	KeyR:         "r",
+	KeyS:         "s",
+	KeyT:         "t",
+	KeyU:         "u",
+	KeyV:         "v",
+	KeyW:         "w",
+	KeyX:         "x",
+	KeyY:         "y",
+	KeyZ:         "z",
 	KeyLeftBracket:  "[",
 	KeyBackslash:    "\\",
 	KeyRightBracket: "[",

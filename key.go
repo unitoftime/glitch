@@ -1,6 +1,8 @@
 package glitch
 
 import (
+	"strings"
+
 	"github.com/unitoftime/glitch/internal/glfw"
 )
 
@@ -9,6 +11,7 @@ import (
 
 type Key int
 
+// Note: these are based on the key location for a qwerty keyboard
 const (
 	KeyUnknown			= Key(glfw.KeyUnknown)
 	KeySpace				= Key(glfw.KeySpace)
@@ -180,24 +183,33 @@ func GetKeyName(k Key) string {
 	return glfw.GetKeyName(glfw.Key(k), 0)
 }
 
-// Same thing as GetKeyName, but gives better descriptions for non-text keys
 // TODO: This won't work for wasm yet
+// For text-keys, we return the upper case version of the key. For non-text we return a text string of the key. This may fall back to QWERTY keyboard layout in some cases
+// Returns "Unknown" if we don't have a description for that key
 func GetKeyDescription(k Key) string {
-	keyName := GetKeyName(k)
-	if keyName != "" {
-		return keyName
+	if !isMouseKey(k) {
+		keyName := GetKeyName(k)
+		if keyName != "" {
+			if len(keyName) == 1 {
+				return strings.ToUpper(keyName)
+			} else {
+				return keyName
+			}
+		}
 	}
 
-	name, ok := keyDescription[k]
+	name, ok := qwertyKeyDescription[k]
 	if !ok {
-		// TODO: Use scancode to lookup
+		// TODO: Use scancode to lookup?
 		return "Unknown"
 	}
 	return name
 }
-var keyDescription map[Key]string = map[Key]string{
+
+// Note: This is QWERTY only!
+var qwertyKeyDescription map[Key]string = map[Key]string{
 	KeySpace:        "Space",
-	KeyApostrophe:        "'", //???
+	KeyApostrophe:   "'", //???
 	KeyComma:        ",",
 	KeyMinus:        "-",
 	KeyPeriod:       ".",
@@ -318,5 +330,11 @@ var keyDescription map[Key]string = map[Key]string{
 	// KeyRightSuper:        "OSRight",
 	KeyRightSuper:      "MetaRight",
 	KeyMenu:    "ContextMenu", // ????
+
+	// Mouse Buttons
+	MouseButtonLeft: "MouseButtonLeft",
+	MouseButtonRight: "MouseButtonRight",
+	MouseButtonMiddle: "MouseButtonMiddle",
+	// TODO: Mouse4-8
 }
 

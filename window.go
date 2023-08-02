@@ -278,14 +278,17 @@ func (w *Window) mainthreadCacheMousePosition() {
 
 // // Returns true if the key was pressed in the last frame
 func (w *Window) JustPressed(key Key) bool {
+	if key == KeyUnknown { return false }
 	return w.input.justPressed[key]
 }
 
 func (w *Window) JustReleased(key Key) bool {
+	if key == KeyUnknown { return false }
 	return w.input.justReleased[key]
 }
 
 func (w *Window) Repeated(key Key) bool {
+	if key == KeyUnknown { return false }
 	return w.input.repeated[key]
 }
 
@@ -305,6 +308,7 @@ func (w *Window) Bind() {
 // }
 
 func (w *Window) Pressed(key Key) bool {
+	if key == KeyUnknown { return false }
 	w.pressedKeyCheck = key
 	mainthread.Call(w.mainthreadPressed)
 	return w.pressedKeyReturn
