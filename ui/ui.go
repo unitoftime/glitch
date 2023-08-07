@@ -183,22 +183,22 @@ func (g *Group) Clear() {
 }
 
 // Performs a draw of the UI Group
-func (g *Group) Draw() {
-	g.pass.SetUniform("projection", g.camera.Projection)
-	g.pass.SetUniform("view", g.camera.View)
+// func (g *Group) Draw() {
+// 	g.pass.SetUniform("projection", g.camera.Projection)
+// 	g.pass.SetUniform("view", g.camera.View)
 
-	// Draw the union rect
-	if g.Debug {
-		// fmt.Println("Active: ", g.active, " | Hover: ", g.hover)
+// 	// Draw the union rect
+// 	if g.Debug {
+// 		// fmt.Println("Active: ", g.active, " | Hover: ", g.hover)
 
-		if !g.unionBoundsSet {
-			g.debugRect(g.unionBounds)
-		}
-	}
+// 		if !g.unionBoundsSet {
+// 			g.debugRect(g.unionBounds)
+// 		}
+// 	}
 
-	// g.pass.Draw(g.win)
-	// g.pass.Draw(targ)
-}
+// 	// g.pass.Draw(g.win)
+// 	// g.pass.Draw(targ)
+// }
 
 func (g *Group) SetColor(color glitch.RGBA) {
 	g.color = color
