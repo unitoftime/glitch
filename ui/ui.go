@@ -5,18 +5,8 @@ import (
 	"strings"
 
 	"github.com/unitoftime/glitch"
-	// "github.com/unitoftime/glitch/shaders"
 	"github.com/unitoftime/glitch/graph"
 )
-
-// Element that needs to be drawn
-type uiElement struct {
-	drawer Drawer
-}
-
-type uiPass struct {
-	elements [][]uiElement
-}
 
 type uiGlobals struct {
 	mouseCaught bool
@@ -77,26 +67,25 @@ type Group struct {
 	graphBuffer []*graph.Graph
 	currentGraphBufferIndex int
 
-	// hot, active *Elem
-	// active *Elem
-	// tmpHover *Elem
-	// hover, held, selectDown, selectUp *Elem
-
-	hover, down, active any
-	tmpHover any
-	// hover, held, selectDown, selectUp any
-
 	mousePos, mouseDownPos glitch.Vec2
+
+	// New Way
+	hotId, activeId eid
+	downId eid
+	tmpHotId eid
+
+	idCounter eid
+	elements map[string]eid // Maps labels to elements
+	elementsRev map[eid]string
+	dedup map[string]uint32
+
+	// TODO: Element Stylesheet map?
 }
 
-func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas, pass *glitch.RenderPass) *Group {
-	// TODO - it probably makes sense to pass the RenderPass in on the Draw() func and in the meantime just batch all the commands together.
-	// shader, err := glitch.NewShader(shaders.SpriteShader)
-	// if err != nil { panic(err) }
-	// pass := glitch.NewRenderPass(shader)
-	// pass.SoftwareSort = glitch.SoftwareSortY
-	// pass.DepthTest = true
+type eid uint64 // Element Id
+const invalidId eid = 0
 
+func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas, pass *glitch.RenderPass) *Group {
 	return &Group{
 		win: win,
 		camera: camera,
@@ -109,11 +98,12 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		color: glitch.RGBA{1, 1, 1, 1},
 		textBuffer: make([]*glitch.Text, 0),
 		graphBuffer: make([]*graph.Graph, 0),
-	}
-}
 
-func (g *Group) Stats() glitch.RenderStats {
-	return g.pass.Stats()
+		elements: make(map[string]eid),
+		elementsRev: make(map[eid]string),
+		dedup: make(map[string]uint32),
+		idCounter: invalidId + 1,
+	}
 }
 
 func (g *Group) getText(str string) *glitch.Text {
@@ -171,34 +161,22 @@ func (g *Group) Clear() {
 	mX, mY := g.mousePosition()
 	g.mousePos = glitch.Vec2{mX, mY}
 
-	g.hover = g.tmpHover
-	g.tmpHover = nil
-
 	g.currentTextBufferIndex = 0
 	g.currentGraphBufferIndex = 0
 
 	// g.pass.Clear()
 	g.unionBoundsSet = false
 	g.allBounds = g.allBounds[:0]
+
+
+	// New
+	// Clearing Optimization: https://go.dev/doc/go1.11#performance-compiler
+	g.hotId = g.tmpHotId
+	g.tmpHotId = invalidId
+	for k := range g.dedup {
+		delete(g.dedup, k)
+	}
 }
-
-// Performs a draw of the UI Group
-// func (g *Group) Draw() {
-// 	g.pass.SetUniform("projection", g.camera.Projection)
-// 	g.pass.SetUniform("view", g.camera.View)
-
-// 	// Draw the union rect
-// 	if g.Debug {
-// 		// fmt.Println("Active: ", g.active, " | Hover: ", g.hover)
-
-// 		if !g.unionBoundsSet {
-// 			g.debugRect(g.unionBounds)
-// 		}
-// 	}
-
-// 	// g.pass.Draw(g.win)
-// 	// g.pass.Draw(targ)
-// }
 
 func (g *Group) SetColor(color glitch.RGBA) {
 	g.color = color
@@ -473,26 +451,77 @@ func (g *Group) debugRect(rect glitch.Rect) {
 // 	c.DebugRect(destRect)
 // }
 
-
-// type DragDropper interface {
-// 	Drag(any)
-// 	Drop(any)
-// }
-
-type Elem struct {
-	id uint64 // TODO - Not needed, was only for testing
-	group *Group
+//--------------------------------------------------------------------------------
+func (g *Group) getLabel(id eid) string {
+	l, ok := g.elementsRev[id]
+	if !ok {
+		return ""
+	}
+	return l
 }
-var idCounter uint64
-func (g *Group) NewElem() *Elem {
-	idCounter++
-	return &Elem{
-		id: idCounter,
+
+func (g *Group) getId(label string) eid {
+	bump, alreadyFetched := g.dedup[label]
+	if alreadyFetched {
+		g.dedup[label] = bump + 1
+		label = fmt.Sprintf("%s##%d", label, bump)
+		// fmt.Printf("duplicate label, using bump: %s\n", label)
+		// panic(fmt.Sprintf("duplicate label found: %s", label))
+	} else {
+		g.dedup[label] = 0
+	}
+
+	id, ok := g.elements[label]
+	if !ok {
+		id = g.idCounter
+		g.idCounter++
+		g.elements[label] = id
+		g.elementsRev[id] = label
+	}
+
+	return id
+}
+
+func removeDedup(label string) string {
+	ret, _, _ := strings.Cut(label, "##")
+	return ret
+}
+
+type Style struct {
+	Normal, Hovered, Pressed Drawer
+	Text *TextStyle
+}
+
+type TextStyle struct {
+	group *Group
+	Anchor glitch.Vec2
+	Padding glitch.Rect
+	Color glitch.RGBA
+	// TODO: atlas/fontface
+	// TODO: color, fixedsize, etc
+}
+
+// TODO: Remove group dependence
+func (g *Group) NewTextStyle() *TextStyle {
+	return &TextStyle{
 		group: g,
+		Anchor: glitch.Vec2{0.5, 0.5},
+		Padding: glitch.R(5, 5, 5, 5),
+		Color: glitch.White,
 	}
 }
+func (t *TextStyle) Draw(str string, rect glitch.Rect) {
+	rect = rect.Unpad(t.Padding)
 
-func (g *Group) trackHover(elem any, rect glitch.Rect) {
+	// TODO: pass color into new text function
+	oldCol := t.group.color
+	t.group.color = t.Color
+	t.group.Text(str, rect, t.Anchor)
+	t.group.color = oldCol
+}
+
+
+func (g *Group) trackHover2(id eid, rect glitch.Rect) {
 	// TODO - centralize in group
 	// mX, mY := g.mousePosition()
 	// if rect.Contains(mX, mY) {
@@ -501,76 +530,40 @@ func (g *Group) trackHover(elem any, rect glitch.Rect) {
 
 	mX, mY := g.mousePosition()
 	if mouseCheck(rect, glitch.Vec2{mX, mY}) {
-		g.tmpHover = elem
+		g.tmpHotId = id
 	}
 }
 
-// func (g *Group) trackHeld(elem *Elem, rect glitch.Rect) {
-// 	if !g.win.Pressed(glitch.MouseButtonLeft) { // TODO - multiple keybinds?
-// 		return
-// 	}
-// 	// TODO - centralize in group
-// 	mX, mY := g.mousePosition()
-// 	if rect.Contains(mX, mY) {
-// 		g.held = elem
-// 	}
-// }
+func (g *Group) ButtonE(label string, style Style, rect glitch.Rect) bool {
+	id := g.getId(label)
+	text := removeDedup(label)
 
-// func (g *Group) trackSelectDown(elem *Elem, rect glitch.Rect) {
-// 	if !g.win.JustPressed(glitch.MouseButtonLeft) { // TODO - multiple keybinds?
-// 		g.selectDown = nil
-// 		return
-// 	}
-
-// 	// TODO - centralize in group
-// 	mX, mY := g.mousePosition()
-// 	if rect.Contains(mX, mY) {
-// 		g.selectDown = elem
-// 	}
-// }
-
-// func (g *Group) trackSelectUp(elem *Elem, rect glitch.Rect) {
-// 	if !g.win.JustReleased(glitch.MouseButtonLeft) { // TODO - multiple keybinds?
-// 		g.selectUp = nil
-// 		return
-// 	}
-
-// 	// TODO - centralize in group
-// 	mX, mY := g.mousePosition()
-// 	if rect.Contains(mX, mY) {
-// 		g.selectUp = elem
-// 	}
-// }
-
-// func (g *Group) trackState(elem *Elem, rect glitch.Rect) {
-// 	g.trackHover(elem, rect)
-// 	// g.trackSelectDown(elem, rect)
-// 	// g.trackSelectUp(elem, rect)
-// }
-
-func (g *Group) Button2(elem any, normal, hovered, pressed Drawer, rect glitch.Rect) bool {
 	ret := false
-	if g.active == elem {
+	if g.activeId == id {
 		if g.win.JustReleased(glitch.MouseButtonLeft) {
-			g.active = nil
-			if g.hover == elem {
+			g.activeId = invalidId
+			if g.hotId == id {
 				ret = true
 			}
 		}
-	} else if g.hover == elem {
+	} else if g.hotId == id {
 		if g.win.JustPressed(glitch.MouseButtonLeft) {
-			g.active = elem
+			g.activeId = id
 		}
 	}
 
-	g.trackHover(elem, rect)
+	g.trackHover2(id, rect)
 
-	if g.active == elem {
-		g.Panel(pressed, rect)
-	} else if g.hover == elem {
-		g.Panel(hovered, rect)
+	if g.activeId == id {
+		g.Panel(style.Pressed, rect)
+	} else if g.hotId == id {
+		g.Panel(style.Hovered, rect)
 	} else {
-		g.Panel(normal, rect)
+		g.Panel(style.Normal, rect)
+	}
+
+	if style.Text != nil && text != "" {
+		style.Text.Draw(text, rect)
 	}
 
 	g.appendUnionBounds(rect)
@@ -579,113 +572,88 @@ func (g *Group) Button2(elem any, normal, hovered, pressed Drawer, rect glitch.R
 	return ret
 }
 
-func (g *Group) DragAndDropSlot(elem any, drawer Drawer, rect glitch.Rect) {
-	// var ret *Elem
-	// if g.active == elem {
-	// } else if g.hover == elem {
-	// }
+// Returns true if we successfully completed a drag and drop ending on this element
+func (g *Group) DragAndDropSlotE(label string, style Style, rect glitch.Rect) bool {
+	id := g.getId(label)
 
-	if g.active != nil {
-		g.trackHover(elem, rect)
+	if g.hotId == id {
+		if g.win.JustReleased(glitch.MouseButtonLeft) {
+			g.activeId = id
+			return true
+		}
 	}
 
-	g.PanelColorMask(drawer, rect, glitch.White)
-	// if g.active == elem {
-	// 	PanelColorMask(drawer, rect, glitch.White)
-	// } else if g.hover == elem {
-	// 	PanelColorMask(drawer, rect, glitch.White)
-	// } else {
-	// 	PanelColorMask(drawer, rect, glitch.White)
-	// }
-	// return ret
+	// We can only interact with this if we currently have a drag and drop item active
+	// TODO: restrict to only drag and drop items?
+	if g.activeId != invalidId {
+		g.trackHover2(id, rect)
+
+	}
+
+	g.PanelColorMask(style.Normal, rect, glitch.White)
 
 	// Note: This is only so that the mouseCaught boolean is tracked for this rect
 	mX, mY := g.mousePosition()
 	mouseCheck(rect, glitch.Vec2{mX, mY})
+	return false
 }
 
-// returns (Clicked, hovered, isdragging, drop elem)
-func (g *Group) DragAndDropItem(elem any, drawer Drawer, rect glitch.Rect) (bool, bool, bool, any) {
+// returns (Clicked, hovered, isdragging, dropSlot)
+func (g *Group) DragAndDropItemE(label string, style Style, rect glitch.Rect) (bool, bool, bool, bool) {
+	id := g.getId(label)
+
 	buttonClick := false
 	buttonHover := false
-	if g.active == elem {
+	if g.activeId == id {
 		mX, mY := g.mousePosition()
 		global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
-		g.PanelColorMask(drawer, rect.WithCenter(glitch.Vec2{mX, mY}), glitch.RGBA{0.5, 0.5, 0.5, 0.5})
-	} else if g.down == elem {
-		g.PanelColorMask(drawer, rect, glitch.RGBA{0.5, 0.5, 0.5, 0.5})
-	} else if g.hover == elem {
-		g.PanelColorMask(drawer, rect, glitch.White)
+		g.PanelColorMask(style.Normal, rect.WithCenter(glitch.Vec2{mX, mY}), glitch.RGBA{0.5, 0.5, 0.5, 0.5})
+	} else if g.downId == id {
+		g.PanelColorMask(style.Normal, rect, glitch.RGBA{0.5, 0.5, 0.5, 0.5})
+	} else if g.hotId == id {
+		g.PanelColorMask(style.Normal, rect, glitch.White)
 	} else {
-		g.PanelColorMask(drawer, rect, glitch.White)
+		g.PanelColorMask(style.Normal, rect, glitch.White)
 	}
 
-	// var ret any
-	// if g.active == elem {
-	// 	if g.win.JustReleased(glitch.MouseButtonLeft) {
-	// 		fmt.Println("Drop:", elem)
-	// 		// dropper, ok := g.hover.(Dropper)
-	// 		// if ok {
-	// 		// 	dropper.Drop(elem)
-	// 		// }
-	// 		ret = g.hover
-	// 		g.active = nil
-	// 	}
-	// } else if g.down == elem {
-	// 	if g.mousePos.Sub(g.mouseDownPos).Len() > 3.0 { // TODO - arbitrary
-	// 		fmt.Println("Drag:", elem)
-	// 		g.active = elem
-	// 		g.down = nil
-	// 	}
+	// Make it so we can't hover ourself if we are currently being dragged
+	if g.activeId != id {
+		g.trackHover2(id, rect)
+	}
 
-	// 	g.trackHover(elem, rect)
-	// } else if g.hover == elem {
-	// 	if g.win.JustPressed(glitch.MouseButtonLeft) {
-	// 		fmt.Println("Down:", elem)
-	// 		g.down = elem
-	// 		g.mouseDownPos = g.mousePos
-	// 	}
-	// } else {
-	// 	g.trackHover(elem, rect)
-	// }
-
-	g.trackHover(elem, rect)
-
-	var ret any
-	if g.active == elem {
+	dropSlot := false
+	if g.activeId == id {
 		if g.win.JustReleased(glitch.MouseButtonLeft) {
-			// fmt.Println("Drop:", elem)
-			// dropper, ok := g.hover.(Dropper)
-			// if ok {
-			// 	dropper.Drop(elem)
-			// }
-			ret = g.hover
-			g.active = nil
+			g.activeId = invalidId
 		}
-	} else if g.down == elem {
+	} else if g.downId == id {
 		buttonHover = true
-		if g.mousePos.Sub(g.mouseDownPos).Len() > 3.0 { // TODO - arbitrary
+		if g.mousePos.Sub(g.mouseDownPos).Len() > 5.0 { // TODO - arbitrary
 			// fmt.Println("Drag:", elem)
-			g.active = elem
-			g.down = nil
+			g.activeId = id
+			g.downId = invalidId
 		} else if g.win.JustReleased(glitch.MouseButtonLeft) {
 			// fmt.Println("Click:", elem)
 			buttonClick = true
-			g.down = nil
+			g.downId = invalidId
 		}
 
-		g.trackHover(elem, rect)
-	} else if g.hover == elem {
+		g.trackHover2(id, rect)
+	} else if g.hotId == id {
+		if g.win.JustReleased(glitch.MouseButtonLeft) {
+			dropSlot = true
+		}
+
 		buttonHover = true
 		if g.win.JustPressed(glitch.MouseButtonLeft) {
 			// fmt.Println("Down:", elem)
-			g.down = elem
+			g.downId = id
 			g.mouseDownPos = g.mousePos
 		}
 	}
 
 	// This item is currently dragging if the active element is itself
-	currentlyDragging := (g.active == elem)
+	currentlyDragging := (g.activeId == id)
 
-	return buttonClick, buttonHover, currentlyDragging, ret
+	return buttonClick, buttonHover, currentlyDragging, dropSlot
 }

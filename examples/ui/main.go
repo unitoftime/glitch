@@ -8,6 +8,7 @@ import (
 	_ "image/png"
 
 	"github.com/unitoftime/glitch"
+	"github.com/unitoftime/glitch/shaders"
 	"github.com/unitoftime/glitch/ui"
 )
 
@@ -40,6 +41,12 @@ func runGame() {
 		Samples: 0,
 	})
 	if err != nil { panic(err) }
+
+	shader, err := glitch.NewShader(shaders.SpriteShader)
+	if err != nil { panic(err) }
+	pass := glitch.NewRenderPass(shader)
+	pass.SoftwareSort = glitch.SoftwareSortY
+	pass.DepthTest = true
 
 	buttonImage, err := loadImage("button.png")
 	if err != nil { panic(err) }
@@ -82,26 +89,33 @@ func runGame() {
 	camera := glitch.NewCameraOrtho()
 	camera.SetOrtho2D(win.Bounds())
 	camera.SetView2D(0, 0, 1.0, 1.0)
-	group := ui.NewGroup(win, camera, atlas)
+	group := ui.NewGroup(win, camera, atlas, pass)
 	// group.Debug = true
 
+	textStyle := group.NewTextStyle()
+	buttonStyle := ui.Style{
+		Normal: buttonSprite,
+		Hovered: buttonHoverSprite,
+		Pressed: buttonPressSprite,
+		Text: textStyle,
+	}
+
 	for !win.Closed() {
-		if win.Pressed(glitch.KeyBackspace) {
+		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
 		}
 
-		mx, my := win.MousePosition()
-		log.Println("Mouse: ", mx, my)
+		// mx, my := win.MousePosition()
+		// log.Println("Mouse: ", mx, my)
 
 		glitch.Clear(win, glitch.Black)
 
 		ui.Clear()
 		group.Clear()
+		pass.Clear()
+
 		menuRect := win.Bounds().SliceHorizontal(500).SliceVertical(500)
 		group.Panel(panelSprite, menuRect)
-
-		// basicHover := ui.BasicHover{buttonSprite, buttonPressSprite}
-		paddingRect := glitch.R(-20,-20,-20,-20)
 
 		menuRect.CutLeft(20)
 		menuRect.CutRight(20)
@@ -112,17 +126,19 @@ func runGame() {
 		menuRect.CutTop(10) // Padding
 		{
 			r := menuRect.CutTop(100)
-			group.Button(buttonSprite, buttonHoverSprite, buttonPressSprite, r)
-			group.SetColor(glitch.RGBA{0, 0, 0, 1})
-			group.Text("Button 0", r.Pad(paddingRect), glitch.Vec2{0.5, 0.5})
+			buttonStyle.Text.Color = glitch.Black
+			if group.ButtonE("Button 0", buttonStyle, r) {
+				println("Button 0")
+			}
 		}
 		menuRect.CutTop(10) // Padding
 		{
 			r := menuRect.CutTop(100)
-			group.Button(buttonSprite, buttonHoverSprite, buttonPressSprite, r)
-			group.Text("Button 1", r.Pad(paddingRect), glitch.Vec2{0.5, 0.5})
+			buttonStyle.Text.Color = glitch.RGBA{1, 0, 0, 1}
+			if group.ButtonE("Button 1", buttonStyle, r) {
+				println("Button 1")
+			}
 		}
-		// group.Sprite(buttonSprite, glitch.R(0, 0, 200, 75))
 
 		menuRect.CutTop(10) // Padding
 		{
@@ -131,7 +147,9 @@ func runGame() {
 			group.Panel(panelInnerSprite, r)
 		}
 
-		group.Draw()
+		pass.SetUniform("projection", camera.Projection)
+		pass.SetUniform("view", camera.View)
+		pass.Draw(win)
 
 		win.Update()
 	}
