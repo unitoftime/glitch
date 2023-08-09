@@ -228,7 +228,42 @@ func (g *Group) Clear() {
 // 	Normal, Hovered, Pressed WidgetDraw
 // }
 
+//--------------------------------------------------------------------------------
+// func (g *Group) draw(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
+// 	if sprite != nil {
+// 		sprite.RectDrawColorMask(g.pass, rect, color)
+// 	}
+// 	g.appendUnionBounds(rect)
+// 	g.debugRect(rect)
+// }
+func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) {
+	if str == "" { return }
 
+	text := g.getText(str)
+
+	rect = rect.Unpad(t.padding)
+	if t.autoFit {
+		rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
+	} else {
+		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
+	}
+	text.RectDrawColorMask(g.pass, rect, t.color)
+
+	g.appendUnionBounds(rect)
+	g.debugRect(rect)
+}
+
+func (g *Group) drawSprite(rect glitch.Rect, style SpriteStyle) {
+	if style.sprite == nil { return }
+	style.sprite.RectDrawColorMask(g.pass, rect, style.color)
+
+	g.appendUnionBounds(rect)
+	g.debugRect(rect)
+}
+func (g *Group) draw(str string, rect glitch.Rect, s SpriteStyle, t TextStyle) {
+	g.drawSprite(rect, s)
+	g.drawText(str, rect, t)
+}
 
 //--------------------------------------------------------------------------------
 func (g *Group) debugRect(rect glitch.Rect) {
@@ -277,23 +312,8 @@ func removeDedup(label string) string {
 }
 
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
-	g.draw(sprite, rect, color)
-}
-
-func (g *Group) draw(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
-	if sprite != nil {
-		sprite.RectDrawColorMask(g.pass, rect, color)
-	}
-	g.appendUnionBounds(rect)
-	g.debugRect(rect)
-}
-
-func (g *Group) drawSprite(rect glitch.Rect, style SpriteStyle) {
-	if style.sprite != nil {
-		style.sprite.RectDrawColorMask(g.pass, rect, style.color)
-	}
-	g.appendUnionBounds(rect)
-	g.debugRect(rect)
+	ss := SpriteStyle{sprite, color}
+	g.drawSprite(rect, ss)
 }
 
 type SpriteStyle struct {
@@ -394,21 +414,15 @@ func (s TextStyle) Color(v glitch.RGBA) TextStyle {
 	s.color = v
 	return s
 }
+func (s TextStyle) Autofit(v bool) TextStyle {
+	s.autoFit = v
+	return s
+}
 
 
 
-func (group *Group) Text(str string, rect glitch.Rect, t TextStyle) {
-	text := group.getText(str)
-
-	rect = rect.Unpad(t.padding)
-	if t.autoFit {
-		rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
-	} else {
-		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
-	}
-	text.RectDrawColorMask(group.pass, rect, t.color)
-	group.appendUnionBounds(rect)
-	group.debugRect(rect)
+func (g *Group) Text(str string, rect glitch.Rect, s TextStyle) {
+	g.drawText(str, rect, s)
 }
 
 
@@ -464,13 +478,38 @@ func (g *Group) button(label string, rect glitch.Rect, style Style) (pressed, he
 	}
 
 	if text != "" {
-		g.Text(text, rect, style.Text)
+		g.drawText(text, rect, style.Text)
 	}
 
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
 
 	return
+}
+
+// Returns true if the input field is active, else returns false
+func (g *Group) InputField(label string, rect glitch.Rect) bool {
+	id := g.getId(label)
+	// text := removeDedup(label)
+
+	g.trackHover(id, rect)
+
+	ret := false
+	if g.activeId == id {
+		ret = true
+		if g.win.JustPressed(glitch.MouseButtonLeft) {
+			if g.tmpHotId != id {
+				// If we are active, but not hot this frame and we click, then the user has clicked off the input field
+				g.activeId = invalidId
+			}
+		}
+	} else if g.hotId == id {
+		if g.win.JustPressed(glitch.MouseButtonLeft) {
+			g.activeId = id
+		}
+	}
+
+	return ret
 }
 
 // TODO: label
@@ -507,7 +546,7 @@ func (g *Group) TextInput(prefix, postfix string, str *string, rect glitch.Rect,
 	// TODO: Change sprite depending on state
 	g.drawSprite(rect, style.Normal)
 
-	g.Text(prefix + *str + postfix, rect, style.Text)
+	g.drawText(prefix + *str + postfix, rect, style.Text)
 }
 
 // TODO - tooltips only seem to work for single lines
@@ -649,9 +688,9 @@ func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2, style TextStyl
 
 	style.anchor = glitch.Vec2{0, 0}
 	style.pivot = glitch.Vec2{1, 0.5}
-	g.Text(fmt.Sprintf("%.2f ms", axes.Min[1]), rect, style)
+	g.drawText(fmt.Sprintf("%.2f ms", axes.Min[1]), rect, style)
 
 	style.anchor = glitch.Vec2{0, 1}
 	style.pivot = glitch.Vec2{1, 0.5}
-	g.Text(fmt.Sprintf("%.2f ms", axes.Max[1]), rect, style)
+	g.drawText(fmt.Sprintf("%.2f ms", axes.Max[1]), rect, style)
 }
