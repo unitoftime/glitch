@@ -556,7 +556,7 @@ func (g *Group) Tooltip(tip string, rect glitch.Rect, style Style) {
 		return // If mouse not contained by rect, then don't draw
 	}
 
-	padding := 10.0
+	// padding := 10.0
 	quadrant := g.win.Bounds().Center().Sub(g.mousePos).Unit()
 
 	var movement glitch.Vec2
@@ -572,21 +572,25 @@ func (g *Group) Tooltip(tip string, rect glitch.Rect, style Style) {
 		movement[1] = 1
 	}
 
-	text := g.getText(tip)
-	// tipRect := rect.Anchor(text.Bounds(), anchor)
-	tipRect := text.Bounds()
-	tipRect = tipRect.WithCenter(g.mousePos)
-	tipRect = tipRect.
-		Moved(glitch.Vec2{
-		(padding + (tipRect.W() / 2)) * movement[0],
-		(padding + (tipRect.H() / 2)) * movement[1],
-	})
+	cursorRect := glitch.R(0, 0, 0, 0).WithCenter(g.mousePos)
+	style.Text = style.Text.Anchor(movement.Scaled(-1))
+	g.draw(tip, cursorRect, style.Normal, style.Text)
 
-	g.drawSprite(tipRect, style.Normal)
+	// text := g.getText(tip)
+	// // tipRect := rect.Anchor(text.Bounds(), anchor)
+	// tipRect := text.Bounds()
+	// tipRect = tipRect.WithCenter(g.mousePos)
+	// tipRect = tipRect.
+	// 	Moved(glitch.Vec2{
+	// 	(padding + (tipRect.W() / 2)) * movement[0],
+	// 	(padding + (tipRect.H() / 2)) * movement[1],
+	// })
 
-	text.DrawRect(g.pass, tipRect, style.Text.color)
-	g.appendUnionBounds(tipRect)
-	g.debugRect(tipRect)
+	// g.drawSprite(tipRect, style.Normal)
+
+	// text.DrawRect(g.pass, tipRect, style.Text.color)
+	// g.appendUnionBounds(tipRect)
+	// g.debugRect(tipRect)
 }
 
 // Returns true if we successfully completed a drag and drop ending on this element
