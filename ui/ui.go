@@ -424,7 +424,10 @@ func (s TextStyle) Autofit(v bool) TextStyle {
 func (g *Group) Text(str string, rect glitch.Rect, s TextStyle) {
 	g.drawText(str, rect, s)
 }
-
+func (g *Group) TextPanel(str string, rect glitch.Rect, s Style) {
+	g.drawSprite(rect, s.Normal)
+	g.drawText(str, rect, s.Text)
+}
 
 func (g *Group) trackHover(id eid, rect glitch.Rect) {
 	if mouseCheck(rect, g.mousePos) {
