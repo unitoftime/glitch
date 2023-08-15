@@ -72,6 +72,9 @@ func (v Vec2) Len() float64 {
 func (v Vec2) Scaled(s float64) Vec2 {
 	return Vec2{s * v[0], s * v[1]}
 }
+func (v Vec2) ScaledXY(s Vec2) Vec2 {
+	return Vec2{v[0] * s[0], v[1] * s[1]}
+}
 
 func (v Vec2) Vec3() Vec3 {
 	return Vec3{v[0], v[1], 0}
@@ -391,6 +394,14 @@ func (r Rect) CenterScaled(scale float64) Rect {
 	return R(c[0] - w, c[1] - h, c[0] + w, c[1] + h)
 }
 
+// Note: This scales around the center
+// func (r Rect) ScaledXY(scale Vec2) Rect {
+// 	c := r.Center()
+// 	w := r.W() * scale[0] / 2.0
+// 	h := r.H() * scale[1] / 2.0
+// 	return R(c[0] - w, c[1] - h, c[0] + w, c[1] + h)
+// }
+
 // TODO: I need to deprecate this. This currently just indepentently scales the min and max point which is only useful if the center, min, or max is on (0, 0)
 func (r Rect) Scaled(scale float64) Rect {
 	// center := r.Center()
@@ -400,6 +411,14 @@ func (r Rect) Scaled(scale float64) Rect {
 		Max: r.Max.Scaled(scale),
 	}
 	// r = r.Moved(center)
+	return r
+}
+
+func (r Rect) ScaledXY(scale Vec2) Rect {
+	r = Rect{
+		Min: r.Min.ScaledXY(scale),
+		Max: r.Max.ScaledXY(scale),
+	}
 	return r
 }
 
