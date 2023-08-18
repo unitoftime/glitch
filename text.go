@@ -36,7 +36,7 @@ func DefaultAtlas() (*Atlas, error) {
 		Size: 64,
 		// GlyphCacheEntries: 1,
 	})
-	atlas := NewAtlas(fontFace, runes, true, 0)
+	atlas := NewAtlas(fontFace, runes, true, 0, 512)
 	return atlas, nil
 }
 
@@ -66,7 +66,7 @@ func fixedToFloat(val fixed.Int26_6) float64 {
 	return float64(val) / (1 << 6)
 }
 
-func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
+func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize int) *Atlas {
 	metrics := face.Metrics()
 	// fmt.Println("Metrics: ", fixedToFloat(metrics.Height), fixedToFloat(metrics.Ascent), fixedToFloat(metrics.Descent))
 	atlas := &Atlas{
@@ -79,7 +79,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 		pixelPerfect: !smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
 	}
 
-	size := 512
+	size := textureSize
 	fixedSize := fixed.I(size)
 	fSize := float64(size)
 
@@ -113,6 +113,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 		//		log.Println("Rune: ", string(r), " - BearingRect: ", bearingRect)
 		bearingX := float64((bearingRect.Min.X * 1000000).Floor()) / (1000000 * fSize)
 		bearingY := float64((-bearingRect.Max.Y * 1000000).Floor()) / (1000000 * fSize)
+
 		//		advance := float32((adv * 1000000).Floor())/(1000000 * fSize) // TODO - why doesn't this work?
 		// log.Println("Rune: ", string(r), " - BearingX: ", float32(bearingRect.Min.X.Floor())/fSize)
 		// log.Println("Rune: ", string(r), " - BearingX: ", bearingX)
@@ -123,43 +124,31 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 		// draw.Draw(img, bounds, mask, maskp, draw.Src)
 
 		// After: 9 offset draws in every direction, then a normal draw
-		// TODO: Move to SDF
-		// for xx := -border; xx <= border; xx++ {
-		// 	for yy := -border; yy <= border; yy++ {
-		// 		offsetBounds := bounds.Add(image.Point{xx, yy})
-		// 		draw.DrawMask(img, offsetBounds, blackImg, image.Point{}, mask, maskp, draw.Over)
-		// 	}
-		// }
+		// Draw nine slots around
+		// // x = dist * cos(pi/2)
+		// diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
+		// draw.DrawMask(img, bounds.Add(image.Point{border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds.Add(image.Point{diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds.Add(image.Point{diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
 
-		// for yy := -border; yy <= border; yy++ {
-		// 	offsetBounds := bounds.Add(image.Point{0, yy})
-		// 	draw.DrawMask(img, offsetBounds, blackImg, image.Point{}, mask, maskp, draw.Over)
-		// }
-		// for xx := -border; xx <= border; xx++ {
-		// 	offsetBounds := bounds.Add(image.Point{xx, 0})
-		// 	draw.DrawMask(img, offsetBounds, blackImg, image.Point{}, mask, maskp, draw.Over)
-		// }
+		// draw.DrawMask(img, bounds.Add(image.Point{-border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds.Add(image.Point{-diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds.Add(image.Point{-diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
 
-		// x = dist * cos(pi/2)
-		diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
-		draw.DrawMask(img, bounds.Add(image.Point{border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
-		draw.DrawMask(img, bounds.Add(image.Point{diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
-		draw.DrawMask(img, bounds.Add(image.Point{diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds.Add(image.Point{0, border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// draw.DrawMask(img, bounds.Add(image.Point{0, -border}), blackImg, image.Point{}, mask, maskp, draw.Over)
 
-		draw.DrawMask(img, bounds.Add(image.Point{-border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
-		draw.DrawMask(img, bounds.Add(image.Point{-diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
-		draw.DrawMask(img, bounds.Add(image.Point{-diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
-
-		draw.DrawMask(img, bounds.Add(image.Point{0, border}), blackImg, image.Point{}, mask, maskp, draw.Over)
-		draw.DrawMask(img, bounds.Add(image.Point{0, -border}), blackImg, image.Point{}, mask, maskp, draw.Over)
-
+		// // Draw shadow
+		// shadow := 1
+		// draw.DrawMask(img, bounds.Add(image.Point{border + shadow, border + shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		// // draw.DrawMask(img, bounds.Add(image.Point{0, -border-shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
 
 		draw.Draw(img, bounds, mask, maskp, draw.Over)
 		// draw.DrawMask(img, bounds, blackImg, image.Point{}, mask, maskp, draw.Src)
 
 
 		atlas.mapping[r] = Glyph{
-			Advance: float64(adv.Floor() + border)/fSize,
+			Advance: float64(adv.Floor() + (2*border))/fSize,
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
@@ -188,69 +177,68 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	}
 
 	// This just disables anti-aliasing by snapping pixels to either white or transparent
-	if atlas.pixelPerfect {
-		imgBounds := img.Bounds()
-		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
-			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
-				rgba := img.RGBAAt(x, y)
-				if rgba.A > 0 {
-					rgba.A = 255
-					img.Set(x, y, color.White)
-				}
-			}
-		}
-	}
-
-	// // This runs a box filter based on the border side
-	// if atlas.border != 0 {
-	// 	// Finds white pixels and draws borders around the edges
+	// if atlas.pixelPerfect {
 	// 	imgBounds := img.Bounds()
 	// 	for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
 	// 		for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
 	// 			rgba := img.RGBAAt(x, y)
-	// 			if (rgba != color.RGBA{255, 255, 255, 255}) {
-	// 				continue // If the pixel is transparent then it doesn't trigger a border
-	// 			}
-
-	// 			box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
-	// 			for xx := box.Min.X; xx <= box.Max.X; xx++ {
-	// 				for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
-	// 					rgba := img.RGBAAt(xx, yy)
-	// 					if rgba.A == 0 {
-	// 						// Only add a border to transparent pixels
-	// 						img.Set(xx, yy, color.Black)
-	// 					}
-	// 				}
+	// 			if rgba.A > 0 {
+	// 				rgba.A = 255
+	// 				img.Set(x, y, color.White)
 	// 			}
 	// 		}
 	// 	}
-
-	// 	// Finds transparent pixels and draws borders inward on non-transparent pixels
-	// 	// imgBounds := img.Bounds()
-	// 	// for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
-	// 	// 	for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
-	// 	// 		rgba := img.RGBAAt(x, y)
-	// 	// 		if rgba.A != 0 {
-	// 	// 			continue // Skip if pixel is not fully transparent
-	// 	// 		}
-
-	// 	// 		box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
-	// 	// 		for xx := box.Min.X; xx <= box.Max.X; xx++ {
-	// 	// 			for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
-	// 	// 				rgba := img.RGBAAt(xx, yy)
-	// 	// 				if rgba.A != 0 {
-	// 	// 					// Only add a border to transparent pixels
-	// 	// 					rgba.R = 0
-	// 	// 					rgba.G = 0
-	// 	// 					rgba.B = 0
-	// 	// 					img.Set(xx, yy, rgba)
-	// 	// 				}
-	// 	// 			}
-	// 	// 		}
-	// 	// 	}
-	// 	// }
-
 	// }
+
+	// This runs a box filter based on the border side
+	if atlas.border != 0 {
+		// Finds white pixels and draws borders around the edges
+		imgBounds := img.Bounds()
+		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+				rgba := img.RGBAAt(x, y)
+				if (rgba != color.RGBA{255, 255, 255, 255}) {
+					continue // If the pixel is not white, then it doesnt trigger a border
+				}
+
+				box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+				for xx := box.Min.X; xx <= box.Max.X; xx++ {
+					for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+						rgba := img.RGBAAt(xx, yy)
+						if rgba.A == 0 {
+							// Only add a border to transparent pixels
+							img.Set(xx, yy, color.Black)
+						}
+					}
+				}
+			}
+		}
+
+		// Finds transparent pixels and draws borders inward on non-transparent pixels
+		// imgBounds := img.Bounds()
+		// for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+		// 	for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+		// 		rgba := img.RGBAAt(x, y)
+		// 		if rgba.A != 0 {
+		// 			continue // Skip if pixel is not fully transparent
+		// 		}
+
+		// 		box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+		// 		for xx := box.Min.X; xx <= box.Max.X; xx++ {
+		// 			for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+		// 				rgba := img.RGBAAt(xx, yy)
+		// 				if rgba.A != 0 {
+		// 					// Only add a border to transparent pixels
+		// 					rgba.R = 0
+		// 					rgba.G = 0
+		// 					rgba.B = 0
+		// 					img.Set(xx, yy, rgba)
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+	}
 
 	// // outputFile is a File type which satisfies Writer interface
 	// outputFile, err := os.Create("test.png")
@@ -259,7 +247,6 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 	// outputFile.Close()
 
 	atlas.texture = NewTexture(img, smooth)
-	// atlas.texture.GenerateMipmap()
 	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
 }
@@ -268,6 +255,11 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int) *Atlas {
 // 	// TODO - scale?
 // 	return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap)) + float64(2 * a.border)
 // }
+
+func (a *Atlas) kerning() float64 {
+	return 0
+	// return float64(a.border)
+}
 
 func (a *Atlas) UngappedLineHeight() float64 {
 	// TODO - scale?
@@ -309,21 +301,26 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	y1 := dot[1] + (scaleY * glyph.Bearing[1]) + fixedToFloat(a.descent)
 	y2 := y1 + (scaleY * (v2 - v1))
 
-	mesh.AppendQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2), color)
+	destRect := R(x1, y1, x2, y2)
+	if a.pixelPerfect {
+		destRect = R(math.Round(x1), math.Round(y1), math.Round(x2), math.Round(y2))
+	}
+
+	mesh.AppendQuadMesh(destRect, R(u1, v1, u2, v2), color)
 	// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 
-	dot[0] += (scaleX * glyph.Advance)
+	dot[0] += (scaleX * glyph.Advance) + a.kerning()
 
 	return dot, y2
 }
 
-func (a *Atlas) Text(str string) *Text {
+func (a *Atlas) Text(str string, scale float64) *Text {
 	t := &Text{
 		currentString: "",
 		atlas: a,
 		texture: a.texture,
 		material: NewSpriteMaterial(a.texture),
-		scale: 1.0,
+		scale: scale,
 		LineHeight: a.UngappedLineHeight(),
 		mesh: NewMesh(),
 		tmpMesh: NewMesh(),
@@ -344,7 +341,8 @@ type Text struct {
 	bounds Rect
 	texture *Texture
 	material Material
-	scale float64 // TODO - is this useful? Play around with different scaling methods.
+	scale float64
+	shadow Vec2
 	LineHeight float64
 
 	Orig Vec2 // The baseline starting point from which to draw the text
@@ -360,6 +358,14 @@ func (t *Text) MeshBounds() Rect {
 	return t.mesh.Bounds().Rect()
 }
 
+func (t *Text) SetScale(scale float64) {
+	t.scale = scale
+}
+
+func (t *Text) SetShadow(shadow Vec2) {
+	t.shadow = shadow
+}
+
 func (t *Text) Clear() {
 	t.Orig = Vec2{}
 	t.Dot = t.Orig
@@ -371,9 +377,13 @@ func (t *Text) Clear() {
 func (t *Text) Set(str string) {
 	if t.currentString != str {
 		t.currentString = str
-		t.Clear()
-		t.bounds = t.AppendStringVerts(str)
+		t.regenerate()
 	}
+}
+
+func (t *Text) regenerate() {
+	t.Clear()
+	t.bounds = t.AppendStringVerts(t.currentString)
 }
 
 // This appends the list of bytes onto the end of the string
@@ -397,6 +407,9 @@ func (t *Text) Draw(target BatchTarget, matrix Mat4) {
 }
 
 func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
+	// mat2 := matrix
+	// mat2.Translate(0, -0.5, 0)
+	// target.Add(t.mesh, mat2, Black, t.material, false)
 	target.Add(t.mesh, matrix, color, t.material, false)
 }
 
@@ -421,18 +434,23 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 func (t *Text) AppendStringVerts(text string) Rect {
 	// maxAscent := float32(0) // Tracks the maximum y point of the text block
 
+	lineHeight := t.atlas.UngappedLineHeight() * t.scale
 	initialDot := t.Dot
 
 	for _,r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			t.Dot[1] += t.atlas.UngappedLineHeight()
+			t.Dot[1] += lineHeight
 			t.Dot[0] = t.Orig[0]
 			continue
 		}
 
 		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
 		// fmt.Println("dot", *dot)
+		noShadow := Vec2{}
+		if t.shadow != noShadow {
+			_, _ = t.atlas.RuneVerts(t.mesh, r, t.Dot.Add(t.shadow), t.scale, Black)
+		}
 		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.Color)
 
 		t.Dot = newDot
@@ -471,7 +489,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 
 	// Attempt 3 - use mesh bounds for X and line height for Y
 	meshBounds := t.mesh.Bounds().Rect()
-	return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] + (t.atlas.UngappedLineHeight()))
+	return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] + lineHeight)
 
 	// fmt.Println(bounds)
 

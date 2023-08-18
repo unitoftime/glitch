@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"math"
 	"strings"
 
 	"github.com/unitoftime/glitch"
@@ -117,14 +118,19 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 }
 
 // TODO: cache based on label for more precision?
-func (g *Group) getText(str string) *glitch.Text {
+// TODO: I used to pass the style scale into the text here, but it never quite lined up right. so I just scale later now
+func (g *Group) getText(str string, style TextStyle) *glitch.Text {
 	if g.currentTextBufferIndex >= len(g.textBuffer) {
-		g.textBuffer = append(g.textBuffer, g.atlas.Text(str))
+		text := g.atlas.Text("", 1.0)
+		text.SetShadow(style.shadow)
+		g.textBuffer = append(g.textBuffer, text)
 	}
 
 	idx := g.currentTextBufferIndex
 	g.currentTextBufferIndex++
 	// g.textBuffer[idx].Clear()
+	// g.textBuffer[idx].SetScale(style.scale)
+	g.textBuffer[idx].SetShadow(style.shadow)
 	g.textBuffer[idx].Set(str)
 	return g.textBuffer[idx]
 }
@@ -236,17 +242,35 @@ func (g *Group) Clear() {
 // 	g.appendUnionBounds(rect)
 // 	g.debugRect(rect)
 // }
+func rectSnap(r glitch.Rect) glitch.Rect {
+	r.Min[0] = math.Round(r.Min[0])
+	r.Max[0] = math.Round(r.Max[0])
+	r.Min[1] = math.Round(r.Min[1])
+	r.Max[1] = math.Round(r.Max[1])
+	return r
+}
+
+
 func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) {
 	if str == "" { return }
 
-	text := g.getText(str)
+	// text := g.getText(str, t.scale)
+	text := g.getText(str, t)
 
 	rect = rect.Unpad(t.padding)
+	// if t.autoFit {
+	// 	rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
+	// } else {
+	// 	rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
+	// }
 	if t.autoFit {
 		rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
 	} else {
 		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
+		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
+
+	// rect = rectSnap(rect)
 	text.RectDrawColorMask(g.pass, rect, t.color)
 
 	g.appendUnionBounds(rect)
@@ -381,6 +405,7 @@ type TextStyle struct {
 	color glitch.RGBA
 	scale float64
 	autoFit bool
+	shadow glitch.Vec2
 }
 
 // TODO: I kind of feel like the string needs to be in here, I'm not sure though
@@ -392,6 +417,7 @@ func NewTextStyle() TextStyle {
 		color: glitch.White,
 		scale: 1.0,
 		autoFit: false,
+		shadow: glitch.Vec2{0.0, 0.0},
 	}
 }
 
@@ -418,7 +444,10 @@ func (s TextStyle) Autofit(v bool) TextStyle {
 	s.autoFit = v
 	return s
 }
-
+func (s TextStyle) Shadow(v glitch.Vec2) TextStyle {
+	s.shadow = v
+	return s
+}
 
 
 func (g *Group) Text(str string, rect glitch.Rect, s TextStyle) {

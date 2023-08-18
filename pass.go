@@ -240,6 +240,8 @@ func (r *RenderPass) SetBlendMode(bm BlendMode) {
 func (r *RenderPass) Batch() {
 	r.SortInSoftware()
 
+	// TODO: This isn't an efficient order for fill rate. You should reverse the order (but make an initial batch pass where you draw translucent geometry in the right order)
+	// for l := range r.commands { // Draw front to back
 	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 		for _, c := range r.commands[l].Opaque {
 			r.applyDrawCommand(c)

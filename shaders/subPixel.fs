@@ -52,6 +52,7 @@ void main()
   // Attempt 2: https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/
   // Note: This looks less blurry
   float texelsPerPixel = 100.0; // TODO - Not sure where to get this from
+  /* float texelsPerPixel = 1.0 / 4.0; // (1920.0 / 4.0))/ 1920.0; // TODO: pass in with uniform */
   vec2 textureSize2d = vec2(textureSize(texture1, 0));
   vec2 pixel = TexCoord * textureSize2d.xy;
 
