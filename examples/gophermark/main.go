@@ -106,7 +106,7 @@ func runGame() {
 	atlas, err := glitch.DefaultAtlas()
 	if err != nil { panic(err) }
 
-	text := atlas.Text("hello world")
+	text := atlas.Text("hello world", 1)
 
 	min := time.Duration(0)
 	max := time.Duration(0)

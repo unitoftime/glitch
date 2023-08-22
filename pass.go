@@ -3,7 +3,8 @@ package glitch
 import (
 	"fmt"
 	// "math"
-	"sort"
+	"slices"
+	"cmp"
 
 	"github.com/hashicorp/golang-lru/v2"
 
@@ -44,22 +45,40 @@ func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
 	if sortMode == SoftwareSortNone { return } // Skip if sorting disabled
 
 	if sortMode == SoftwareSortX {
-		sort.Slice(buf, func(i, j int) bool {
-			return buf[i].matrix[i4_3_0] > buf[j].matrix[i4_3_0] // sort by x
+		slices.SortFunc(buf, func(a, b drawCommand) int {
+			return -cmp.Compare(a.matrix[i4_3_0], b.matrix[i4_3_0]) // sort by x
 		})
 	} else if sortMode == SoftwareSortY {
-		sort.Slice(buf, func(i, j int) bool {
-			return buf[i].matrix[i4_3_1] > buf[j].matrix[i4_3_1] // Sort by y
+		slices.SortFunc(buf, func(a, b drawCommand) int {
+			return -cmp.Compare(a.matrix[i4_3_1], b.matrix[i4_3_1]) // sort by y
 		})
 	} else if sortMode == SoftwareSortZ {
-		sort.Slice(buf, func(i, j int) bool {
-			return buf[i].matrix[i4_3_2] > buf[j].matrix[i4_3_2] // Sort by z
+		slices.SortFunc(buf, func(a, b drawCommand) int {
+			return -cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
 		})
 	} else if sortMode == SoftwareSortCommand {
-		sort.Slice(buf, func(i, j int) bool {
-			return buf[i].command > buf[j].command // Sort by command
+		slices.SortFunc(buf, func(a, b drawCommand) int {
+			return -cmp.Compare(a.command, b.command) // sort by command
 		})
 	}
+
+	// if sortMode == SoftwareSortX {
+	// 	sort.Slice(buf, func(i, j int) bool {
+	// 		return buf[i].matrix[i4_3_0] > buf[j].matrix[i4_3_0] // sort by x
+	// 	})
+	// } else if sortMode == SoftwareSortY {
+	// 	sort.Slice(buf, func(i, j int) bool {
+	// 		return buf[i].matrix[i4_3_1] > buf[j].matrix[i4_3_1] // Sort by y
+	// 	})
+	// } else if sortMode == SoftwareSortZ {
+	// 	sort.Slice(buf, func(i, j int) bool {
+	// 		return buf[i].matrix[i4_3_2] > buf[j].matrix[i4_3_2] // Sort by z
+	// 	})
+	// } else if sortMode == SoftwareSortCommand {
+	// 	sort.Slice(buf, func(i, j int) bool {
+	// 		return buf[i].command > buf[j].command // Sort by command
+	// 	})
+	// }
 }
 
 

@@ -182,10 +182,8 @@ func (g *Group) Clear() {
 	// New
 	g.hotId = g.tmpHotId
 	g.tmpHotId = invalidId
-	// Clearing Optimization: https://go.dev/doc/go1.11#performance-compiler
-	for k := range g.dedup {
-		delete(g.dedup, k)
-	}
+
+	clear(g.dedup)
 }
 
 //--------------------------------------------------------------------------------
