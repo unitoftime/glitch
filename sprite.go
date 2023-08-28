@@ -85,7 +85,7 @@ type NinePanelSprite struct {
 	sprites []*Sprite
 	border Rect
 	bounds Rect
-	Mask RGBA // This represents the default color mask to draw with (unless one is passed in via a draw function, Example: *Mask)
+	// Mask RGBA // This represents the default color mask to draw with (unless one is passed in via a draw function, Example: *Mask)
 	Scale float64
 }
 
@@ -131,7 +131,7 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 		sprites: sprites,
 		bounds: fullBounds,
 		border: border,
-		Mask: White,
+		// Mask: White,
 		Scale: 1,
 	}
 }
@@ -142,7 +142,7 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 // }
 
 func (s *NinePanelSprite) RectDraw(pass BatchTarget, bounds Rect) {
-	s.RectDrawColorMask(pass, bounds, RGBA{1,1,1,1})
+	s.RectDrawColorMask(pass, bounds, White)
 }
 
 func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RGBA) {
@@ -184,7 +184,7 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 		// fmt.Println(destRects[i].W(), destRects[i].H())
 		matrix = Mat4Ident
 		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min[0], destRects[i].H()/2 + destRects[i].Min[1], 0)
-		pass.Add(s.sprites[i].mesh, matrix, s.Mask, s.sprites[i].material, false)
+		pass.Add(s.sprites[i].mesh, matrix, mask, s.sprites[i].material, false)
 	}
 }
 
