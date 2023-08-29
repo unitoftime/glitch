@@ -596,18 +596,33 @@ func (c *CameraOrtho) SetOrtho2D(bounds Rect) {
 	c.Projection = Mat4(mgl64.Ortho(0, c.bounds.W(), 0, c.bounds.H(), c.DepthRange[0], c.DepthRange[1]))
 }
 
+// Helpful: https://stackoverflow.com/questions/2346238/opengl-how-do-i-avoid-rounding-errors-when-specifying-uv-co-ordinates
 func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 	c.dirtyViewInv = true
 
 	c.View = Mat4Ident
 	cameraCenter := c.bounds.Center()
+	// c.View.
+	// 	// Translate by x, y of the camera
+	// 	Translate(-x, -y, 0).
+	// 	// Scale around the center of the camera
+	// 	Translate(-cameraCenter[0], -cameraCenter[1], 0).
+	// 	Scale(scaleX, scaleY, 1.0).
+	// 	Translate(cameraCenter[0], cameraCenter[1], 0)
+
+	// Rounding the cameraCenter position helps fix scaling issues where we might have scaled around a non integer position
+	cX := math.Round(cameraCenter[0])
+	cY := math.Round(cameraCenter[1])
 	c.View.
 		// Translate by x, y of the camera
 		Translate(-x, -y, 0).
 		// Scale around the center of the camera
-		Translate(-cameraCenter[0], -cameraCenter[1], 0).
+		Translate(-cX, -cY, 0).
 		Scale(scaleX, scaleY, 1.0).
-		Translate(cameraCenter[0], cameraCenter[1], 0)
+		Translate(cX, cY, 0)
+
+
+
 
 	// // TODO - this is literally only for pixel art
 	// c.ViewSnapped = Mat4Ident
