@@ -134,8 +134,7 @@ type drawCall struct {
 type RenderPass struct {
 	shader *Shader
 	texture *Texture
-	// uniforms map[string]interface{}
-	uniforms map[string]Mat4
+	uniforms map[string]any
 	buffer *BufferPool
 	commands []cmdList
 	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
@@ -180,8 +179,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 	r := &RenderPass{
 		shader: shader,
 		texture: nil,
-		uniforms: make(map[string]Mat4),
-		// uniforms: make(map[string]interface{}),
+		uniforms: make(map[string]any),
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
 		// currentLayer: DefaultLayer,
@@ -377,12 +375,9 @@ func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	r.texture = texture
 }
 
-func (r *RenderPass) SetUniform(name string, value Mat4) {
+func (r *RenderPass) SetUniform(name string, value any) {
 	r.uniforms[name] = value
 }
-// func (r *RenderPass) SetUniform(name string, value interface{}) {
-// 	r.uniforms[name] = value
-// }
 
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation

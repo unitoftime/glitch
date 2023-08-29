@@ -91,6 +91,7 @@ var PixelArtShader = glitch.ShaderConfig{
 		glitch.Attr{"model", glitch.AttrMat4},
 		glitch.Attr{"projection", glitch.AttrMat4},
 		glitch.Attr{"view", glitch.AttrMat4},
+		glitch.Attr{"texelsPerPixel", glitch.AttrFloat},
 	},
 }
 

@@ -1043,11 +1043,12 @@ func TexParameteri(target, pname Enum, param int) {
 // 	c.Call("uniform1f", dst.Value, v)
 // }
 
-// // func Uniform1fv(dst Uniform, src []float32) {
-// // 	array, length := SliceToTypedArray(src)
-// // 	subarray := array.Call("subarray", 0, length)
-// // 	c.Call("uniform1fv", dst.Value, subarray)
-// // }
+func Uniform1fv(dst Uniform, src []float32) {
+	// TODO: invoke
+	array, length := SliceToTypedArray(src)
+	subarray := array.Call("subarray", 0, length)
+	c.Call("uniform1fv", dst.Value, subarray)
+}
 
 // func Uniform1i(dst Uniform, v int) {
 // 	c.Call("uniform1i", dst.Value, v)

@@ -2,9 +2,6 @@ package glitch
 
 import (
 	"fmt"
-
-	// "github.com/go-gl/mathgl/mgl32"
-
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
@@ -187,8 +184,7 @@ func init() {
 	}
 }
 
-func (s *Shader) SetUniform(uniformName string, value Mat4) bool {
-// func (s *Shader) SetUniform(uniformName string, value interface{}) bool {
+func (s *Shader) SetUniform(uniformName string, value any) bool {
 	tmpUniformSetter.shader = s
 	tmpUniformSetter.name = uniformName
 	tmpUniformSetter.value = value
@@ -199,7 +195,7 @@ func (s *Shader) SetUniform(uniformName string, value Mat4) bool {
 type uniformSetter struct {
 	shader *Shader
 	name string
-	value Mat4
+	value any
 	FUNC func()
 }
 
@@ -215,34 +211,34 @@ func (u *uniformSetter) Func() {
 		panic(fmt.Sprintf("Uniform not found! Or uniform location was invalid: %s", uniformName))
 	}
 
-	s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-	s.tmpFloat32Slice = value.writeToFloat32(s.tmpFloat32Slice)
-	gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
+	// s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
+	// s.tmpFloat32Slice = value.writeToFloat32(s.tmpFloat32Slice)
+	// gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
 
-	// switch val := value.(type) {
-	// 	// case float32:
-	// 	// 	sliced := []float32{val}
-	// 	// 	gl.Uniform1fv(uniform.loc, sliced)
-	// 	// case Vec3:
-	// 	// 	vec := val.gl()
-	// 	// 	gl.Uniform3fv(uniform.loc, vec[:])
-	// 	// case Vec4:
-	// 	// 	vec := val.gl()
-	// 	// 	gl.Uniform4fv(uniform.loc, vec[:])
-	// case Mat4:
-	// 	s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-	// 	s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
-	// 	gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
-	// 	// mat := val.gl()
-	// 	// gl.UniformMatrix4fv(uniform.loc, mat[:])
-	// case *Mat4:
-	// 	s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-	// 	s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
-	// 	gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
-	// 	// mat := val.gl()
-	// 	// gl.UniformMatrix4fv(uniform.loc, mat[:])
-	// default:
-	// 	// fmt.Println("ERROR", uniform)
-	// 	panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
-	// }
+	switch val := value.(type) {
+	case float32:
+		sliced := []float32{val}
+		gl.Uniform1fv(uniform.loc, sliced)
+		// case Vec3:
+		// 	vec := val.gl()
+		// 	gl.Uniform3fv(uniform.loc, vec[:])
+		// case Vec4:
+		// 	vec := val.gl()
+		// 	gl.Uniform4fv(uniform.loc, vec[:])
+	case Mat4:
+		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
+		s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
+		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
+		// mat := val.gl()
+		// gl.UniformMatrix4fv(uniform.loc, mat[:])
+	case *Mat4:
+		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
+		s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
+		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
+		// mat := val.gl()
+		// gl.UniformMatrix4fv(uniform.loc, mat[:])
+	default:
+		// fmt.Println("ERROR", uniform)
+		panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
+	}
 }
