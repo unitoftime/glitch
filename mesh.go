@@ -204,6 +204,20 @@ func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	target.Add(b.mesh, matrix, color, b.material, b.Translucent)
 }
 
+func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
+	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
+}
+// TODO: Generalize this rectdraw logic. Copy paseted from Sprite
+func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
+	// pass.SetTexture(0, s.texture)
+	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+
+	batchBounds := b.Bounds().Rect()
+	matrix := Mat4Ident
+	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	target.Add(b.mesh, matrix, mask, b.material, false)
+}
+
 func (b *Batch) Bounds() Box {
 	return b.mesh.Bounds()
 }
