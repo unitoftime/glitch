@@ -8,12 +8,23 @@ import (
 )
 
 type stateTracker struct {
+	// FBO
 	fbo gl.Framebuffer
 	fboBounds Rect
 	fboBinder func()
 
+	// Depth Test
 	depthTest bool
 	depthFunc gl.Enum
+	depthFuncBinder func()
+
+	// Texture
+	texture *Texture
+	textureBinder func()
+
+	// BlendFunc
+	blendSrc, blendDst gl.Enum
+	blendFuncBinder func()
 }
 
 var state *stateTracker
@@ -21,11 +32,32 @@ func init() {
 	state = &stateTracker{
 	}
 
+	state.depthFuncBinder = func() {
+		gl.Enable(gl.DEPTH_TEST)
+		gl.DepthFunc(state.depthFunc)
+	}
+
 	state.fboBinder = func() {
 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
 		gl.Viewport(0, 0, int(state.fboBounds.W()), int(state.fboBounds.H()))
 		gl.BindFramebuffer(gl.FRAMEBUFFER, state.fbo)
 	}
+
+	state.textureBinder = func() {
+		gl.ActiveTexture(gl.TEXTURE0);
+		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
+		gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
+	}
+
+	state.blendFuncBinder = func() {
+		gl.BlendFunc(state.blendSrc, state.blendDst)
+	}
+}
+
+func (s *stateTracker) bindTexture(texture *Texture) {
+	// TODO: Check if changed
+	s.texture = texture
+	mainthread.Call(state.textureBinder)
 }
 
 func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
@@ -45,8 +77,11 @@ func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
 	s.depthTest = true
 	s.depthFunc = depthFunc
 
-	mainthread.Call(func() {
-		gl.Enable(gl.DEPTH_TEST)
-		gl.DepthFunc(depthFunc)
-	})
+	mainthread.Call(s.depthFuncBinder)
+}
+
+func (s *stateTracker) setBlendFunc(src, dst gl.Enum) {
+	s.blendSrc = src
+	s.blendDst = dst
+	mainthread.Call(s.blendFuncBinder)
 }

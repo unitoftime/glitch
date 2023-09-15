@@ -23,9 +23,7 @@ func (b *BufferState) Bind() {
 	if b.material != nil {
 		b.material.Bind()
 	}
-	mainthread.Call(func() {
-		gl.BlendFunc(b.blend.src, b.blend.dst)
-	})
+	state.setBlendFunc(b.blend.src, b.blend.dst)
 }
 
 

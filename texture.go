@@ -174,13 +174,7 @@ func (t *Texture) Bounds() Rect {
 
 func (t *Texture) Bind(position int) {
 	// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
-	mainthread.Call(t.bind)
-}
-
-func (t *Texture) bind() {
-	gl.ActiveTexture(gl.TEXTURE0);
-	// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
-	gl.BindTexture(gl.TEXTURE_2D, t.texture)
+	state.bindTexture(t)
 }
 
 func (t *Texture) delete() {

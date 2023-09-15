@@ -571,8 +571,11 @@ func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
 	//================================================================================
 }
 
+// Not thread safe
+var lastState BufferState
+// Not thread safe
 func openglDraw(shader *Shader, draws []drawCall) {
-	lastState := BufferState{}
+	lastState = BufferState{}
 	for i := range draws {
 		buffer := draws[i].buffer
 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
