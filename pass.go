@@ -375,6 +375,10 @@ func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	r.texture = texture
 }
 
+// TODO: Maybe do this to prevent allocations from the `any` cast
+// func SetUniform[T any](r *RenderPass, name, val T) {
+// }
+
 func (r *RenderPass) SetUniform(name string, value any) {
 	r.uniforms[name] = value
 }

@@ -18,7 +18,7 @@ type BufferState struct{
 	material Material
 	blend BlendMode
 }
-func (b *BufferState) Bind() {
+func (b BufferState) Bind() {
 	// TODO: combine these into the same mainthread call?
 	if b.material != nil {
 		b.material.Bind()
