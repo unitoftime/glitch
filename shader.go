@@ -21,6 +21,9 @@ type Shader struct {
 	tmpBuffers []any
 	tmpFloat32Slice []float32
 	mainthreadBind func()
+
+	uniformLoc gl.Uniform
+	setUniformMat4 func()
 }
 
 type Uniform struct {
@@ -60,6 +63,10 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 
 	shader.mainthreadBind = func() {
 		gl.UseProgram(shader.program)
+	}
+
+	shader.setUniformMat4 = func() {
+		gl.UniformMatrix4fv(shader.uniformLoc, shader.tmpFloat32Slice)
 	}
 
 	// Loop through and set all matrices to identity matrices
@@ -175,6 +182,21 @@ func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 // 	})
 // 	return ret
 // }
+
+func (s *Shader) SetUniformMat4(uniformName string, value *Mat4) bool {
+	uniform, ok := s.uniforms[uniformName]
+	if !ok /* || !uniform.loc.Valid() */ {
+		// TODO - panic or just return false? I feel like its bad if you think you're setting a uniform that doesn't exist.
+		panic(fmt.Sprintf("Uniform not found! Or uniform location was invalid: %s", uniformName))
+	}
+
+	s.uniformLoc = uniform.loc
+	s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
+	s.tmpFloat32Slice = value.writeToFloat32(s.tmpFloat32Slice)
+
+	mainthread.Call(s.setUniformMat4)
+	return true
+}
 
 // Note: This was me playing around with a way to reduce the amount of memory allocations
 var tmpUniformSetter uniformSetter

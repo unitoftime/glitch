@@ -588,7 +588,7 @@ func openglDraw(shader *Shader, draws []drawCall) {
 			lastState.Bind()
 		}
 
-		ok := shader.SetUniform("model", draws[i].model)
+		ok := shader.SetUniformMat4("model", &(draws[i].model))
 		if !ok {
 			panic("Error setting model uniform - all shaders must have 'model' uniform")
 		}
