@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"hash/crc64"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/graph"
@@ -86,9 +87,9 @@ type Group struct {
 	tmpHotId eid
 
 	idCounter eid
-	elements map[string]eid // Maps labels to elements
+	elements map[uint64]eid // Maps labels to elements
 	// elementsRev map[eid]string
-	dedup map[string]uint32
+	dedup map[uint64]uint32
 
 	// TODO: Element Stylesheet map?
 }
@@ -110,9 +111,9 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 		textBuffer: make([]*glitch.Text, 0),
 		graphBuffer: make([]*graph.Graph, 0),
 
-		elements: make(map[string]eid),
+		elements: make(map[uint64]eid),
 		// elementsRev: make(map[eid]string),
-		dedup: make(map[string]uint32),
+		dedup: make(map[uint64]uint32),
 		idCounter: invalidId + 1,
 	}
 }
@@ -306,22 +307,33 @@ func (g *Group) debugRect(rect glitch.Rect) {
 // 	return l
 // }
 
+var hashTable = crc64.MakeTable(crc64.ISO)
+func crc(label string) uint64 {
+	return crc64.Checksum([]byte(label), hashTable)
+}
+func bumpCrc(crc uint64, bump []byte) uint64 {
+	return crc64.Update(crc, hashTable, bump)
+}
+
 func (g *Group) getId(label string) eid {
-	bump, alreadyFetched := g.dedup[label]
+	crc := crc(label)
+
+	bump, alreadyFetched := g.dedup[crc]
 	if alreadyFetched {
-		g.dedup[label] = bump + 1
-		label = fmt.Sprintf("%s##%d", label, bump)
+		g.dedup[crc] = bump + 1
+		crc = bumpCrc(crc, []byte{uint8(bump)})
+		// label = fmt.Sprintf("%s##%d", label, bump)
 		// fmt.Printf("duplicate label, using bump: %s\n", label)
 		// panic(fmt.Sprintf("duplicate label found: %s", label))
 	} else {
-		g.dedup[label] = 0
+		g.dedup[crc] = 0
 	}
 
-	id, ok := g.elements[label]
+	id, ok := g.elements[crc]
 	if !ok {
 		id = g.idCounter
 		g.idCounter++
-		g.elements[label] = id
+		g.elements[crc] = id
 		// g.elementsRev[id] = label
 	}
 
