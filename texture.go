@@ -47,7 +47,6 @@ type Texture struct {
 	texture gl.Texture
 	width, height int
 	smooth bool
-	mainthreadBind func()
 }
 
 func toRgba(img image.Image) *image.RGBA {

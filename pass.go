@@ -111,6 +111,7 @@ func (c *cmdList) Clear() {
 type meshBuffer struct {
 	buffer *VertexBuffer
 	generation uint32
+	// used bool // used to indicate if the meshBuffer was used this frame
 }
 func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	if len(mesh.indices) % 3 != 0 {
@@ -124,6 +125,12 @@ func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	}
 	return meshBuf
 }
+// func (m meshBuffer) Delete() {
+// 	if m.buffer == nil { return }
+
+// 	m.buffer.delete()
+// 	m.buffer = nil
+// }
 
 type drawCall struct {
 	buffer *VertexBuffer
@@ -169,7 +176,7 @@ const (
 
 func NewRenderPass(shader *Shader) *RenderPass {
 	defaultBatchSize := 1024 * 8 // 10000 // TODO - arbitrary
-	defaultCacheSize := 1024 // TODO - arbitrary
+	defaultCacheSize := 20 // TODO - arbitrary
 	meshCache, err := lru.New[*Mesh, meshBuffer](defaultCacheSize)
 	if err != nil {
 		panic(err) // Note: Only panics if defaultCacheSize is negative
@@ -238,6 +245,10 @@ func (r *RenderPass) Clear() {
 		r.commands[l].Clear()
 	}
 
+	// TODO: I'm not 100% sure if this is needed, but we may need to clear the vbo pointers that exist in draw calls
+	for i := range r.drawCalls {
+		r.drawCalls[i] = drawCall{}
+	}
 	r.drawCalls = r.drawCalls[:0]
 }
 
@@ -286,6 +297,7 @@ func (r *RenderPass) applyDrawCommand(c drawCommand) {
 			// fmt.Println("MeshCache: Mesh has never been cached!")
 			// Create and add the meshBuffer to the cache
 			meshBuf = newMeshBuffer(r.shader, c.mesh)
+			// meshBuf.used = true
 			r.meshCache.Add(c.mesh, meshBuf)
 
 			success := meshBuf.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
@@ -314,6 +326,7 @@ func (r *RenderPass) applyDrawCommand(c drawCommand) {
 
 				// Update the cache
 				meshBuf.generation = c.mesh.generation
+				// meshBuf.used = true
 				r.meshCache.Add(c.mesh, meshBuf)
 			}
 		}
@@ -359,6 +372,31 @@ func (r *RenderPass) Draw(target Target) {
 	}
 
 	openglDraw(r.shader, r.drawCalls)
+
+	// if r.meshCache.Len() > 0 {
+	// 	fmt.Println("Preclean:", r.meshCache.Len())
+	// }
+	// keys := r.meshCache.Keys()
+	// for _, key := range keys {
+	// 	val, ok := r.meshCache.Get(key)
+	// 	if !ok { continue }
+	// 	if val.used {
+	// 		val.used = false // Reset state
+	// 		r.meshCache.Add(key, val)
+	// 		continue // mesh buffer was used
+	// 	}
+	// 	println("REMOVE")
+	// 	r.meshCache.Remove(key) // Else remove the key b/c it wasn't used
+	// 	val.Delete()
+	// 	// oldestKey, oldestVal, ok := r.meshCache.GetOldest()
+	// 	// if !ok { break } // No more entries
+	// 	// if oldestVal.used { break } // mesh buffer was used this frame
+	// 	// println("REMOVE")
+	// 	// r.meshCache.Remove(oldestKey) // Else remove the key b/c it wasn't used
+	// }
+	// if r.meshCache.Len() > 0 {
+	// 	fmt.Println("PostClean:", r.meshCache.Len())
+	// }
 }
 // func (r *RenderPass) enableDepthTest() {
 // 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl

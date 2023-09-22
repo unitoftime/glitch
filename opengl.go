@@ -38,7 +38,7 @@ type VertexBuffer struct {
 	buffers []ISubBuffer
 	indices []uint32
 	bufferedToGPU bool
-	mainthreadDraw func()
+	deleted bool
 }
 
 // TODO - rename
@@ -138,11 +138,6 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		buffers: make([]ISubBuffer, len(format)),
 		indices: make([]uint32, 3 * numTris), // 3 indices per triangle
 	}
-
-	b.mainthreadDraw = func() {
-		mainthreadDrawVertexBuffer(b)
-	}
-
 
 	b.stride = 0
 	offset := 0
@@ -257,6 +252,9 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 }
 
 func (v *VertexBuffer) delete() {
+	if v.deleted { return }
+	v.deleted = true
+
 	mainthread.CallNonBlock(func() {
 		gl.DeleteVertexArrays(v.vao)
 		gl.DeleteBuffers(v.vbo)
@@ -354,29 +352,10 @@ func (v *VertexBuffer) Draw() {
 		return
 	}
 
-	mainthread.Call(v.mainthreadDraw)
-
-	// mainthreadCall(func() {
-	// 	gl.BindVertexArray(v.vao)
-
-	// 	if !v.bufferedToGPU {
-	// 		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
-	// 		offset := 0
-	// 		for i := range v.buffers {
-	// 			gl.BufferSubData(gl.ARRAY_BUFFER, offset, v.buffers[i].Buffer())
-	// 			offset += v.buffers[i].Offset()
-	// 		}
-
-	// 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-	// 		gl.BufferSubData(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
-
-	// 		v.bufferedToGPU = true
-	// 		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
-	// 	} else {
-	// 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-	// 		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
-	// 	}
-	// })
+	// TODO: Cache this closure func
+	mainthread.Call(func() {
+		mainthreadDrawVertexBuffer(v)
+	})
 }
 
 // BufferPool
