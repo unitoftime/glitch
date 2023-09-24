@@ -248,7 +248,9 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 			go w.mouseButtonCallback(w, MouseButton(button), Press, 0)
 		}
 
-		me.Call("preventDefault")
+		// Note: I commented out the preventDefault here, because if you are running your game inside an iframe, when the user clicks the canvas, I guess this preventDefault will cause the focus to never get set on the canvas. And that will cause keyboard events to not register properly. You might rethink how this works in the future though.
+		// me.Call("preventDefault")
+
 		return nil
 	}))
 	document.Call("addEventListener", "mouseup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
