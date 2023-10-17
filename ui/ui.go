@@ -118,6 +118,10 @@ func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atla
 	}
 }
 
+func (g *Group) GetTextHeight() float64 {
+	return g.atlas.UngappedLineHeight()
+}
+
 // TODO: cache based on label for more precision?
 // TODO: I used to pass the style scale into the text here, but it never quite lined up right. so I just scale later now
 func (g *Group) getText(str string, style TextStyle) *glitch.Text {
@@ -348,6 +352,17 @@ func removeDedup(label string) string {
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	ss := SpriteStyle{sprite, color}
 	g.drawSprite(rect, ss)
+}
+
+func (g *Group) HoverPanel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) bool {
+	ret := false
+	if mouseCheck(rect, g.mousePos) {
+		ret = true
+	}
+
+	ss := SpriteStyle{sprite, color}
+	g.drawSprite(rect, ss)
+	return ret
 }
 
 type SpriteStyle struct {
