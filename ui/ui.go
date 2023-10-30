@@ -278,6 +278,7 @@ func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) {
 
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
+	return
 }
 
 func (g *Group) drawSprite(rect glitch.Rect, style SpriteStyle) {
@@ -352,6 +353,14 @@ func removeDedup(label string) string {
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	ss := SpriteStyle{sprite, color}
 	g.drawSprite(rect, ss)
+}
+
+func (g *Group) Hovered(rect glitch.Rect) bool {
+	ret := false
+	if mouseCheck(rect, g.mousePos) {
+		ret = true
+	}
+	return ret
 }
 
 func (g *Group) HoverPanel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) bool {
