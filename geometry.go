@@ -21,6 +21,7 @@ func (g *GeomDraw) SetColor(color RGBA) {
 	g.color = color
 }
 
+
 func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 	positions := []glVec3{
 		glVec3{float32(rect.Min[0]), float32(rect.Max[1]), 0},

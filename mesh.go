@@ -14,6 +14,14 @@ func NewBatch() *Batch {
 	}
 }
 
+func (b *Batch) Buffer(pass *RenderPass) *Batch {
+	return &Batch{
+		mesh: b.mesh.Buffer(pass, b.material, b.Translucent),
+		material: b.material,
+		Translucent: b.Translucent,
+	}
+}
+
 // TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
 // TODO: should I maintain a translucent and non-translucent batch mesh?
 func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, translucent bool) {
@@ -232,6 +240,9 @@ type Mesh struct {
 
 	origin Vec3
 	generation uint32
+
+	// TODO: migrate towards
+	buffer *VertexBuffer
 }
 
 func NewMesh() *Mesh {
@@ -244,6 +255,12 @@ func NewMesh() *Mesh {
 	}
 }
 
+func (m *Mesh) Buffer(pass *RenderPass, material Material, translucent bool) *Mesh {
+	return &Mesh{
+		buffer: pass.BufferMesh(m, material, translucent),
+	}
+}
+
 // TODO - clear function? Should append be more like draw?
 func (m *Mesh) Clear() {
 	m.positions = m.positions[:0]
@@ -253,8 +270,9 @@ func (m *Mesh) Clear() {
 	m.indices = m.indices[:0]
 	m.bounds = Box{}
 	m.origin = Vec3{}
-
 	m.generation++
+
+	m.buffer = nil // TODO: manually delete?
 }
 
 func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {

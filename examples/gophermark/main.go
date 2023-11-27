@@ -1,18 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"embed"
+	"flag"
+	"fmt"
 	"image"
 	"image/draw"
 	_ "image/png"
-	"time"
+	"log"
 	"math/rand"
+	"os"
 	"runtime"
 	"runtime/pprof"
-	"flag"
-	"os"
+	"time"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
@@ -70,8 +70,8 @@ func main() {
 }
 
 func runGame() {
-	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
-		Vsync: true,
+	win, err := glitch.NewWindow(1920, 1080, "Glitch - Gophermark", glitch.WindowConfig{
+		Vsync: false,
 	})
 	if err != nil { panic(err) }
 
@@ -84,16 +84,10 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
-	// texture := glitch.NewTexture(160, 200, manImage.Pix)
 	texture := glitch.NewTexture(manImage, false)
-	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
+	manSprite := glitch.NewSprite(texture, texture.Bounds())
 
-	// mesh := glitch.NewQuadMesh()
-	x := 0.0
-	y := 0.0
-	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
-
-	length := 20000
+	length := 80000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -106,7 +100,7 @@ func runGame() {
 	atlas, err := glitch.DefaultAtlas()
 	if err != nil { panic(err) }
 
-	text := atlas.Text("hello world", 1)
+	text := atlas.Text("", 1)
 
 	min := time.Duration(0)
 	max := time.Duration(0)
@@ -118,7 +112,7 @@ func runGame() {
 
 	mat := glitch.Mat4Ident
 	for !win.Closed() {
-		if win.Pressed(glitch.KeyBackspace) {
+		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
 		}
 		start = time.Now()
@@ -142,17 +136,6 @@ func runGame() {
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
-		for i := range man {
-			mat = glitch.Mat4Ident
-			// mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
-			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
-
-			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
-			// pass.SetLayer(man[i].layer)
-			manSprite.DrawColorMask(pass, mat, man[i].color)
-			// manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
-		}
-
 		mat = glitch.Mat4Ident
 		mat.Translate(0, 0, 0)
 		pass.SetLayer(0)
@@ -167,6 +150,12 @@ func runGame() {
 			max = 0
 		}
 		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
+
+		for i := range man {
+			mat = glitch.Mat4Ident
+			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
+			manSprite.DrawColorMask(pass, mat, man[i].color)
+		}
 
 		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 

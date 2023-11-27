@@ -4,16 +4,17 @@ import (
 	// "os"
 	// "image/png"
 	"fmt"
-	"math"
 	"image"
 	"image/color"
 	"image/draw"
+	"math"
 
 	"golang.org/x/image/font"
 
 	"golang.org/x/image/math/fixed"
 
 	"unicode"
+
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/font/gofont/goregular"
 )
@@ -22,6 +23,7 @@ import (
 // TODO: And this: https://blog.mapbox.com/drawing-text-with-signed-distance-fields-in-mapbox-gl-b0933af6f817
 // TODO: And this: https://www.youtube.com/watch?v=Y1kuhXtVAc4
 
+// TODO: Ideally this wouldn't return an error
 func DefaultAtlas() (*Atlas, error) {
 	runes := make([]rune, unicode.MaxASCII - 32)
 	for i := range runes {
