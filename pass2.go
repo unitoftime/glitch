@@ -28,9 +28,6 @@ type Target interface {
 type GeometryFiller interface {
 	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
 
-	// NumVerts() int // Returns the number of verts to reserve
-	// Indices() []uint32 // Retursn the indices to reserve
-
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
 	Fill(*RenderPass, glMat4, RGBA, BufferState) *VertexBuffer
 }
@@ -80,11 +77,13 @@ type cmdList struct{
 	Translucent []drawCommand
 }
 
-func (c *cmdList) Add(translucent bool, cmd drawCommand) {
+func (c *cmdList) Add(translucent bool, cmd drawCommand) *drawCommand {
 	if translucent {
 		c.Translucent = append(c.Translucent, cmd)
+		return &c.Translucent[len(c.Translucent)-1]
 	} else {
 		c.Opaque = append(c.Opaque, cmd)
+		return &c.Opaque[len(c.Opaque)-1]
 	}
 }
 

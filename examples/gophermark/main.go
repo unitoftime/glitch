@@ -80,14 +80,14 @@ func runGame() {
 
 	pass := glitch.NewRenderPass(shader)
 
-	manImage, err := loadImage("gopher.png")
-	if err != nil {
-		panic(err)
-	}
-	texture := glitch.NewTexture(manImage, false)
-	manSprite := glitch.NewSprite(texture, texture.Bounds())
+	// manImage, err := loadImage("gopher.png")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// texture := glitch.NewTexture(manImage, false)
+	// manSprite := glitch.NewSprite(texture, texture.Bounds())
 
-	length := 80000
+	length := 200000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -110,6 +110,8 @@ func runGame() {
 	start := time.Now()
 	var dt time.Duration
 
+	geom := glitch.NewGeomDraw()
+	geomRect := glitch.R(-16, -16, 16, 16)
 	mat := glitch.Mat4Ident
 	for !win.Closed() {
 		if win.Pressed(glitch.KeyEscape) {
@@ -149,11 +151,15 @@ func runGame() {
 		text.DrawColorMask(pass, glitch.Mat4Ident, glitch.White)
 
 		pass.SetLayer(1)
+		geom.Clear()
 		for i := range man {
 			mat = glitch.Mat4Ident
 			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
-			manSprite.DrawColorMask(pass, mat, man[i].color)
+			// manSprite.DrawColorMask(pass, mat, man[i].color)
+			// geom.DrawRect(pass, geomRect, mat, man[i].color)
+			geom.DrawRect2(geomRect, mat, man[i].color)
 		}
+		geom.Draw(pass, glitch.Mat4Ident)
 
 		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 

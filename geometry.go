@@ -5,15 +5,78 @@ import (
 	"math"
 )
 
+type RectFill struct {
+	bounds Rect
+}
+
+func (s Rect) GetBuffer() *VertexBuffer {
+	return nil
+}
+// Note: For caching purposes
+var geomQuadIndices = []uint32{
+	0, 1, 3,
+	1, 2, 3,
+}
+func (s Rect) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
+	numVerts := 4
+	vertexBuffer := pass.buffer.Reserve(state, geomQuadIndices, numVerts, pass.shader.tmpBuffers)
+	bounds := s
+
+	destBuffs := pass.shader.tmpBuffers
+	for bufIdx, attr := range pass.shader.attrFmt {
+		// TODO - I'm not sure of a good way to break up this switch statement
+		switch attr.Swizzle {
+		case PositionXYZ:
+			bounds := bounds.Box()
+			min := bounds.Min.gl()
+			max := bounds.Max.gl()
+			if mat != glMat4Ident {
+				min = mat.Apply(min)
+				max = mat.Apply(max)
+			}
+
+			// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
+			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+			posBuf[0] = glVec3{float32(max[0]), float32(max[1]), float32(min[2])}
+			posBuf[1] = glVec3{float32(max[0]), float32(min[1]), float32(min[2])}
+			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
+			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
+
+		case ColorRGBA:
+			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
+			color := mask.gl()
+			colBuf[0] = color
+			colBuf[1] = color
+			colBuf[2] = color
+			colBuf[3] = color
+		case TexCoordXY:
+			uvBounds := bounds
+			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+			texBuf[0] = glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])}
+			texBuf[1] = glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])}
+			texBuf[2] = glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])}
+			texBuf[3] = glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])}
+		default:
+			panic("Unsupported")
+		}
+	}
+
+	return vertexBuffer
+}
+
 type GeomDraw struct {
 	color RGBA
 	Divisions int
+	mesh *Mesh
+	defaultMaterial Material
 }
 
 func NewGeomDraw() *GeomDraw {
 	return &GeomDraw{
 		color: RGBA{1, 1, 1, 1},
 		Divisions: 100,
+		mesh: NewMesh(),
+		defaultMaterial: DefaultMaterial(),
 	}
 }
 
@@ -21,6 +84,88 @@ func (g *GeomDraw) SetColor(color RGBA) {
 	g.color = color
 }
 
+func (g *GeomDraw) DrawRect(target BatchTarget, rect Rect, mat Mat4, mask RGBA) {
+	pass, ok := target.(*RenderPass)
+	if ok {
+		// TODO: Doesn't handle depth calculation
+		cmdPtr := pass.commands[pass.currentLayer].Add(false, drawCommand{
+			// rect,
+			matrix: mat,
+			mask: mask,
+			state: BufferState{g.defaultMaterial, pass.blendMode},
+		})
+		cmdPtr.filler = rect
+	} else {
+		target.Add(rect, mat, mask, DefaultMaterial(), false)
+	}
+}
+
+func (g *GeomDraw) Clear() {
+	g.mesh.Clear()
+}
+func (g *GeomDraw) Draw(target BatchTarget, mat Mat4) {
+	// pass, ok := target.(*RenderPass)
+	// if ok {
+	// 	bufferedMesh := g.mesh.Buffer(pass, DefaultMaterial(), false)
+	// 	g.mesh.buffer = bufferedMesh.buffer
+	// }
+	// TODO: mask? bufferstate, transparent
+	target.Add(g.mesh, mat, White, BufferState{DefaultMaterial(), BlendModeNormal}, false)
+}
+
+func (g *GeomDraw) DrawRect2(rect Rect, mat Mat4, mask RGBA) {
+	g.SetColor(mask)
+	g.Rectangle2(g.mesh, rect, mat.gl())
+}
+
+
+func (g *GeomDraw) Rectangle2(mesh *Mesh, rect Rect, mat glMat4) {
+	currentElement := uint32(len(mesh.positions))
+	for i := range geomQuadIndices {
+		mesh.indices = append(mesh.indices, currentElement + geomQuadIndices[i])
+	}
+
+	{
+		bounds := rect.Box()
+		min := bounds.Min.gl()
+		max := bounds.Max.gl()
+		if mat != glMat4Ident {
+			min = mat.Apply(min)
+			max = mat.Apply(max)
+		}
+
+		// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
+		mesh.positions = append(mesh.positions,
+			glVec3{float32(max[0]), float32(max[1]), float32(min[2])},
+			glVec3{float32(max[0]), float32(min[1]), float32(min[2])},
+			glVec3{float32(min[0]), float32(min[1]), float32(min[2])},
+			glVec3{float32(min[0]), float32(max[1]), float32(min[2])},
+		)
+	}
+
+	{
+		color := g.color.gl()
+		mesh.colors = append(mesh.colors,
+			color,
+			color,
+			color,
+			color,
+		)
+	}
+
+
+	{
+		uvBounds := rect // TODO: idk
+		mesh.texCoords = append(mesh.texCoords,
+			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
+			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
+			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
+			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
+			)
+	}
+
+	mesh.generation++ // TODO: needed anymore idk
+}
 
 func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 	positions := []glVec3{
@@ -319,3 +464,4 @@ func EllipsePoints(size Vec2, rotation float64, divisions int) []Vec3 {
 
 	return points
 }
+
