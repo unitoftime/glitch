@@ -136,7 +136,10 @@ func runGame() {
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
 
+		mat = glitch.Mat4Ident
+		mat.Translate(0, 0, 0)
 		pass.SetLayer(0)
+
 		if counter == 0 {
 			text.Clear()
 			text.Set(fmt.Sprintf("%2.2f (%2.2f, %2.2f) ms",
@@ -146,9 +149,8 @@ func runGame() {
 			min = 100000000000
 			max = 0
 		}
-		text.DrawColorMask(pass, glitch.Mat4Ident, glitch.White)
+		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
 
-		pass.SetLayer(1)
 		for i := range man {
 			mat = glitch.Mat4Ident
 			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
