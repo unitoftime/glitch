@@ -119,53 +119,68 @@ func (g *GeomDraw) SetColor(color RGBA) {
 // }
 
 
-// func (g *GeomDraw) Rectangle2(mesh *Mesh, rect Rect, mat glMat4) {
-// 	currentElement := uint32(len(mesh.positions))
-// 	for i := range geomQuadIndices {
-// 		mesh.indices = append(mesh.indices, currentElement + geomQuadIndices[i])
-// 	}
+// if width == 0, then fill the rect
+func (g *GeomDraw) Rectangle2(mesh *Mesh, rect Rect, width float64) {
+	if width <= 0 {
+		g.FillRect2(mesh, rect, glMat4Ident)
+	}
 
-// 	{
-// 		bounds := rect.Box()
-// 		min := bounds.Min.gl()
-// 		max := bounds.Max.gl()
-// 		if mat != glMat4Ident {
-// 			min = mat.Apply(min)
-// 			max = mat.Apply(max)
-// 		}
+	t := rect.CutTop(width)
+	b := rect.CutBottom(width)
+	l := rect.CutLeft(width)
+	r := rect.CutRight(width)
 
-// 		// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
-// 		mesh.positions = append(mesh.positions,
-// 			glVec3{float32(max[0]), float32(max[1]), float32(min[2])},
-// 			glVec3{float32(max[0]), float32(min[1]), float32(min[2])},
-// 			glVec3{float32(min[0]), float32(min[1]), float32(min[2])},
-// 			glVec3{float32(min[0]), float32(max[1]), float32(min[2])},
-// 		)
-// 	}
+	g.FillRect2(mesh, t, glMat4Ident)
+	g.FillRect2(mesh, b, glMat4Ident)
+	g.FillRect2(mesh, l, glMat4Ident)
+	g.FillRect2(mesh, r, glMat4Ident)
+}
 
-// 	{
-// 		color := g.color.gl()
-// 		mesh.colors = append(mesh.colors,
-// 			color,
-// 			color,
-// 			color,
-// 			color,
-// 		)
-// 	}
+func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
+	currentElement := uint32(len(mesh.positions))
+	for i := range geomQuadIndices {
+		mesh.indices = append(mesh.indices, currentElement + geomQuadIndices[i])
+	}
+
+	{
+		bounds := rect.Box()
+		min := bounds.Min.gl()
+		max := bounds.Max.gl()
+		if mat != glMat4Ident {
+			min = mat.Apply(min)
+			max = mat.Apply(max)
+		}
+
+		// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
+		mesh.positions = append(mesh.positions,
+			glVec3{float32(max[0]), float32(max[1]), float32(min[2])},
+			glVec3{float32(max[0]), float32(min[1]), float32(min[2])},
+			glVec3{float32(min[0]), float32(min[1]), float32(min[2])},
+			glVec3{float32(min[0]), float32(max[1]), float32(min[2])},
+		)
+	}
+
+	{
+		color := g.color.gl()
+		mesh.colors = append(mesh.colors,
+			color,
+			color,
+			color,
+			color,
+		)
+	}
 
 
-// 	{
-// 		uvBounds := rect // TODO: idk
-// 		mesh.texCoords = append(mesh.texCoords,
-// 			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
-// 			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
-// 			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
-// 			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
-// 			)
-// 	}
-
-// 	mesh.generation++ // TODO: needed anymore idk
-// }
+	{
+		uvBounds := rect // TODO: idk
+		mesh.texCoords = append(mesh.texCoords,
+			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
+			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
+			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
+			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
+			)
+	}
+}
 
 func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 	positions := []glVec3{
