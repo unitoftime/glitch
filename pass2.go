@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	"fmt"
+
 	// "math"
 	"cmp"
 	"slices"
@@ -60,24 +60,6 @@ func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
 	// 		return -cmp.Compare(a.command, b.command) // sort by command
 	// 	})
 	// }
-
-	// if sortMode == SoftwareSortX {
-	// 	sort.Slice(buf, func(i, j int) bool {
-	// 		return buf[i].matrix[i4_3_0] > buf[j].matrix[i4_3_0] // sort by x
-	// 	})
-	// } else if sortMode == SoftwareSortY {
-	// 	sort.Slice(buf, func(i, j int) bool {
-	// 		return buf[i].matrix[i4_3_1] > buf[j].matrix[i4_3_1] // Sort by y
-	// 	})
-	// } else if sortMode == SoftwareSortZ {
-	// 	sort.Slice(buf, func(i, j int) bool {
-	// 		return buf[i].matrix[i4_3_2] > buf[j].matrix[i4_3_2] // Sort by z
-	// 	})
-	// } else if sortMode == SoftwareSortCommand {
-	// 	sort.Slice(buf, func(i, j int) bool {
-	// 		return buf[i].command > buf[j].command // Sort by command
-	// 	})
-	// }
 }
 
 
@@ -109,8 +91,6 @@ func (c *cmdList) Clear() {
 
 type meshBuffer struct {
 	buffer *VertexBuffer
-	generation uint32
-	// used bool // used to indicate if the meshBuffer was used this frame
 }
 func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	if len(mesh.indices) % 3 != 0 {
@@ -120,16 +100,9 @@ func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	numTris := len(mesh.indices) / 3
 	meshBuf := meshBuffer{
 		buffer: NewVertexBuffer(shader, numVerts, numTris),
-		generation: mesh.generation,
 	}
 	return meshBuf
 }
-// func (m meshBuffer) Delete() {
-// 	if m.buffer == nil { return }
-
-// 	m.buffer.delete()
-// 	m.buffer = nil
-// }
 
 type drawCall struct {
 	buffer *VertexBuffer
@@ -150,14 +123,7 @@ type RenderPass struct {
 	DepthTest bool // If set true, enable hardware depth testing. This changes how software sorting works. currently If you change this mid-pass you might get weird behavior.
 	SoftwareSort SoftwareSortMode
 
-	minimumCacheSize int // The minimum number of verts a mesh must have before we cache it
-
 	drawCalls []drawCall
-
-	// Stats
-	stats RenderStats
-
-	// mainthreadDepthTest func()
 }
 
 type SoftwareSortMode uint8
@@ -181,54 +147,14 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		uniforms: make(map[string]any),
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
-		// currentLayer: DefaultLayer,
-		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
-		minimumCacheSize: 128,
 		drawCalls: make([]drawCall, 0),
 		blendMode: BlendModeNormal,
 	}
-	// r.mainthreadDepthTest = func() {
-	// 	r.enableDepthTest()
-	// }
 	return r
 }
 
-type RenderStats struct {
-	MeshCacheSize int
-	DrawCalls int
-	UncachedDraws int
-	CachedDraws int
-	BatchToBuffers int
-	CachedVerts int
-	CachedIndices int
-	UncachedVerts int
-	UncachedIndices int
-}
-
-func (s RenderStats) String() string {
-	return fmt.Sprintf(`CachedMeshes: %d | DrawCalls: %d
-Cached: %d | Uncached: %d | BatchToBuffers: %d
-CachedVerts: %d | CachedIndices: %d
-UncachedVerts: %d | UncachedIndices: %d
-NumVertexBuffers: %d
-`, s.MeshCacheSize, s.DrawCalls,
-		s.CachedDraws, s.UncachedDraws, s.BatchToBuffers,
-		s.CachedVerts, s.CachedIndices,
-		s.UncachedVerts, s.UncachedIndices,
-		numVertexBuffers,
-	)
-}
-
-func (r *RenderPass) Stats() RenderStats {
-	r.stats.DrawCalls = len(r.drawCalls)
-
-	return r.stats
-}
 
 func (r *RenderPass) Clear() {
-	// Clear stats
-	r.stats = RenderStats{}
-
 	// Clear stuff
 	r.buffer.Clear()
 	for l := range r.commands {
@@ -312,41 +238,7 @@ func (r *RenderPass) Draw(target Target) {
 	}
 
 	openglDraw(r.shader, r.drawCalls)
-
-	// if r.meshCache.Len() > 0 {
-	// 	fmt.Println("Preclean:", r.meshCache.Len())
-	// }
-	// keys := r.meshCache.Keys()
-	// for _, key := range keys {
-	// 	val, ok := r.meshCache.Get(key)
-	// 	if !ok { continue }
-	// 	if val.used {
-	// 		val.used = false // Reset state
-	// 		r.meshCache.Add(key, val)
-	// 		continue // mesh buffer was used
-	// 	}
-	// 	println("REMOVE")
-	// 	r.meshCache.Remove(key) // Else remove the key b/c it wasn't used
-	// 	val.Delete()
-	// 	// oldestKey, oldestVal, ok := r.meshCache.GetOldest()
-	// 	// if !ok { break } // No more entries
-	// 	// if oldestVal.used { break } // mesh buffer was used this frame
-	// 	// println("REMOVE")
-	// 	// r.meshCache.Remove(oldestKey) // Else remove the key b/c it wasn't used
-	// }
-	// if r.meshCache.Len() > 0 {
-	// 	fmt.Println("PostClean:", r.meshCache.Len())
-	// }
 }
-// func (r *RenderPass) enableDepthTest() {
-// 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
-// 	if r.DepthTest {
-// 		gl.Enable(gl.DEPTH_TEST)
-// 		gl.DepthFunc(gl.LEQUAL)
-// 	} else {
-// 		gl.Disable(gl.DEPTH_TEST)
-// 	}
-// }
 
 func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	// TODO - use correct texture slot
@@ -597,9 +489,3 @@ func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bo
 
 	return buffer
 }
-
-//--------------------------------------------------------------------------------
-// TODO: Maybe?
-// func (pass *RenderPass) Rect(r Rect, width float64) {
-// 	,
-// }

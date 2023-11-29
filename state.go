@@ -1,4 +1,5 @@
 package glitch
+
 // TODO - maybe push this up into internal/gl?
 // TODO - this might lock us up into a single window? That doesn't seem like too bad of a requirement though
 
@@ -70,6 +71,8 @@ func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	mainthread.Call(s.fboBinder)
 }
 
+// TODO: Enable disable
+// 		gl.Enable(gl.DEPTH_TEST)
 func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
 	if s.depthTest && s.depthFunc == depthFunc {
 		return // Skip if already enabled and depth functions match

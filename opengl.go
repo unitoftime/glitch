@@ -3,8 +3,8 @@ package glitch
 import (
 	"fmt"
 	"reflect"
-	"unsafe"
 	"runtime"
+	"unsafe"
 
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
@@ -26,21 +26,6 @@ func (b BufferState) Bind() {
 	state.setBlendFunc(b.blend.src, b.blend.dst)
 }
 
-
-type VertexBuffer struct {
-	vao, vbo, ebo gl.Buffer
-
-	materialSet bool
-	state BufferState
-	format VertexFormat
-	stride int
-
-	buffers []ISubBuffer
-	indices []uint32
-	bufferedToGPU bool
-	deleted bool
-}
-
 // TODO - rename
 type ISubBuffer interface {
 	Clear()
@@ -49,7 +34,6 @@ type ISubBuffer interface {
 	Offset() int
 	Len() int
 	Cap() int
-	// BufferSubData(int)
 }
 
 type SupportedSubBuffers interface {
@@ -58,8 +42,6 @@ type SupportedSubBuffers interface {
 
 type SubBuffer[T SupportedSubBuffers] struct {
 	attr Attr
-	// name string
-	// attrSize AttribSize
 	maxVerts int
 	offset int
 	vertexCount int
@@ -128,10 +110,21 @@ func ReserveSubBuffer[T SupportedSubBuffers](b *SubBuffer[T], count int) []T {
 	return b.buffer[start:end]
 }
 
-var numVertexBuffers int
+type VertexBuffer struct {
+	vao, vbo, ebo gl.Buffer
+
+	materialSet bool
+	state BufferState
+	format VertexFormat
+	stride int
+
+	buffers []ISubBuffer
+	indices []uint32
+	bufferedToGPU bool
+	deleted bool
+}
+
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
-	numVertexBuffers++
-	// fmt.Println("NewVertexBuffer:", shader, numVerts, numTris)
 	format := shader.attrFmt // TODO - cleanup this variable
 	b := &VertexBuffer{
 		format: format,
@@ -142,51 +135,43 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	b.stride = 0
 	offset := 0
 	for i := range format {
-		b.stride += (int(format[i].Size()) * sof)
+		b.stride += (format[i].Size() * sof)
 
 		if format[i].Type == AttrVec4 {
 			b.buffers[i] = &SubBuffer[glVec4]{
 				attr: format[i].Attr,
-				// name: format[i].Name,
-				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]glVec4, numVerts),
-				sliceScale: 4 * sof, //int(format[i].Size()) * sof,
+				sliceScale: format[i].Size() * sof,
 			}
 		} else if format[i].Type == AttrVec3 {
 			b.buffers[i] = &SubBuffer[glVec3]{
 				attr: format[i].Attr,
-				// name: format[i].Name,
-				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]glVec3, numVerts),
-				sliceScale: 3 * sof, //int(format[i].Size()) * sof,
+				sliceScale: format[i].Size() * sof,
 			}
 		} else if format[i].Type == AttrVec2 {
 			b.buffers[i] = &SubBuffer[glVec2]{
 				attr: format[i].Attr,
-				// name: format[i].Name,
-				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]glVec2, numVerts),
-				sliceScale: 2 * sof, //int(format[i].Size()) * sof,
+				sliceScale: format[i].Size() * sof,
 			}
 		} else if format[i].Type == AttrFloat {
 			b.buffers[i] = &SubBuffer[float32]{
 				attr: format[i].Attr,
-				// name: format[i].Name,
-				// attrSize: format[i].Size,
 				maxVerts: numVerts,
 				vertexCount: 0,
 				offset: offset,
 				buffer: make([]float32, numVerts),
-				sliceScale: 1 * sof, //int(format[i].Size()) * sof,
+				sliceScale: format[i].Size() * sof,
 			}
 		} else {
 			panic(fmt.Sprintf("Unknown format: %v", format[i]))
@@ -195,9 +180,6 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		offset += sof * int(format[i].Size()) * numVerts
 	}
 
-	// vertices := make([]float32, 8 * sof * numVerts)
-	// fakeVertices := make([]float32, 4 * numVerts * b.stride) // 4 = sof
-
 	mainthread.Call(func() {
 		b.vao = gl.GenVertexArrays()
 		b.vbo = gl.GenBuffers()
@@ -205,14 +187,11 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 		gl.BindVertexArray(b.vao)
 
-		componentSize := 4 // float32
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		// gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, fakeVertices, gl.DYNAMIC_DRAW)
-		gl.BufferData(gl.ARRAY_BUFFER, componentSize * numVerts * b.stride, nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, sof * numVerts * b.stride, nil, gl.DYNAMIC_DRAW)
 
 		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-		// gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize * len(b.indices), b.indices, gl.DYNAMIC_DRAW)
 		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize * len(b.indices), nil, gl.DYNAMIC_DRAW)
 
 		for i := range b.buffers {
