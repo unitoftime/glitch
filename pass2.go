@@ -264,7 +264,12 @@ func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 // func SetUniform[T any](r *RenderPass, name, val T) {
 // }
 
-func (r *RenderPass) SetUniform(name string, value any) {
+func (r *RenderPass) SetCamera2D(camera *CameraOrtho) {
+	r.setUniform("projection", camera.Projection)
+	r.setUniform("view", camera.View)
+}
+
+func (r *RenderPass) setUniform(name string, value any) {
 	r.uniforms[name] = value
 }
 

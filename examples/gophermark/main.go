@@ -166,8 +166,9 @@ func runGame() {
 
 		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
 
-		pass.SetUniform("projection", camera.Projection)
-		pass.SetUniform("view", camera.View)
+		pass.SetCamera2D(camera)
+		// pass.SetUniform("projection", camera.Projection)
+		// pass.SetUniform("view", camera.View)
 		pass.Draw(win)
 
 		win.Update()
