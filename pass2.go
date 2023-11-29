@@ -28,8 +28,8 @@ type Target interface {
 type GeometryFiller interface {
 	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
 
-	NumVerts() int // Returns the number of verts to reserve
-	Indices() []uint32 // Retursn the indices to reserve
+	// NumVerts() int // Returns the number of verts to reserve
+	// Indices() []uint32 // Retursn the indices to reserve
 
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
 	Fill(*RenderPass, glMat4, RGBA, BufferState) *VertexBuffer

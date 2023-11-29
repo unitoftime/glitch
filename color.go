@@ -1,8 +1,8 @@
 package glitch
 
 import (
-	"math"
 	"image/color"
+	"math"
 )
 
 var (
@@ -58,4 +58,8 @@ func (c1 RGBA) Mult(c2 RGBA) RGBA {
 		c1.B * c2.B,
 		c1.A * c2.A,
 	}
+}
+
+func (c RGBA) gl() glVec4 {
+	return glVec4{float32(c.R), float32(c.G), float32(c.B), float32(c.A)}
 }

@@ -325,6 +325,9 @@ func (r Rect) ToMesh() *Mesh {
 }
 
 // Returns a box that holds this rect. The Z axis is 0
+func (r Rect) Box() Box {
+	return r.ToBox()
+}
 func (r Rect) ToBox() Box {
 	return Box{
 		Min: Vec3{r.Min[0], r.Min[1], 0},
