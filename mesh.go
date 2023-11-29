@@ -33,8 +33,6 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, trans
 		}
 	}
 
-	b.mesh.generation++
-
 	// If anything translucent is added to the batch, then we will consider the entire thing translucent
 	b.Translucent = b.Translucent || translucent
 
@@ -239,7 +237,6 @@ type Mesh struct {
 	bounds Box
 
 	origin Vec3
-	generation uint32
 
 	// TODO: migrate towards
 	buffer *VertexBuffer
@@ -270,7 +267,6 @@ func (m *Mesh) Clear() {
 	m.indices = m.indices[:0]
 	m.bounds = Box{}
 	m.origin = Vec3{}
-	m.generation++
 
 	m.buffer = nil // TODO: manually delete?
 }
@@ -301,7 +297,6 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.texCoords = append(m.texCoords, m2.texCoords...)
 
 	m.bounds = m.bounds.Union(m2.bounds)
-	m.generation++
 }
 
 // Changes the origin point of the mesh by translating all the geometry to the new origin. This shouldn't be called frequently
@@ -322,7 +317,6 @@ func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
 
 	// TODO - recalculate mesh bounds/box
 
-	newMesh.generation++
 	return newMesh
 }
 
@@ -332,8 +326,6 @@ func (m *Mesh) SetColor(col RGBA) {
 	for i := range m.colors {
 		m.colors[i] = v4Color
 	}
-
-	m.generation++
 }
 
 // TODO - Maybe this is faster in some scenarios?
@@ -384,7 +376,6 @@ func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect, color RGBA) {
 	m.texCoords = append(m.texCoords, texCoords...)
 
 	m.bounds = m.bounds.Union(bounds.ToBox())
-	m.generation++
 }
 
 // --------------------------------------------------------------------------------

@@ -16,7 +16,8 @@ import (
 // 3. Things that change frequently: include in draw command
 
 type BatchTarget interface {
-	Add(GeometryFiller, Mat4, RGBA, Material, bool)
+	// Add(GeometryFiller, Mat4, RGBA, Material, bool)
+	Add(*Mesh, Mat4, RGBA, Material, bool)
 }
 
 type Target interface {
@@ -270,7 +271,7 @@ func (r *RenderPass) SetUniform(name string, value any) {
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
 // Option 3: I can batch together these sprites into a single thing that is then rendered
-func (r *RenderPass) Add(filler GeometryFiller, mat Mat4, mask RGBA, material Material, translucent bool) {
+func (r *RenderPass) Add(filler *Mesh, mat Mat4, mask RGBA, material Material, translucent bool) {
 	if mask.A != 0 && mask.A != 1 {
 		translucent = true
 	}
@@ -471,7 +472,6 @@ func openglDraw(shader *Shader, draws []drawCall) {
 
 //--------------------------------------------------------------------------------
 func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bool) *VertexBuffer {
-
 	bufferState := BufferState{material, pass.blendMode}
 
 	if len(mesh.indices) % 3 != 0 {
@@ -494,6 +494,20 @@ func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bo
 	batchToBuffers(pass.shader, mesh, glMat4Ident, White)
 
 	// pass.copyToBuffer(cmd, pass.shader.tmpBuffers)
+
+	// TODO: Could use copy funcs if you want to restrict buffer types
+	// for bufIdx, attr := range pass.shader.attrFmt {
+	// 	switch attr.Swizzle {
+	// 	case PositionXYZ:
+	// 		buffer.buffers[bufIdx].SetData(mesh.positions)
+	// 	case ColorRGBA:
+	// 		buffer.buffers[bufIdx].SetData(mesh.colors)
+	// 	case TexCoordXY:
+	// 		buffer.buffers[bufIdx].SetData(mesh.texCoords)
+	// 	default:
+	// 		panic("unsupported")
+	// 	}
+	// }
 
 	return buffer
 }

@@ -34,6 +34,7 @@ type ISubBuffer interface {
 	Offset() int
 	Len() int
 	Cap() int
+	SetData(any)
 }
 
 type SupportedSubBuffers interface {
@@ -101,7 +102,11 @@ func (b *SubBuffer[T]) Offset() int {
 	return sof * int(b.attr.Size()) * b.maxVerts
 }
 
-func ReserveSubBuffer[T SupportedSubBuffers](b *SubBuffer[T], count int) []T {
+func (b *SubBuffer[T]) SetData(data any) {
+	b.buffer = data.([]T)
+}
+
+func (b *SubBuffer[T]) Reserve(count int) []T {
 	start := len(b.buffer)
 	b.buffer = b.buffer[:len(b.buffer)+count]
 	end := len(b.buffer)
@@ -285,16 +290,16 @@ func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int
 		switch subBuffer := v.buffers[i].(type) {
 		case *SubBuffer[float32]:
 			d := dests[i].(*[]float32)
-			*d = ReserveSubBuffer[float32](subBuffer, numVerts)
+			*d = subBuffer.Reserve(numVerts)
 		case *SubBuffer[glVec2]:
 			d := dests[i].(*[]glVec2)
-			*d = ReserveSubBuffer[glVec2](subBuffer, numVerts)
+			*d = subBuffer.Reserve(numVerts)
 		case *SubBuffer[glVec3]:
 			d := dests[i].(*[]glVec3)
-			*d = ReserveSubBuffer[glVec3](subBuffer, numVerts)
+			*d = subBuffer.Reserve(numVerts)
 		case *SubBuffer[glVec4]:
 			d := dests[i].(*[]glVec4)
-			*d = ReserveSubBuffer[glVec4](subBuffer, numVerts)
+			*d = subBuffer.Reserve(numVerts)
 		default:
 			panic("Unknown!")
 		}

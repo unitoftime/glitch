@@ -49,7 +49,7 @@ func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
 	s.DrawColorMask(target, matrix, White)
 }
 func (s *Sprite) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(s, matrix, mask, s.material, s.Translucent)
+	target.Add(s.mesh, matrix, mask, s.material, s.Translucent)
 }
 
 func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
@@ -65,59 +65,59 @@ func (s *Sprite) Bounds() Rect {
 	return s.bounds
 }
 
-// TODO: This stuff was somehow just about the same speed as the mesh fill function. Not sure if its worth it unless I can make it way faster
-func (s *Sprite) GetBuffer() *VertexBuffer {
-	return nil
-}
-// Note: For caching purposes
-var spriteQuadIndices = []uint32{
-	0, 1, 3,
-	1, 2, 3,
-}
-func (s *Sprite) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
-	numVerts := 4
-	vertexBuffer := pass.buffer.Reserve(state, spriteQuadIndices, numVerts, pass.shader.tmpBuffers)
+// // TODO: This stuff was somehow just about the same speed as the mesh fill function. Not sure if its worth it unless I can make it way faster
+// func (s *Sprite) GetBuffer() *VertexBuffer {
+// 	return nil
+// }
+// // Note: For caching purposes
+// var spriteQuadIndices = []uint32{
+// 	0, 1, 3,
+// 	1, 2, 3,
+// }
+// func (s *Sprite) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
+// 	numVerts := 4
+// 	vertexBuffer := pass.buffer.Reserve(state, spriteQuadIndices, numVerts, pass.shader.tmpBuffers)
 
-	destBuffs := pass.shader.tmpBuffers
-	for bufIdx, attr := range pass.shader.attrFmt {
-		// TODO - I'm not sure of a good way to break up this switch statement
-		switch attr.Swizzle {
-		case PositionXYZ:
-			bounds := s.bounds.Box()
-			min := bounds.Min.gl()
-			max := bounds.Max.gl()
-			if mat != glMat4Ident {
-				min = mat.Apply(min)
-				max = mat.Apply(max)
-			}
+// 	destBuffs := pass.shader.tmpBuffers
+// 	for bufIdx, attr := range pass.shader.attrFmt {
+// 		// TODO - I'm not sure of a good way to break up this switch statement
+// 		switch attr.Swizzle {
+// 		case PositionXYZ:
+// 			bounds := s.bounds.Box()
+// 			min := bounds.Min.gl()
+// 			max := bounds.Max.gl()
+// 			if mat != glMat4Ident {
+// 				min = mat.Apply(min)
+// 				max = mat.Apply(max)
+// 			}
 
-			// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
-			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-			posBuf[0] = glVec3{float32(max[0]), float32(max[1]), float32(min[2])}
-			posBuf[1] = glVec3{float32(max[0]), float32(min[1]), float32(min[2])}
-			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
-			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
+// 			// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
+// 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+// 			posBuf[0] = glVec3{float32(max[0]), float32(max[1]), float32(min[2])}
+// 			posBuf[1] = glVec3{float32(max[0]), float32(min[1]), float32(min[2])}
+// 			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
+// 			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
 
-		case ColorRGBA:
-			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
-			color := mask.gl()
-			colBuf[0] = color
-			colBuf[1] = color
-			colBuf[2] = color
-			colBuf[3] = color
-		case TexCoordXY:
-			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			texBuf[0] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Min[1])}
-			texBuf[1] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Max[1])}
-			texBuf[2] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Max[1])}
-			texBuf[3] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Min[1])}
-		default:
-			panic("Unsupported")
-		}
-	}
+// 		case ColorRGBA:
+// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
+// 			color := mask.gl()
+// 			colBuf[0] = color
+// 			colBuf[1] = color
+// 			colBuf[2] = color
+// 			colBuf[3] = color
+// 		case TexCoordXY:
+// 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+// 			texBuf[0] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Min[1])}
+// 			texBuf[1] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Max[1])}
+// 			texBuf[2] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Max[1])}
+// 			texBuf[3] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Min[1])}
+// 		default:
+// 			panic("Unsupported")
+// 		}
+// 	}
 
-	return vertexBuffer
-}
+// 	return vertexBuffer
+// }
 
 //--------------------------------------------------------------------------------
 
