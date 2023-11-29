@@ -1,7 +1,7 @@
 package glitch
 
 import (
-	"fmt"
+
 	// "math"
 	"cmp"
 	"slices"
@@ -124,24 +124,13 @@ func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
 	}
 	return meshBuf
 }
-// func (m meshBuffer) Delete() {
-// 	if m.buffer == nil { return }
-
-// 	m.buffer.delete()
-// 	m.buffer = nil
-// }
-
-type drawCall struct {
-	buffer *VertexBuffer
-	model Mat4
-}
 
 // This is essentially a generalized 2D render pass
 type RenderPass struct {
 	shader *Shader
 	texture *Texture
 	uniforms map[string]any
-	buffer *BufferPool
+	buffer *VertexBuffer
 	commands []cmdList
 	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
 
@@ -149,15 +138,6 @@ type RenderPass struct {
 
 	DepthTest bool // If set true, enable hardware depth testing. This changes how software sorting works. currently If you change this mid-pass you might get weird behavior.
 	SoftwareSort SoftwareSortMode
-
-	minimumCacheSize int // The minimum number of verts a mesh must have before we cache it
-
-	drawCalls []drawCall
-
-	// Stats
-	stats RenderStats
-
-	// mainthreadDepthTest func()
 }
 
 type SoftwareSortMode uint8
@@ -172,74 +152,27 @@ const (
 // const DefaultLayer uint8 = 127/2
 // const DefaultLayer int8 = 0
 
+const defaultBatchSize = 1024 * 32 // 10000 // TODO: arbitrary. fix after removal of bufferpool
 func NewRenderPass(shader *Shader) *RenderPass {
-	defaultBatchSize := 1024 * 8 // 10000 // TODO - arbitrary
-
 	r := &RenderPass{
 		shader: shader,
 		texture: nil,
 		uniforms: make(map[string]any),
-		buffer: NewBufferPool(shader, defaultBatchSize),
+		buffer: NewVertexBuffer(shader, defaultBatchSize, defaultBatchSize), // TODO: cleanup this func so I can more easily specify. Maybe lean on the fact that this will probably only be used for 2d quads/tris
 		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
 		// currentLayer: DefaultLayer,
-		// minimumCacheSize: 4*1024, // TODO - 4k is arbitrary
-		minimumCacheSize: 128,
-		drawCalls: make([]drawCall, 0),
 		blendMode: BlendModeNormal,
 	}
-	// r.mainthreadDepthTest = func() {
-	// 	r.enableDepthTest()
-	// }
 	return r
 }
 
-type RenderStats struct {
-	MeshCacheSize int
-	DrawCalls int
-	UncachedDraws int
-	CachedDraws int
-	BatchToBuffers int
-	CachedVerts int
-	CachedIndices int
-	UncachedVerts int
-	UncachedIndices int
-}
-
-func (s RenderStats) String() string {
-	return fmt.Sprintf(`CachedMeshes: %d | DrawCalls: %d
-Cached: %d | Uncached: %d | BatchToBuffers: %d
-CachedVerts: %d | CachedIndices: %d
-UncachedVerts: %d | UncachedIndices: %d
-NumVertexBuffers: %d
-`, s.MeshCacheSize, s.DrawCalls,
-		s.CachedDraws, s.UncachedDraws, s.BatchToBuffers,
-		s.CachedVerts, s.CachedIndices,
-		s.UncachedVerts, s.UncachedIndices,
-		numVertexBuffers,
-	)
-}
-
-func (r *RenderPass) Stats() RenderStats {
-	r.stats.DrawCalls = len(r.drawCalls)
-
-	return r.stats
-}
 
 func (r *RenderPass) Clear() {
-	// Clear stats
-	r.stats = RenderStats{}
-
 	// Clear stuff
 	r.buffer.Clear()
 	for l := range r.commands {
 		r.commands[l].Clear()
 	}
-
-	// TODO: I'm not 100% sure if this is needed, but we may need to clear the vbo pointers that exist in draw calls
-	for i := range r.drawCalls {
-		r.drawCalls[i] = drawCall{}
-	}
-	r.drawCalls = r.drawCalls[:0]
 }
 
 // TODO - I think I could use a linked list of layers and just use an int here
@@ -256,8 +189,6 @@ func (r *RenderPass) SetBlendMode(bm BlendMode) {
 }
 
 func (r *RenderPass) Batch() {
-	r.SortInSoftware()
-
 	// TODO: This isn't an efficient order for fill rate. You should reverse the order (but make an initial batch pass where you draw translucent geometry in the right order)
 	// for l := range r.commands { // Draw front to back
 	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
@@ -270,38 +201,53 @@ func (r *RenderPass) Batch() {
 	}
 }
 
+func (r *RenderPass) openglDrawVertexBuffer(buffer *VertexBuffer, mat *Mat4) {
+	ok := r.shader.SetUniformMat4("model", mat)
+	if !ok {
+		panic("Error setting model uniform - all shaders must have 'model' uniform")
+	}
+
+	buffer.Draw()
+}
+
 func (r *RenderPass) applyDrawCommand(c drawCommand) {
 	if c.mesh == nil { return } // Skip nil meshes
 
-	// TODO: if command is a buffered mesh then just draw that
 	if c.mesh.buffer != nil {
 		// Because we are about to use a custom meshBuffer, we need to make sure the next time we do an autobatch we use a new VertexBuffer, So we call this function to foward the autobuffer to the next clean buffer
-		r.buffer.gotoNextClean()
-		r.drawCalls = append(r.drawCalls, drawCall{c.mesh.buffer, c.matrix})
+
+		r.openglDrawVertexBuffer(c.mesh.buffer, &c.matrix)
+
 		return
 	}
 
 	// Else we are auto-batching the mesh because the mesh is small
 	numVerts := len(c.mesh.positions)
-	vertexBuffer := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
-	r.batchToBuffers(c, r.shader.tmpBuffers)
+	success := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
+	if success {
+		// If we successfully reserved, then just batch the verts
+		r.batchToBuffers(c, r.shader.tmpBuffers)
+	} else {
+		// If we couldn't reserve (new material or not enough room). then draw the old one and make a new vert buffer
+		r.openglDrawVertexBuffer(r.buffer, &Mat4Ident)
 
-	// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
-	if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
-		// Append the draw call to our list. Because we've already pre-applied the model matrix, we use Mat4Ident here
-		r.drawCalls = append(r.drawCalls, drawCall{vertexBuffer, Mat4Ident})
+		r.buffer.Clear()
+		success := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
+		if !success {
+			panic("Failed to reserve data - todo decrease this to log")
+		}
+		r.batchToBuffers(c, r.shader.tmpBuffers)
 	}
 }
 
 // TODO - Mat?
 func (r *RenderPass) Draw(target Target) {
-	r.Batch()
+	r.SortInSoftware()
 
 	// Bind render target
 	target.Bind()
 
-	// mainthread.Call(r.mainthreadDepthTest)
-	state.enableDepthTest(gl.LEQUAL)// TODO - rehook for depthtest flags
+	state.enableDepthTest(gl.LEQUAL)// TODO - rehook for depthtest flags so that ppl can set depth test they want (or disable completely)
 
 	r.shader.Bind()
 	for k,v := range r.uniforms {
@@ -311,42 +257,9 @@ func (r *RenderPass) Draw(target Target) {
 		}
 	}
 
-	openglDraw(r.shader, r.drawCalls)
-
-	// if r.meshCache.Len() > 0 {
-	// 	fmt.Println("Preclean:", r.meshCache.Len())
-	// }
-	// keys := r.meshCache.Keys()
-	// for _, key := range keys {
-	// 	val, ok := r.meshCache.Get(key)
-	// 	if !ok { continue }
-	// 	if val.used {
-	// 		val.used = false // Reset state
-	// 		r.meshCache.Add(key, val)
-	// 		continue // mesh buffer was used
-	// 	}
-	// 	println("REMOVE")
-	// 	r.meshCache.Remove(key) // Else remove the key b/c it wasn't used
-	// 	val.Delete()
-	// 	// oldestKey, oldestVal, ok := r.meshCache.GetOldest()
-	// 	// if !ok { break } // No more entries
-	// 	// if oldestVal.used { break } // mesh buffer was used this frame
-	// 	// println("REMOVE")
-	// 	// r.meshCache.Remove(oldestKey) // Else remove the key b/c it wasn't used
-	// }
-	// if r.meshCache.Len() > 0 {
-	// 	fmt.Println("PostClean:", r.meshCache.Len())
-	// }
+	r.Batch()
+	r.openglDrawVertexBuffer(r.buffer, &Mat4Ident)
 }
-// func (r *RenderPass) enableDepthTest() {
-// 	// 	//https://gamedev.stackexchange.com/questions/134809/how-do-i-sort-with-both-depth-and-y-axis-in-opengl
-// 	if r.DepthTest {
-// 		gl.Enable(gl.DEPTH_TEST)
-// 		gl.DepthFunc(gl.LEQUAL)
-// 	} else {
-// 		gl.Disable(gl.DEPTH_TEST)
-// 	}
-// }
 
 func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 	// TODO - use correct texture slot
@@ -552,27 +465,27 @@ func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
 	//================================================================================
 }
 
-// Not thread safe
-var lastState BufferState
-// Not thread safe
-func openglDraw(shader *Shader, draws []drawCall) {
-	lastState = BufferState{}
-	for i := range draws {
-		buffer := draws[i].buffer
-		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
-		if lastState != buffer.state {
-			lastState = buffer.state
-			lastState.Bind()
-		}
+// // Not thread safe
+// var lastState BufferState
+// // Not thread safe
+// func openglDraw(shader *Shader, draws []drawCall) {
+// 	lastState = BufferState{}
+// 	for i := range draws {
+// 		buffer := draws[i].buffer
+// 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
+// 		if lastState != buffer.state {
+// 			lastState = buffer.state
+// 			lastState.Bind()
+// 		}
 
-		ok := shader.SetUniformMat4("model", &(draws[i].model))
-		if !ok {
-			panic("Error setting model uniform - all shaders must have 'model' uniform")
-		}
+// 		ok := shader.SetUniformMat4("model", &(draws[i].model))
+// 		if !ok {
+// 			panic("Error setting model uniform - all shaders must have 'model' uniform")
+// 		}
 
-		buffer.Draw()
-	}
-}
+// 		buffer.Draw()
+// 	}
+// }
 
 //--------------------------------------------------------------------------------
 func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bool) *VertexBuffer {
@@ -597,9 +510,3 @@ func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bo
 
 	return buffer
 }
-
-//--------------------------------------------------------------------------------
-// TODO: Maybe?
-// func (pass *RenderPass) Rect(r Rect, width float64) {
-// 	,
-// }
