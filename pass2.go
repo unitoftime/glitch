@@ -16,12 +16,23 @@ import (
 // 3. Things that change frequently: include in draw command
 
 type BatchTarget interface {
-	Add(*Mesh, Mat4, RGBA, Material, bool)
+	Add(GeometryFiller, Mat4, RGBA, Material, bool)
 }
 
 type Target interface {
 	// TODO - Should this be differentiated from being a source Vs a target binding. For example, I'm using this now to bind the target that we draw to. But If I want to have another function on frambuffers to use them as image texture inputs, what would that API be called?
 	Bind()
+}
+
+// TODO: I kindof want to implement one or the other
+type GeometryFiller interface {
+	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
+
+	NumVerts() int // Returns the number of verts to reserve
+	Indices() []uint32 // Retursn the indices to reserve
+
+	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
+	Fill(*RenderPass, glMat4, RGBA, BufferState) *VertexBuffer
 }
 
 // https://realtimecollisiondetection.net/blog/?p=86
@@ -34,7 +45,8 @@ type Target interface {
 type drawCommand struct {
 	// command uint64
 	// fillFunc func(VertexFormat, []interface{})
-	mesh *Mesh
+	// mesh *Mesh
+	filler GeometryFiller
 	matrix Mat4
 	mask RGBA
 	state BufferState
@@ -197,20 +209,23 @@ func (r *RenderPass) Batch() {
 }
 
 func (r *RenderPass) applyDrawCommand(c drawCommand) {
-	if c.mesh == nil { return } // Skip nil meshes
+	if c.filler == nil { return } // Skip nil meshes
 
 	// TODO: if command is a buffered mesh then just draw that
-	if c.mesh.buffer != nil {
+	if c.filler.GetBuffer() != nil {
 		// Because we are about to use a custom meshBuffer, we need to make sure the next time we do an autobatch we use a new VertexBuffer, So we call this function to foward the autobuffer to the next clean buffer
 		r.buffer.gotoNextClean()
-		r.drawCalls = append(r.drawCalls, drawCall{c.mesh.buffer, c.matrix})
+		r.drawCalls = append(r.drawCalls, drawCall{c.filler.GetBuffer(), c.matrix})
 		return
 	}
 
 	// Else we are auto-batching the mesh because the mesh is small
-	numVerts := len(c.mesh.positions)
-	vertexBuffer := r.buffer.Reserve(c.state, c.mesh.indices, numVerts, r.shader.tmpBuffers)
-	r.batchToBuffers(c, r.shader.tmpBuffers)
+	vertexBuffer := c.filler.Fill(r, c.matrix.gl(), c.mask, c.state)
+
+	// numVerts := c.filler.NumVerts()
+	// indices := c.filler.Indices()
+	// vertexBuffer := r.buffer.Reserve(c.state, indices, numVerts, r.shader.tmpBuffers)
+	// r.batchToBuffers(c, r.shader.tmpBuffers)
 
 	// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
 	if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
@@ -256,7 +271,7 @@ func (r *RenderPass) SetUniform(name string, value any) {
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
 // Option 3: I can batch together these sprites into a single thing that is then rendered
-func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material, translucent bool) {
+func (r *RenderPass) Add(filler GeometryFiller, mat Mat4, mask RGBA, material Material, translucent bool) {
 	if mask.A != 0 && mask.A != 1 {
 		translucent = true
 	}
@@ -277,11 +292,11 @@ func (r *RenderPass) Add(mesh *Mesh, mat Mat4, mask RGBA, material Material, tra
 		// fmt.Println("Depth: ", mat[i4_3_2])
 
 		r.commands[r.currentLayer].Add(translucent, drawCommand{
-			mesh, mat, mask, BufferState{material, r.blendMode},
+			filler, mat, mask, BufferState{material, r.blendMode},
 		})
 	} else {
 		r.commands[r.currentLayer].Add(translucent, drawCommand{
-			mesh, mat, mask, BufferState{material, r.blendMode},
+			filler, mat, mask, BufferState{material, r.blendMode},
 		})
 	}
 }
@@ -306,143 +321,132 @@ func (r *RenderPass) SortInSoftware() {
 	}
 }
 
-// This is like batchToBuffer but doesn't pre-apply the model matrix of the mesh
-func (r *RenderPass) copyToBuffer(c drawCommand, destBuffs []interface{}) {
-	// For now I'm just going to modify the drawCommand to use Mat4Ident and then pass to batchToBuffers
-	c.matrix = Mat4Ident
-	r.batchToBuffers(c, destBuffs)
-}
+// func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
+// 	mat32 := c.matrix.gl()
 
-func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
-	// if c.fillFunc != nil {
-	// 	c.fillFunc(r.shader.attrFmt, destBuffs)
-	// 	return
-	// }
-	mat32 := c.matrix.gl()
+// 	// Append all mesh buffers to shader buffers
+// 	for bufIdx, attr := range r.shader.attrFmt {
+// 		// TODO - I'm not sure of a good way to break up this switch statement
+// 		switch attr.Swizzle {
+// 			// Positions
+// 		case PositionXY:
+// 			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+// 			if c.matrix == Mat4Ident {
+// 				// If matrix is identity, don't transform anything
+// 				for i := range c.mesh.positions {
+// 					posBuf[i] = *(*glVec2)(c.mesh.positions[i][:2])
+// 				}
+// 			} else {
+// 				for i := range c.mesh.positions {
+// 					vec := mat32.Apply(c.mesh.positions[i])
+// 					posBuf[i] = *(*glVec2)(vec[:2])
+// 				}
+// 			}
 
-	// Append all mesh buffers to shader buffers
-	for bufIdx, attr := range r.shader.attrFmt {
-		// TODO - I'm not sure of a good way to break up this switch statement
-		switch attr.Swizzle {
-			// Positions
-		case PositionXY:
-			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			if c.matrix == Mat4Ident {
-				// If matrix is identity, don't transform anything
-				for i := range c.mesh.positions {
-					posBuf[i] = *(*glVec2)(c.mesh.positions[i][:2])
-				}
-			} else {
-				for i := range c.mesh.positions {
-					vec := mat32.Apply(c.mesh.positions[i])
-					posBuf[i] = *(*glVec2)(vec[:2])
-				}
-			}
+// 		case PositionXYZ:
+// 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+// 			if c.matrix == Mat4Ident {
+// 				// If matrix is identity, don't transform anything
+// 				for i := range c.mesh.positions {
+// 					posBuf[i] = c.mesh.positions[i]
+// 				}
+// 			} else {
+// 				for i := range c.mesh.positions {
+// 					vec := mat32.Apply(c.mesh.positions[i])
+// 					posBuf[i] = vec
+// 				}
+// 			}
 
-		case PositionXYZ:
-			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-			if c.matrix == Mat4Ident {
-				// If matrix is identity, don't transform anything
-				for i := range c.mesh.positions {
-					posBuf[i] = c.mesh.positions[i]
-				}
-			} else {
-				for i := range c.mesh.positions {
-					vec := mat32.Apply(c.mesh.positions[i])
-					posBuf[i] = vec
-				}
-			}
+// 			// Normals
+// 			// TODO - Renormalize if batching
+// 			// case NormalXY:
+// 			// 	normBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+// 			// 	for i := range c.mesh.normals {
+// 			// 		vec := c.mesh.normals[i]
+// 			// 		normBuf[i] = *(*Vec2)(vec[:2])
+// 			// 	}
 
-			// Normals
-			// TODO - Renormalize if batching
-			// case NormalXY:
-			// 	normBuf := *(destBuffs[bufIdx]).(*[]Vec2)
-			// 	for i := range c.mesh.normals {
-			// 		vec := c.mesh.normals[i]
-			// 		normBuf[i] = *(*Vec2)(vec[:2])
-			// 	}
+// 		case NormalXYZ:
+// 			renormalizeMat := c.matrix.Inv().Transpose().gl()
+// 			normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+// 			for i := range c.mesh.normals {
+// 				vec := renormalizeMat.Apply(c.mesh.normals[i])
+// 				normBuf[i] = vec
+// 			}
 
-		case NormalXYZ:
-			renormalizeMat := c.matrix.Inv().Transpose().gl()
-			normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-			for i := range c.mesh.normals {
-				vec := renormalizeMat.Apply(c.mesh.normals[i])
-				normBuf[i] = vec
-			}
+// 			// Colors
+// 		case ColorR:
+// 			colBuf := *(destBuffs[bufIdx]).(*[]float32)
+// 			for i := range c.mesh.colors {
+// 				colBuf[i] = c.mesh.colors[i][0] * float32(c.mask.R)
+// 			}
+// 		case ColorRG:
+// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+// 			for i := range c.mesh.colors {
+// 				colBuf[i] = glVec2{
+// 					c.mesh.colors[i][0] * float32(c.mask.R),
+// 					c.mesh.colors[i][1] * float32(c.mask.G),
+// 				}
+// 			}
+// 		case ColorRGB:
+// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+// 			for i := range c.mesh.colors {
+// 				colBuf[i] = glVec3{
+// 					c.mesh.colors[i][0] * float32(c.mask.R),
+// 					c.mesh.colors[i][1] * float32(c.mask.G),
+// 					c.mesh.colors[i][2] * float32(c.mask.B),
+// 				}
+// 			}
+// 		case ColorRGBA:
+// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
+// 			for i := range c.mesh.colors {
+// 				colBuf[i] = glVec4{
+// 					c.mesh.colors[i][0] * float32(c.mask.R),
+// 					c.mesh.colors[i][1] * float32(c.mask.G),
+// 					c.mesh.colors[i][2] * float32(c.mask.B),
+// 					c.mesh.colors[i][3] * float32(c.mask.A),
+// 				}
+// 			}
 
-			// Colors
-		case ColorR:
-			colBuf := *(destBuffs[bufIdx]).(*[]float32)
-			for i := range c.mesh.colors {
-				colBuf[i] = c.mesh.colors[i][0] * float32(c.mask.R)
-			}
-		case ColorRG:
-			colBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			for i := range c.mesh.colors {
-				colBuf[i] = glVec2{
-					c.mesh.colors[i][0] * float32(c.mask.R),
-					c.mesh.colors[i][1] * float32(c.mask.G),
-				}
-			}
-		case ColorRGB:
-			colBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-			for i := range c.mesh.colors {
-				colBuf[i] = glVec3{
-					c.mesh.colors[i][0] * float32(c.mask.R),
-					c.mesh.colors[i][1] * float32(c.mask.G),
-					c.mesh.colors[i][2] * float32(c.mask.B),
-				}
-			}
-		case ColorRGBA:
-			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
-			for i := range c.mesh.colors {
-				colBuf[i] = glVec4{
-					c.mesh.colors[i][0] * float32(c.mask.R),
-					c.mesh.colors[i][1] * float32(c.mask.G),
-					c.mesh.colors[i][2] * float32(c.mask.B),
-					c.mesh.colors[i][3] * float32(c.mask.A),
-				}
-			}
+// 		case TexCoordXY:
+// 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+// 			for i := range c.mesh.texCoords {
+// 				texBuf[i] = c.mesh.texCoords[i]
+// 			}
+// 		default:
+// 			panic("Unsupported")
+// 		}
+// 	}
 
-		case TexCoordXY:
-			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			for i := range c.mesh.texCoords {
-				texBuf[i] = c.mesh.texCoords[i]
-			}
-		default:
-			panic("Unsupported")
-		}
-	}
+// 	//================================================================================
+// 	// TODO The hardcoding is a bit slower. Keeping it around in case I want to do some performance analysis
+// 	// Notes: Ran gophermark with 1000000 gophers.
+// 	// - Hardcoded: ~ 120 to 125 ms range
+// 	// - Switch Statement: ~ 125 to 130 ms range
+// 	// - Switch Statement (with shader changed to use vec2s for position): ~ 122 to 127 ms range
+// 	// work and append
+// 	// 	posBuf := *(destBuffs[0]).(*[]Vec3)
+// 	// 	for i := range c.mesh.positions {
+// 	// 		vec := c.matrix.Apply(c.mesh.positions[i])
+// 	// 		posBuf[i] = vec
+// 	// 	}
 
-	//================================================================================
-	// TODO The hardcoding is a bit slower. Keeping it around in case I want to do some performance analysis
-	// Notes: Ran gophermark with 1000000 gophers.
-	// - Hardcoded: ~ 120 to 125 ms range
-	// - Switch Statement: ~ 125 to 130 ms range
-	// - Switch Statement (with shader changed to use vec2s for position): ~ 122 to 127 ms range
-	// work and append
-	// 	posBuf := *(destBuffs[0]).(*[]Vec3)
-	// 	for i := range c.mesh.positions {
-	// 		vec := c.matrix.Apply(c.mesh.positions[i])
-	// 		posBuf[i] = vec
-	// 	}
+// 	// 	colBuf := *(destBuffs[1]).(*[]Vec4)
+// 	// 	for i := range c.mesh.colors {
+// 	// 		colBuf[i] = Vec4{
+// 	// 			c.mesh.colors[i][0] * c.mask.R,
+// 	// 			c.mesh.colors[i][1] * c.mask.G,
+// 	// 			c.mesh.colors[i][2] * c.mask.B,
+// 	// 			c.mesh.colors[i][3] * c.mask.A,
+// 	// 		}
+// 	// 	}
 
-	// 	colBuf := *(destBuffs[1]).(*[]Vec4)
-	// 	for i := range c.mesh.colors {
-	// 		colBuf[i] = Vec4{
-	// 			c.mesh.colors[i][0] * c.mask.R,
-	// 			c.mesh.colors[i][1] * c.mask.G,
-	// 			c.mesh.colors[i][2] * c.mask.B,
-	// 			c.mesh.colors[i][3] * c.mask.A,
-	// 		}
-	// 	}
-
-	// 	texBuf := *(destBuffs[2]).(*[]Vec2)
-	// 	for i := range c.mesh.texCoords {
-	// 		texBuf[i] = c.mesh.texCoords[i]
-	// 	}
-	//================================================================================
-}
+// 	// 	texBuf := *(destBuffs[2]).(*[]Vec2)
+// 	// 	for i := range c.mesh.texCoords {
+// 	// 		texBuf[i] = c.mesh.texCoords[i]
+// 	// 	}
+// 	//================================================================================
+// }
 
 // Not thread safe
 var lastState BufferState
@@ -468,24 +472,41 @@ func openglDraw(shader *Shader, draws []drawCall) {
 
 //--------------------------------------------------------------------------------
 func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bool) *VertexBuffer {
-	// TODO: Translucent
-	// TODO: Depth sorting
-	cmd := drawCommand{
-		mesh, Mat4Ident, White, BufferState{material, pass.blendMode},
-	}
 
-	if len(cmd.mesh.indices) % 3 != 0 {
+	bufferState := BufferState{material, pass.blendMode}
+
+	if len(mesh.indices) % 3 != 0 {
 		panic("Cmd.Mesh indices must have 3 indices per triangle!")
 	}
-	numVerts := len(cmd.mesh.positions)
-	numTris := len(cmd.mesh.indices) / 3
+	numVerts := len(mesh.positions)
+	numTris := len(mesh.indices) / 3
 	buffer := NewVertexBuffer(pass.shader, numVerts, numTris)
 
-	success := buffer.Reserve(cmd.state, cmd.mesh.indices, numVerts, pass.shader.tmpBuffers)
+	success := buffer.Reserve(bufferState, mesh.indices, numVerts, pass.shader.tmpBuffers)
 	if !success {
 		panic("Something went wrong")
 	}
-	pass.copyToBuffer(cmd, pass.shader.tmpBuffers)
+
+	// cmd := drawCommand{
+	// 	mesh, Mat4Ident, White, bufferState,
+	// }
+	// TODO: Translucent?
+	// TODO: Depth sorting?
+	batchToBuffers(pass.shader, mesh, glMat4Ident, White)
+
+	// pass.copyToBuffer(cmd, pass.shader.tmpBuffers)
 
 	return buffer
 }
+
+// // This is like batchToBuffer but doesn't pre-apply the model matrix of the mesh
+// func (r *RenderPass) copyToBuffer(c drawCommand, destBuffs []interface{}) {
+// 	// // For now I'm just going to modify the drawCommand to use Mat4Ident and then pass to batchToBuffers
+// 	// c.matrix = Mat4Ident
+// 	// batchToBuffers(c, destBuffs)
+
+// 	numVerts := c.filler.NumVerts()
+// 	indices := c.filler.Indices()
+// 	vertexBuffer := pass.buffer.Reserve(state, indices, numVerts, pass.shader.tmpBuffers)
+// 	batchToBuffers(pass.shader, m, mat, mask)
+// }

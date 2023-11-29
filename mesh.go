@@ -566,3 +566,152 @@ func NewCubeMesh(size float64) *Mesh {
 		},
 	}
 }
+//--------------------------------------------------------------------------------
+
+func (m *Mesh) GetBuffer() *VertexBuffer {
+	return m.buffer
+}
+
+func (m *Mesh) NumVerts() int {
+	return len(m.positions)
+}
+func (m *Mesh) Indices() []uint32 {
+	return m.indices
+}
+
+func (m *Mesh) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
+	numVerts := m.NumVerts()
+	indices := m.Indices()
+	vertexBuffer := pass.buffer.Reserve(state, indices, numVerts, pass.shader.tmpBuffers)
+	batchToBuffers(pass.shader, m, mat, mask)
+
+	return vertexBuffer
+}
+
+func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
+	destBuffs := shader.tmpBuffers
+
+	// Append all mesh buffers to shader buffers
+	for bufIdx, attr := range shader.attrFmt {
+		// TODO - I'm not sure of a good way to break up this switch statement
+		switch attr.Swizzle {
+			// Positions
+		case PositionXY:
+			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+			if mat32 == glMat4Ident {
+				// If matrix is identity, don't transform anything
+				for i := range mesh.positions {
+					posBuf[i] = *(*glVec2)(mesh.positions[i][:2])
+				}
+			} else {
+				for i := range mesh.positions {
+					vec := mat32.Apply(mesh.positions[i])
+					posBuf[i] = *(*glVec2)(vec[:2])
+				}
+			}
+
+		case PositionXYZ:
+			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+			if mat32 == glMat4Ident {
+				// If matrix is identity, don't transform anything
+				for i := range mesh.positions {
+					posBuf[i] = mesh.positions[i]
+				}
+			} else {
+				for i := range mesh.positions {
+					vec := mat32.Apply(mesh.positions[i])
+					posBuf[i] = vec
+				}
+			}
+
+			// Normals
+			// TODO - Renormalize if batching
+			// case NormalXY:
+			// 	normBuf := *(destBuffs[bufIdx]).(*[]Vec2)
+			// 	for i := range mesh.normals {
+			// 		vec := mesh.normals[i]
+			// 		normBuf[i] = *(*Vec2)(vec[:2])
+			// 	}
+
+			// TODO: Re enable when you have funcs like inv(), transpose() on glMat4
+		// case NormalXYZ:
+		// 	renormalizeMat := c.matrix.Inv().Transpose().gl()
+		// 	normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+		// 	for i := range mesh.normals {
+		// 		vec := renormalizeMat.Apply(mesh.normals[i])
+		// 		normBuf[i] = vec
+		// 	}
+
+			// Colors
+		case ColorR:
+			colBuf := *(destBuffs[bufIdx]).(*[]float32)
+			for i := range mesh.colors {
+				colBuf[i] = mesh.colors[i][0] * float32(mask.R)
+			}
+		case ColorRG:
+			colBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+			for i := range mesh.colors {
+				colBuf[i] = glVec2{
+					mesh.colors[i][0] * float32(mask.R),
+					mesh.colors[i][1] * float32(mask.G),
+				}
+			}
+		case ColorRGB:
+			colBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+			for i := range mesh.colors {
+				colBuf[i] = glVec3{
+					mesh.colors[i][0] * float32(mask.R),
+					mesh.colors[i][1] * float32(mask.G),
+					mesh.colors[i][2] * float32(mask.B),
+				}
+			}
+		case ColorRGBA:
+			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
+			for i := range mesh.colors {
+				colBuf[i] = glVec4{
+					mesh.colors[i][0] * float32(mask.R),
+					mesh.colors[i][1] * float32(mask.G),
+					mesh.colors[i][2] * float32(mask.B),
+					mesh.colors[i][3] * float32(mask.A),
+				}
+			}
+
+		case TexCoordXY:
+			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+			for i := range mesh.texCoords {
+				texBuf[i] = mesh.texCoords[i]
+			}
+		default:
+			panic("Unsupported")
+		}
+	}
+
+	//================================================================================
+	// TODO The hardcoding is a bit slower. Keeping it around in case I want to do some performance analysis
+	// Notes: Ran gophermark with 1000000 gophers.
+	// - Hardcoded: ~ 120 to 125 ms range
+	// - Switch Statement: ~ 125 to 130 ms range
+	// - Switch Statement (with shader changed to use vec2s for position): ~ 122 to 127 ms range
+	// work and append
+	// 	posBuf := *(destBuffs[0]).(*[]Vec3)
+	// 	for i := range mesh.positions {
+	// 		vec := c.matrix.Apply(mesh.positions[i])
+	// 		posBuf[i] = vec
+	// 	}
+
+	// 	colBuf := *(destBuffs[1]).(*[]Vec4)
+	// 	for i := range mesh.colors {
+	// 		colBuf[i] = Vec4{
+	// 			mesh.colors[i][0] * mask.R,
+	// 			mesh.colors[i][1] * mask.G,
+	// 			mesh.colors[i][2] * mask.B,
+	// 			mesh.colors[i][3] * mask.A,
+	// 		}
+	// 	}
+
+	// 	texBuf := *(destBuffs[2]).(*[]Vec2)
+	// 	for i := range mesh.texCoords {
+	// 		texBuf[i] = mesh.texCoords[i]
+	// 	}
+	//================================================================================
+}

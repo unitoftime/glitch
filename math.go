@@ -14,6 +14,9 @@ type glVec3 [3]float32
 type glVec4 [4]float32
 
 type glMat4 [16]float32
+
+var glMat4Ident = Mat4Ident.gl()
+
 func (m *glMat4) Apply(v glVec3) glVec3 {
 	return glVec3{
 		m[i4_0_0]*v[0] + m[i4_1_0]*v[1] + m[i4_2_0]*v[2] + m[i4_3_0], // w = 1.0
