@@ -485,6 +485,7 @@ func (pass *RenderPass) BufferMesh(mesh *Mesh, material Material, translucent bo
 	numVerts := len(mesh.positions)
 	numTris := len(mesh.indices) / 3
 	buffer := NewVertexBuffer(pass.shader, numVerts, numTris)
+	buffer.deallocAfterBuffer = true
 
 	success := buffer.Reserve(bufferState, mesh.indices, numVerts, pass.shader.tmpBuffers)
 	if !success {

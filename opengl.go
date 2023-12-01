@@ -125,8 +125,10 @@ type VertexBuffer struct {
 
 	buffers []ISubBuffer
 	indices []uint32
-	bufferedToGPU bool
-	deleted bool
+	numIndicesToDraw int // The number of indices we are currently drawing
+	bufferedToGPU bool // Tracks whether the data has been written to the GPU
+	deallocAfterBuffer bool // If set true, once we write data to the GPU we deallocate CPU buffers
+	deleted bool // If true, we've already deleted this
 }
 
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
@@ -245,10 +247,12 @@ func (v *VertexBuffer) delete() {
 	})
 }
 
-func (v *VertexBuffer) Bind() {
-	mainthread.Call(func() {
-		gl.BindVertexArray(v.vao)
-	})
+func (v *VertexBuffer) deallocCPUBuffers() {
+	v.indices = nil
+	for i := range v.buffers {
+		v.buffers[i] = nil
+	}
+	v.buffers = nil
 }
 
 func (v *VertexBuffer) Clear() {
@@ -256,6 +260,7 @@ func (v *VertexBuffer) Clear() {
 		v.buffers[i].Clear()
 	}
 	v.indices = v.indices[:0]
+	v.numIndicesToDraw = 0
 	v.materialSet = false
 	v.bufferedToGPU = false
 }
@@ -277,7 +282,6 @@ func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int
 
 	v.bufferedToGPU = false
 
-	// fmt.Println("Establishing Buffer", material)
 	v.materialSet = true
 	v.state = state
 
@@ -285,6 +289,7 @@ func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int
 	for i := range indices {
 		v.indices = append(v.indices, currentElement + indices[i])
 	}
+	v.numIndicesToDraw = len(v.indices)
 
 	for i := range v.buffers {
 		switch subBuffer := v.buffers[i].(type) {
@@ -323,16 +328,20 @@ func (v *VertexBuffer) mainthreadDraw() {
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
 		gl.BufferSubDataUint32(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
 
+		gl.DrawElements(gl.TRIANGLES, v.numIndicesToDraw, gl.UNSIGNED_INT, 0)
+
+		if v.deallocAfterBuffer {
+			v.deallocCPUBuffers()
+		}
 		v.bufferedToGPU = true
-		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
 	} else {
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-		gl.DrawElements(gl.TRIANGLES, len(v.indices), gl.UNSIGNED_INT, 0)
+		gl.DrawElements(gl.TRIANGLES, v.numIndicesToDraw, gl.UNSIGNED_INT, 0)
 	}
 }
 
 func (v *VertexBuffer) Draw() {
-	if len(v.indices) <= 0 {
+	if v.numIndicesToDraw <= 0 {
 		return
 	}
 
