@@ -307,7 +307,7 @@ func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int
 	return true
 }
 
-func mainthreadDrawVertexBuffer(v *VertexBuffer) {
+func (v *VertexBuffer) mainthreadDraw() {
 	gl.BindVertexArray(v.vao)
 
 	if !v.bufferedToGPU {
@@ -336,10 +336,7 @@ func (v *VertexBuffer) Draw() {
 		return
 	}
 
-	// TODO: Cache this closure func
-	mainthread.Call(func() {
-		mainthreadDrawVertexBuffer(v)
-	})
+	state.drawVertBuffer(v)
 }
 
 // BufferPool

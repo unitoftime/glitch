@@ -26,6 +26,9 @@ type stateTracker struct {
 	// BlendFunc
 	blendSrc, blendDst gl.Enum
 	blendFuncBinder func()
+
+	vertBuf *VertexBuffer
+	vertBufDrawer func()
 }
 
 var state *stateTracker
@@ -52,6 +55,10 @@ func init() {
 
 	state.blendFuncBinder = func() {
 		gl.BlendFunc(state.blendSrc, state.blendDst)
+	}
+
+	state.vertBufDrawer = func() {
+		state.vertBuf.mainthreadDraw()
 	}
 }
 
@@ -87,4 +94,9 @@ func (s *stateTracker) setBlendFunc(src, dst gl.Enum) {
 	s.blendSrc = src
 	s.blendDst = dst
 	mainthread.Call(s.blendFuncBinder)
+}
+
+func (s *stateTracker) drawVertBuffer(vb *VertexBuffer) {
+	s.vertBuf = vb
+	mainthread.Call(s.vertBufDrawer)
 }
