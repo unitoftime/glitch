@@ -2,9 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"hash/crc64"
 	"math"
 	"strings"
-	"hash/crc64"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/graph"

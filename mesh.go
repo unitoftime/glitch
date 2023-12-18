@@ -87,9 +87,11 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, trans
 	b.mesh.bounds = b.mesh.bounds.Union(newBounds)
 
 
-	renormalizeMat := matrix.Inv().Transpose().gl()
-	for i := range mesh.normals {
-		b.mesh.normals = append(b.mesh.normals, renormalizeMat.Apply(mesh.normals[i]))
+	if len(mesh.normals) > 0 {
+		renormalizeMat := matrix.Inv().Transpose().gl()
+		for i := range mesh.normals {
+			b.mesh.normals = append(b.mesh.normals, renormalizeMat.Apply(mesh.normals[i]))
+		}
 	}
 
 	for i := range mesh.colors {

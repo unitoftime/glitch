@@ -461,6 +461,7 @@ func openglDraw(shader *Shader, draws []drawCall) {
 	for i := range draws {
 		buffer := draws[i].buffer
 		// fmt.Println(i, len(b.buffers[i].indices), b.buffers[i].buffers[0].Len(), b.buffers[i].buffers[0].Cap())
+		// TODO: Push this inward so concept like last state and whatever is managed by vertbuffer
 		if lastState != buffer.state {
 			lastState = buffer.state
 			lastState.Bind()
