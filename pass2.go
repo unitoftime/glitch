@@ -17,6 +17,14 @@ import (
 // 2. Things that are changed infrequently: SetBlah()
 // 3. Things that change frequently: include in draw command
 
+// TODO: I kindof want to implement one or the other
+type GeometryFiller interface {
+	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
+
+	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
+	Fill(*RenderPass, glMat4, RGBA, BufferState) *VertexBuffer
+}
+
 type BatchTarget interface {
 	// Add(GeometryFiller, Mat4, RGBA, Material, bool)
 	Add(*Mesh, Mat4, RGBA, Material, bool)
@@ -25,14 +33,6 @@ type BatchTarget interface {
 type Target interface {
 	// TODO - Should this be differentiated from being a source Vs a target binding. For example, I'm using this now to bind the target that we draw to. But If I want to have another function on frambuffers to use them as image texture inputs, what would that API be called?
 	Bind()
-}
-
-// TODO: I kindof want to implement one or the other
-type GeometryFiller interface {
-	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
-
-	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
-	Fill(*RenderPass, glMat4, RGBA, BufferState) *VertexBuffer
 }
 
 // https://realtimecollisiondetection.net/blog/?p=86
@@ -235,9 +235,11 @@ func (r *RenderPass) Draw(target Target) {
 	// Bind render target
 	target.Bind()
 
-	// mainthread.Call(r.mainthreadDepthTest)
-	state.enableDepthTest(gl.LEQUAL)// TODO - rehook for depthtest flags
-	// state.enableDepthTest(gl.LESS)// TODO - rehook for depthtest flags
+	state.enableDepthTest(r.DepthTest)
+	if r.DepthTest {
+		state.setDepthFunc(gl.LEQUAL)
+		// state.setDepthFunc(gl.LESS)
+	}
 
 	r.shader.Bind()
 	for k,v := range r.uniforms {
@@ -271,7 +273,9 @@ func (r *RenderPass) setUniform(name string, value any) {
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
 // Option 3: I can batch together these sprites into a single thing that is then rendered
+// TODO: push Mat4 out and replace with glMat4
 func (r *RenderPass) Add(filler *Mesh, mat Mat4, mask RGBA, material Material, translucent bool) {
+	// TODO: mask.A == 0 { skip } ???
 	if mask.A != 0 && mask.A != 1 {
 		translucent = true
 	}
@@ -290,15 +294,11 @@ func (r *RenderPass) Add(filler *Mesh, mat Mat4, mask RGBA, material Material, t
 		// Add the layer to the depth
 		mat[i4_3_2] -= float64(r.currentLayer)
 		// fmt.Println("Depth: ", mat[i4_3_2])
-
-		r.commands[r.currentLayer].Add(translucent, drawCommand{
-			filler, mat, mask, BufferState{material, r.blendMode},
-		})
-	} else {
-		r.commands[r.currentLayer].Add(translucent, drawCommand{
-			filler, mat, mask, BufferState{material, r.blendMode},
-		})
 	}
+
+	r.commands[r.currentLayer].Add(translucent, drawCommand{
+		filler, mat, mask, BufferState{material, r.blendMode},
+	})
 }
 
 func (r *RenderPass) SortInSoftware() {

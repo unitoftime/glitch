@@ -16,6 +16,7 @@ type stateTracker struct {
 
 	// Depth Test
 	depthTest       bool
+	enableDepthFunc func()
 	depthFunc       gl.Enum
 	depthFuncBinder func()
 
@@ -41,8 +42,15 @@ var state *stateTracker
 func init() {
 	state = &stateTracker{}
 
+	state.enableDepthFunc = func() {
+		if state.depthTest {
+			gl.Enable(gl.DEPTH_TEST)
+		} else {
+			gl.Disable(gl.DEPTH_TEST)
+		}
+	}
+
 	state.depthFuncBinder = func() {
-		gl.Enable(gl.DEPTH_TEST)
 		gl.DepthFunc(state.depthFunc)
 	}
 
@@ -89,16 +97,20 @@ func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	mainthread.Call(s.fboBinder)
 }
 
-// TODO: Enable disable
-//
-//	gl.Enable(gl.DEPTH_TEST)
-func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
-	if s.depthTest && s.depthFunc == depthFunc {
+func (s *stateTracker) enableDepthTest(enable bool) {
+	if s.depthTest == enable {
+		return // Skip if state already matches
+	}
+	s.depthTest = enable
+	mainthread.Call(s.enableDepthFunc)
+}
+
+func (s *stateTracker) setDepthFunc(depthFunc gl.Enum) {
+	if s.depthFunc == depthFunc {
 		return // Skip if already enabled and depth functions match
 	}
-	s.depthTest = true
-	s.depthFunc = depthFunc
 
+	s.depthFunc = depthFunc
 	mainthread.Call(s.depthFuncBinder)
 }
 
