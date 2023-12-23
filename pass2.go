@@ -1,14 +1,16 @@
 package glitch
 
 import (
-
-	// "math"
 	"cmp"
 	"slices"
 
 	"github.com/unitoftime/glitch/internal/gl"
-	// "github.com/unitoftime/glitch/internal/mainthread"
 )
+
+// Sorting
+// 1. FBO Target
+// 2. Shader program
+// 3. Geometry
 
 // TODO - This whole file needs to be rewritten. I'm thinking:
 // 1. Single renderpass wrapper that lets met toggle all configs, shaders, meshes, etc
@@ -41,8 +43,6 @@ type GeometryFiller interface {
 // - Sort by: x, y, z, depth?
 // I also feel like I'm finding myself mirroring this: https://pkg.go.dev/github.com/hajimehoshi/ebiten/v2#DrawImageOptions
 type drawCommand struct {
-	// command uint64
-	// fillFunc func(VertexFormat, []interface{})
 	// mesh *Mesh
 	filler GeometryFiller
 	matrix Mat4
@@ -101,20 +101,20 @@ func (c *cmdList) Clear() {
 	c.Translucent = c.Translucent[:0]
 }
 
-type meshBuffer struct {
-	buffer *VertexBuffer
-}
-func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
-	if len(mesh.indices) % 3 != 0 {
-		panic("Mesh indices must have 3 indices per triangle!")
-	}
-	numVerts := len(mesh.positions)
-	numTris := len(mesh.indices) / 3
-	meshBuf := meshBuffer{
-		buffer: NewVertexBuffer(shader, numVerts, numTris),
-	}
-	return meshBuf
-}
+// type meshBuffer struct {
+// 	buffer *VertexBuffer
+// }
+// func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
+// 	if len(mesh.indices) % 3 != 0 {
+// 		panic("Mesh indices must have 3 indices per triangle!")
+// 	}
+// 	numVerts := len(mesh.positions)
+// 	numTris := len(mesh.indices) / 3
+// 	meshBuf := meshBuffer{
+// 		buffer: NewVertexBuffer(shader, numVerts, numTris),
+// 	}
+// 	return meshBuf
+// }
 
 type drawCall struct {
 	buffer *VertexBuffer
@@ -221,11 +221,6 @@ func (r *RenderPass) applyDrawCommand(c drawCommand) {
 	// Else we are auto-batching the mesh because the mesh is small
 	vertexBuffer := c.filler.Fill(r, c.matrix.gl(), c.mask, c.state)
 
-	// numVerts := c.filler.NumVerts()
-	// indices := c.filler.Indices()
-	// vertexBuffer := r.buffer.Reserve(c.state, indices, numVerts, r.shader.tmpBuffers)
-	// r.batchToBuffers(c, r.shader.tmpBuffers)
-
 	// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
 	if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
 		// Append the draw call to our list. Because we've already pre-applied the model matrix, we use Mat4Ident here
@@ -326,132 +321,6 @@ func (r *RenderPass) SortInSoftware() {
 	}
 }
 
-// func (r *RenderPass) batchToBuffers(c drawCommand, destBuffs []interface{}) {
-// 	mat32 := c.matrix.gl()
-
-// 	// Append all mesh buffers to shader buffers
-// 	for bufIdx, attr := range r.shader.attrFmt {
-// 		// TODO - I'm not sure of a good way to break up this switch statement
-// 		switch attr.Swizzle {
-// 			// Positions
-// 		case PositionXY:
-// 			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-// 			if c.matrix == Mat4Ident {
-// 				// If matrix is identity, don't transform anything
-// 				for i := range c.mesh.positions {
-// 					posBuf[i] = *(*glVec2)(c.mesh.positions[i][:2])
-// 				}
-// 			} else {
-// 				for i := range c.mesh.positions {
-// 					vec := mat32.Apply(c.mesh.positions[i])
-// 					posBuf[i] = *(*glVec2)(vec[:2])
-// 				}
-// 			}
-
-// 		case PositionXYZ:
-// 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-// 			if c.matrix == Mat4Ident {
-// 				// If matrix is identity, don't transform anything
-// 				for i := range c.mesh.positions {
-// 					posBuf[i] = c.mesh.positions[i]
-// 				}
-// 			} else {
-// 				for i := range c.mesh.positions {
-// 					vec := mat32.Apply(c.mesh.positions[i])
-// 					posBuf[i] = vec
-// 				}
-// 			}
-
-// 			// Normals
-// 			// TODO - Renormalize if batching
-// 			// case NormalXY:
-// 			// 	normBuf := *(destBuffs[bufIdx]).(*[]Vec2)
-// 			// 	for i := range c.mesh.normals {
-// 			// 		vec := c.mesh.normals[i]
-// 			// 		normBuf[i] = *(*Vec2)(vec[:2])
-// 			// 	}
-
-// 		case NormalXYZ:
-// 			renormalizeMat := c.matrix.Inv().Transpose().gl()
-// 			normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-// 			for i := range c.mesh.normals {
-// 				vec := renormalizeMat.Apply(c.mesh.normals[i])
-// 				normBuf[i] = vec
-// 			}
-
-// 			// Colors
-// 		case ColorR:
-// 			colBuf := *(destBuffs[bufIdx]).(*[]float32)
-// 			for i := range c.mesh.colors {
-// 				colBuf[i] = c.mesh.colors[i][0] * float32(c.mask.R)
-// 			}
-// 		case ColorRG:
-// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-// 			for i := range c.mesh.colors {
-// 				colBuf[i] = glVec2{
-// 					c.mesh.colors[i][0] * float32(c.mask.R),
-// 					c.mesh.colors[i][1] * float32(c.mask.G),
-// 				}
-// 			}
-// 		case ColorRGB:
-// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-// 			for i := range c.mesh.colors {
-// 				colBuf[i] = glVec3{
-// 					c.mesh.colors[i][0] * float32(c.mask.R),
-// 					c.mesh.colors[i][1] * float32(c.mask.G),
-// 					c.mesh.colors[i][2] * float32(c.mask.B),
-// 				}
-// 			}
-// 		case ColorRGBA:
-// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
-// 			for i := range c.mesh.colors {
-// 				colBuf[i] = glVec4{
-// 					c.mesh.colors[i][0] * float32(c.mask.R),
-// 					c.mesh.colors[i][1] * float32(c.mask.G),
-// 					c.mesh.colors[i][2] * float32(c.mask.B),
-// 					c.mesh.colors[i][3] * float32(c.mask.A),
-// 				}
-// 			}
-
-// 		case TexCoordXY:
-// 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-// 			for i := range c.mesh.texCoords {
-// 				texBuf[i] = c.mesh.texCoords[i]
-// 			}
-// 		default:
-// 			panic("Unsupported")
-// 		}
-// 	}
-
-// 	//================================================================================
-// 	// TODO The hardcoding is a bit slower. Keeping it around in case I want to do some performance analysis
-// 	// Notes: Ran gophermark with 1000000 gophers.
-// 	// - Hardcoded: ~ 120 to 125 ms range
-// 	// - Switch Statement: ~ 125 to 130 ms range
-// 	// - Switch Statement (with shader changed to use vec2s for position): ~ 122 to 127 ms range
-// 	// work and append
-// 	// 	posBuf := *(destBuffs[0]).(*[]Vec3)
-// 	// 	for i := range c.mesh.positions {
-// 	// 		vec := c.matrix.Apply(c.mesh.positions[i])
-// 	// 		posBuf[i] = vec
-// 	// 	}
-
-// 	// 	colBuf := *(destBuffs[1]).(*[]Vec4)
-// 	// 	for i := range c.mesh.colors {
-// 	// 		colBuf[i] = Vec4{
-// 	// 			c.mesh.colors[i][0] * c.mask.R,
-// 	// 			c.mesh.colors[i][1] * c.mask.G,
-// 	// 			c.mesh.colors[i][2] * c.mask.B,
-// 	// 			c.mesh.colors[i][3] * c.mask.A,
-// 	// 		}
-// 	// 	}
-
-// 	// 	texBuf := *(destBuffs[2]).(*[]Vec2)
-// 	// 	for i := range c.mesh.texCoords {
-// 	// 		texBuf[i] = c.mesh.texCoords[i]
-// 	// 	}
-// 	//================================================================================
-// }
 
 // Not thread safe
 var lastState BufferState

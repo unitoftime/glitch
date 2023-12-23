@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	// "fmt"
 	"math"
 )
 

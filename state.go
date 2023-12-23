@@ -10,31 +10,36 @@ import (
 
 type stateTracker struct {
 	// FBO
-	fbo gl.Framebuffer
+	fbo       gl.Framebuffer
 	fboBounds Rect
 	fboBinder func()
 
 	// Depth Test
-	depthTest bool
-	depthFunc gl.Enum
+	depthTest       bool
+	depthFunc       gl.Enum
 	depthFuncBinder func()
 
 	// Texture
-	texture *Texture
+	texture       *Texture
 	textureBinder func()
 
 	// BlendFunc
 	blendSrc, blendDst gl.Enum
-	blendFuncBinder func()
+	blendFuncBinder    func()
 
-	vertBuf *VertexBuffer
+	// Vert Buffer
+	vertBuf       *VertexBuffer
 	vertBufDrawer func()
+
+	clearColor RGBA
+	clearMode  gl.Enum
+	clearFunc  func()
 }
 
 var state *stateTracker
+
 func init() {
-	state = &stateTracker{
-	}
+	state = &stateTracker{}
 
 	state.depthFuncBinder = func() {
 		gl.Enable(gl.DEPTH_TEST)
@@ -48,7 +53,7 @@ func init() {
 	}
 
 	state.textureBinder = func() {
-		gl.ActiveTexture(gl.TEXTURE0);
+		gl.ActiveTexture(gl.TEXTURE0)
 		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
 		gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
 	}
@@ -59,6 +64,12 @@ func init() {
 
 	state.vertBufDrawer = func() {
 		state.vertBuf.mainthreadDraw()
+	}
+
+	state.clearFunc = func() {
+		gl.ClearColor(float32(state.clearColor.R), float32(state.clearColor.G), float32(state.clearColor.B), float32(state.clearColor.A))
+		// gl.Clear(gl.COLOR_BUFFER_BIT) // Make configurable?
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	}
 }
 
@@ -79,7 +90,8 @@ func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 }
 
 // TODO: Enable disable
-// 		gl.Enable(gl.DEPTH_TEST)
+//
+//	gl.Enable(gl.DEPTH_TEST)
 func (s *stateTracker) enableDepthTest(depthFunc gl.Enum) {
 	if s.depthTest && s.depthFunc == depthFunc {
 		return // Skip if already enabled and depth functions match
@@ -99,4 +111,9 @@ func (s *stateTracker) setBlendFunc(src, dst gl.Enum) {
 func (s *stateTracker) drawVertBuffer(vb *VertexBuffer) {
 	s.vertBuf = vb
 	mainthread.Call(s.vertBufDrawer)
+}
+
+func (s *stateTracker) clearTarget(color RGBA) {
+	s.clearColor = color
+	mainthread.Call(s.clearFunc)
 }
