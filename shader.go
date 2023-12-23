@@ -2,6 +2,7 @@ package glitch
 
 import (
 	"fmt"
+
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
@@ -183,7 +184,7 @@ func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 // 	return ret
 // }
 
-func (s *Shader) SetUniformMat4(uniformName string, value *Mat4) bool {
+func (s *Shader) SetUniformMat4(uniformName string, value *glMat4) bool {
 	uniform, ok := s.uniforms[uniformName]
 	if !ok /* || !uniform.loc.Valid() */ {
 		// TODO - panic or just return false? I feel like its bad if you think you're setting a uniform that doesn't exist.

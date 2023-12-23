@@ -27,7 +27,7 @@ type GeometryFiller interface {
 
 type BatchTarget interface {
 	// Add(GeometryFiller, Mat4, RGBA, Material, bool)
-	Add(*Mesh, Mat4, RGBA, Material, bool)
+	Add(*Mesh, glMat4, RGBA, Material, bool)
 }
 
 type Target interface {
@@ -45,7 +45,7 @@ type Target interface {
 type drawCommand struct {
 	// mesh *Mesh
 	filler GeometryFiller
-	matrix Mat4
+	matrix glMat4
 	mask RGBA
 	state BufferState
 }
@@ -118,7 +118,7 @@ func (c *cmdList) Clear() {
 
 type drawCall struct {
 	buffer *VertexBuffer
-	model Mat4
+	model glMat4
 }
 
 // This is essentially a generalized 2D render pass
@@ -164,7 +164,6 @@ func NewRenderPass(shader *Shader) *RenderPass {
 	}
 	return r
 }
-
 
 func (r *RenderPass) Clear() {
 	// Clear stuff
@@ -219,12 +218,12 @@ func (r *RenderPass) applyDrawCommand(c drawCommand) {
 	}
 
 	// Else we are auto-batching the mesh because the mesh is small
-	vertexBuffer := c.filler.Fill(r, c.matrix.gl(), c.mask, c.state)
+	vertexBuffer := c.filler.Fill(r, c.matrix, c.mask, c.state)
 
 	// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
 	if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
 		// Append the draw call to our list. Because we've already pre-applied the model matrix, we use Mat4Ident here
-		r.drawCalls = append(r.drawCalls, drawCall{vertexBuffer, Mat4Ident})
+		r.drawCalls = append(r.drawCalls, drawCall{vertexBuffer, glMat4Ident})
 	}
 }
 
@@ -273,8 +272,7 @@ func (r *RenderPass) setUniform(name string, value any) {
 // Option 1: I was thinking that I could add in the Z component on top of the Y component at the very end. but only use the early Y component for the sorting.
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
 // Option 3: I can batch together these sprites into a single thing that is then rendered
-// TODO: push Mat4 out and replace with glMat4
-func (r *RenderPass) Add(filler *Mesh, mat Mat4, mask RGBA, material Material, translucent bool) {
+func (r *RenderPass) Add(filler *Mesh, mat glMat4, mask RGBA, material Material, translucent bool) {
 	// TODO: mask.A == 0 { skip } ???
 	if mask.A != 0 && mask.A != 1 {
 		translucent = true
@@ -292,7 +290,7 @@ func (r *RenderPass) Add(filler *Mesh, mat Mat4, mask RGBA, material Material, t
 		// mat[i4_3_2] = mat[i4_3_1] // Set Z translation to the y point
 
 		// Add the layer to the depth
-		mat[i4_3_2] -= float64(r.currentLayer)
+		mat[i4_3_2] -= float32(r.currentLayer)
 		// fmt.Println("Depth: ", mat[i4_3_2])
 	}
 

@@ -405,20 +405,21 @@ func (t *Text) Write(p []byte) (n int, err error) {
 }
 
 func (t *Text) Draw(target BatchTarget, matrix Mat4) {
-	target.Add(t.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, t.material, false)
+	t.DrawColorMask(target, matrix, White)
 }
 
 func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	// mat2 := matrix
 	// mat2.Translate(0, -0.5, 0)
 	// target.Add(t.mesh, mat2, Black, t.material, false)
-	target.Add(t.mesh, matrix, color, t.material, false)
+
+	target.Add(t.mesh, matrix.gl(), color, t.material, false)
 }
 
 func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
 	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
-	target.Add(t.mesh, mat, color, t.material, false)
+	target.Add(t.mesh, mat.gl(), color, t.material, false)
 }
 
 func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
@@ -430,7 +431,7 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// TODO!!! - There's something wrong with this
 	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
 
-	target.Add(t.mesh, mat, mask, t.material, false)
+	target.Add(t.mesh, mat.gl(), mask, t.material, false)
 }
 
 func (t *Text) AppendStringVerts(text string) Rect {

@@ -66,7 +66,7 @@ func (f *Frame) Draw(pass *RenderPass, matrix Mat4) {
 }
 func (f *Frame) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	pass.Add(f.mesh, matrix, mask, f.material, false)
+	pass.Add(f.mesh, matrix.gl(), mask, f.material, false)
 }
 
 func (f *Frame) delete() {

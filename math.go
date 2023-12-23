@@ -43,6 +43,14 @@ func (m Mat4) gl() glMat4 {
 	return ret
 }
 
+func (m glMat4) writeToFloat32(s []float32) []float32 {
+	// TODO: Replace with copy()?
+	for i := range m {
+		s = append(s, m[i])
+	}
+	return s
+}
+
 func (m Mat4) writeToFloat32(s []float32) []float32 {
 	for i := range m {
 		s = append(s, float32(m[i]))
