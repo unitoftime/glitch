@@ -29,7 +29,7 @@ func (b BufferState) Bind() {
 // TODO - rename
 type ISubBuffer interface {
 	Clear()
-	VertexCount() uint32
+	// VertexCount() uint32
 	Buffer() []byte
 	Offset() int
 	Len() int
@@ -68,9 +68,9 @@ func (b *SubBuffer[T]) Cap() int {
 	return cap(b.buffer)
 }
 
-func (b *SubBuffer[T]) VertexCount() uint32 {
-	return uint32(b.vertexCount)
-}
+// func (b *SubBuffer[T]) VertexCount() uint32 {
+// 	return uint32(b.vertexCount)
+// }
 
 func (b *SubBuffer[T]) Buffer() []byte {
 	copiedHeader := b.buffer
@@ -125,6 +125,7 @@ type VertexBuffer struct {
 
 	buffers []ISubBuffer
 	indices []uint32
+	numVerts uint32 // The number of vertices we currently have buffered
 	numIndicesToDraw int // The number of indices we are currently drawing
 	bufferedToGPU bool // Tracks whether the data has been written to the GPU
 	deallocAfterBuffer bool // If set true, once we write data to the GPU we deallocate CPU buffers
@@ -261,6 +262,7 @@ func (v *VertexBuffer) Clear() {
 	}
 	v.indices = v.indices[:0]
 	v.numIndicesToDraw = 0
+	v.numVerts = 0
 	v.materialSet = false
 	v.bufferedToGPU = false
 }
@@ -285,10 +287,12 @@ func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int
 	v.materialSet = true
 	v.state = state
 
-	currentElement := v.buffers[0].VertexCount()
+	// currentElement := v.buffers[0].VertexCount()
+	currentElement := v.numVerts
 	for i := range indices {
 		v.indices = append(v.indices, currentElement + indices[i])
 	}
+	v.numVerts += uint32(numVerts)
 	v.numIndicesToDraw = len(v.indices)
 
 	for i := range v.buffers {
