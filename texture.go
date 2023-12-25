@@ -1,10 +1,9 @@
 package glitch
 
 import (
-	// "fmt"
 	"image"
-	"image/draw"
 	"image/color"
+	"image/draw"
 	"runtime"
 
 	"github.com/unitoftime/glitch/internal/gl"

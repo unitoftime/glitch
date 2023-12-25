@@ -6,7 +6,6 @@ type Sprite struct {
 	frame Rect // Represents the bounds inside the spritesheet
 	texture *Texture
 	material Material
-	// origin Vec3 // This is used to skew the center of the sprite (which helps with sorting sprites who shouldn't be sorted based on their center points.
 	Translucent bool
 	uvBounds Rect
 }

@@ -1,5 +1,7 @@
 package main
 
+// Try: https://www.shadertoy.com/view/csX3RH
+
 import (
 	"embed"
 	"flag"
@@ -81,12 +83,12 @@ func runGame() {
 	pass := glitch.NewRenderPass(shader)
 	pass.DepthTest = true
 
-	// manImage, err := loadImage("gopher.png")
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// texture := glitch.NewTexture(manImage, false)
-	// manSprite := glitch.NewSprite(texture, texture.Bounds())
+	manImage, err := loadImage("gopher.png")
+	if err != nil {
+		panic(err)
+	}
+	texture := glitch.NewTexture(manImage, false)
+	manSprite := glitch.NewSprite(texture, texture.Bounds())
 
 	length := 200000
 	man := make([]Man, length)
@@ -114,8 +116,8 @@ func runGame() {
 	var dt time.Duration
 
 	// geom := glitch.NewGeomDraw()
-	geomRect := glitch.R(-16, -16, 16, 16)
-	geomMesh := glitch.NewQuadMesh(geomRect, geomRect)
+	// geomRect := glitch.R(-16, -16, 16, 16)
+	// geomMesh := glitch.NewQuadMesh(geomRect, geomRect)
 
 	mat := glitch.Mat4Ident
 	for !win.Closed() {
@@ -160,9 +162,9 @@ func runGame() {
 		for i := range man {
 			mat = glitch.Mat4Ident
 			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
-			// manSprite.DrawColorMask(pass, mat, man[i].color)
+			manSprite.DrawColorMask(pass, mat, man[i].color)
 			// geom.DrawRect(pass, geomRect, mat, man[i].color)
-			geomMesh.DrawColorMask(pass, mat, man[i].color)
+			// geomMesh.DrawColorMask(pass, mat, man[i].color)
 			// geom.DrawRect2(geomRect, mat, man[i].color)
 		}
 		// geom.Draw(pass, glitch.Mat4Ident)

@@ -1,8 +1,6 @@
 package glitch
 
 import (
-	// "os"
-	// "image/png"
 	"fmt"
 	"image"
 	"image/color"
