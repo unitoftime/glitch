@@ -3,6 +3,7 @@ package glitch
 import (
 	"math"
 
+	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/mathgl/mgl64"
 )
 
@@ -23,6 +24,14 @@ func (m *glMat4) Apply(v glVec3) glVec3 {
 		m[i4_0_1]*v[0] + m[i4_1_1]*v[1] + m[i4_2_1]*v[2] + m[i4_3_1], // w = 1.0
 		m[i4_0_2]*v[0] + m[i4_1_2]*v[1] + m[i4_2_2]*v[2] + m[i4_3_2], // w = 1.0
 	}
+}
+func (m *glMat4) Inv() *glMat4 {
+	retMat := glMat4(mgl32.Mat4(*m).Inv())
+	return &retMat
+}
+func (m *glMat4) Transpose() *glMat4 {
+	retMat := glMat4(mgl32.Mat4(*m).Transpose())
+	return &retMat
 }
 
 

@@ -24,7 +24,7 @@ func (b *Batch) Buffer(pass *RenderPass) *Batch {
 
 // TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
 // TODO: should I maintain a translucent and non-translucent batch mesh?
-func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, translucent bool) {
+func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, translucent bool) {
 	if b.material == nil {
 		b.material = material
 	} else {
@@ -36,7 +36,7 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, trans
 	// If anything translucent is added to the batch, then we will consider the entire thing translucent
 	b.Translucent = b.Translucent || translucent
 
-	mat := matrix.gl()
+	// mat := matrix.gl()
 
 	// Append each index
 	currentElement := uint32(len(b.mesh.positions))
@@ -46,7 +46,7 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, trans
 
 	// Append each position
 	for i := range mesh.positions {
-		b.mesh.positions = append(b.mesh.positions, mat.Apply(mesh.positions[i]))
+		b.mesh.positions = append(b.mesh.positions, matrix.Apply(mesh.positions[i]))
 	}
 
 	// Calculate the bounding box of the mesh we just merged in
@@ -88,7 +88,7 @@ func (b *Batch) Add(mesh *Mesh, matrix Mat4, mask RGBA, material Material, trans
 
 
 	if len(mesh.normals) > 0 {
-		renormalizeMat := matrix.Inv().Transpose().gl()
+		renormalizeMat := matrix.Inv().Transpose()
 		for i := range mesh.normals {
 			b.mesh.normals = append(b.mesh.normals, renormalizeMat.Apply(mesh.normals[i]))
 		}
