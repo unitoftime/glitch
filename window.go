@@ -3,14 +3,16 @@ package glitch
 import (
 	"fmt"
 
-	"github.com/unitoftime/glitch/internal/glfw"
 	"github.com/unitoftime/glitch/internal/gl"
+	"github.com/unitoftime/glitch/internal/glfw"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 
 type WindowConfig struct {
 	Fullscreen bool
+	Undecorated bool
+	Maximized bool
 	Vsync bool
 	// Resizable bool
 	Samples int
@@ -74,6 +76,13 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		if config.Fullscreen {
 			monitor = glfw.GetPrimaryMonitor()
 		}
+		if config.Undecorated {
+			glfw.WindowHint(glfw.Decorated, glfw.False)
+		}
+		if config.Maximized {
+			glfw.WindowHint(glfw.Maximized, glfw.True)
+		}
+
 		win.window, err = glfw.CreateWindow(width, height, title, monitor, nil)
 		if err != nil {
 			return err
