@@ -461,6 +461,11 @@ func (s TextStyle) Anchor(v glitch.Vec2) TextStyle {
 	return s
 }
 
+func (s TextStyle) Pivot(v glitch.Vec2) TextStyle {
+	s.pivot = v
+	return s
+}
+
 func (s TextStyle) Scale(v float64) TextStyle {
 	s.scale = v
 	return s
