@@ -632,19 +632,21 @@ func (g *Group) Tooltip(tip string, rect glitch.Rect, style Style) {
 
 	var movement glitch.Vec2
 	if quadrant[0] < 0 {
-		movement[0] = -1
-	} else {
 		movement[0] = 1
+	} else {
+		movement[0] = 0
 	}
 
-	if quadrant[1] < 0 {
-		movement[1] = -1
-	} else {
-		movement[1] = 1
-	}
+	// TODO: Maybe make this configurable? I removed the Y flip because most tooltips are just single lines, and the cursor ends up blocking the text if we anchor below
+	// if quadrant[1] < 0 {
+	// 	movement[1] = 1
+	// } else {
+	// 	movement[1] = 0
+	// }
 
 	cursorRect := glitch.R(0, 0, 0, 0).WithCenter(g.mousePos)
-	style.Text = style.Text.Anchor(movement.Scaled(-1))
+	// style.Text = style.Text.Anchor(movement.Scaled(-1)).Pivot(glitch.Vec2{0.5, 0.5})
+	style.Text = style.Text.Anchor(movement)
 	g.draw(tip, cursorRect, style.Normal, style.Text)
 
 	// text := g.getText(tip)
