@@ -219,7 +219,11 @@ func SetupEventListeners(w *Window) {
 			}
 		}
 
-		ke.Call("preventDefault")
+		// Dont prevent default on F11. That's the fullscreen hotkey
+		// TODO: make this configurable? Maybe also include KeyF12?
+		if key != KeyF11 {
+			ke.Call("preventDefault")
+		}
 		return nil
 	}))
 	document.Call("addEventListener", "keyup", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
