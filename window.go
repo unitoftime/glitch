@@ -118,7 +118,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		gl.Viewport(0, 0, int(width), int(height))
 
 		win.window.SetFramebufferSizeCallback(func(w *glfw.Window, width, height int) {
-			// fmt.Println("Framebuffer size callback")
+			// fmt.Println("Framebuffer size callback", width, height)
 			win.width = width
 			win.height = height
 			gl.Viewport(0, 0, int(win.width), int(win.height))
@@ -278,11 +278,16 @@ func (w *Window) mainthreadCacheMousePosition() {
 	// TODO - Use callback to get contentScale. There is a function available in glfw library. In javascript though, I'm not sure if there's a way to detect content scale (other than maybe in the framebuffer size callback) But if a window is dragged to another monitor which has a different content scale, then the framebuffer size callback may not trigger, but the content scale will be updated.
 	sx, sy = w.window.GetContentScale()
 	// We scale the mouse position (which is in window pixel coords) into framebuffer pixel coords by multiplying it by the content scale.
+
 	xPos := x * float64(sx)
 	yPos := float64(w.height) - (y * float64(sy)) // This flips the coordinate to quadrant 1
 	// return xPos, yPos
 	w.mousePosition[0] = xPos
 	w.mousePosition[1] = yPos
+
+	// fmt.Println("ContentScale:", sx, sy)
+	// fmt.Println("CursorPos:", x, y)
+	// fmt.Println("FinalMousePos:", w.mousePosition)
 }
 
 // // Returns true if the key was pressed in the last frame

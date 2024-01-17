@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"log"
 	"runtime"
+	"sync"
 	"syscall/js"
 	"time"
-	"sync"
 )
 
 // Useful: https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/WebGL_best_practices
@@ -147,17 +147,30 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 		}
 	}
 
+	SetupEventListeners(w)
+
+	// Request first animation frame.
+	// raf.Invoke(animationFrameCallback)
+
+	// Alternative 3 RAF strategy
+	// start()
+
+	return w, nil
+}
+
+func SetupEventListeners(w *Window) {
 	js.Global().Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// HACK: Go fullscreen?
 		width := js.Global().Get("innerWidth").Int()
 		height := js.Global().Get("innerHeight").Int()
 
 		w.devicePixelRatio = js.Global().Get("devicePixelRatio").Float()
-		// fmt.Println("w.devicePixelRatio", w.devicePixelRatio)
-		canvas.Set("width", int(float64(width)*devicePixelRatio+0.5))   // Nearest non-negative int.
-		canvas.Set("height", int(float64(height)*devicePixelRatio+0.5)) // Nearest non-negative int.
-		canvas.Get("style").Call("setProperty", "width", fmt.Sprintf("%vpx", width))
-		canvas.Get("style").Call("setProperty", "height", fmt.Sprintf("%vpx", height))
+		// fmt.Println("DevicePixelRatio:", w.devicePixelRatio)
+
+		w.canvas.Set("width", int(float64(width)*w.devicePixelRatio+0.5))   // Nearest non-negative int.
+		w.canvas.Set("height", int(float64(height)*w.devicePixelRatio+0.5)) // Nearest non-negative int.
+		w.canvas.Get("style").Call("setProperty", "width", fmt.Sprintf("%vpx", width))
+		w.canvas.Get("style").Call("setProperty", "height", fmt.Sprintf("%vpx", height))
 
 		if w.framebufferSizeCallback != nil {
 			// TODO: Callbacks may be blocking so they need to happen asyncronously. However,
@@ -405,13 +418,6 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 		document.AddEventListener("touchend", false, touchHandler)
 	*/
 
-	// Request first animation frame.
-	// raf.Invoke(animationFrameCallback)
-
-	// Alternative 3 RAF strategy
-	// start()
-
-	return w, nil
 }
 
 func SwapInterval(interval int) error {
