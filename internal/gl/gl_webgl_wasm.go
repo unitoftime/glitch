@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build js && wasm
 // +build js,wasm
 
 package gl
@@ -9,10 +10,10 @@ package gl
 import (
 	// "encoding/binary"
 	"fmt"
-	"strings"
 	"math"
 	"reflect"
 	"runtime"
+	"strings"
 	"syscall/js"
 	"unsafe"
 )
@@ -114,6 +115,7 @@ var (
 	fnGetUniformLocation js.Value
 	fnLinkProgram js.Value
 	fnTexImage2D js.Value
+	fnTexSubImage2D js.Value
 )
 
 func (contextWatcher) OnMakeCurrent(context interface{}) {
@@ -173,6 +175,7 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnGetUniformLocation = c.Get("getUniformLocation").Call("bind", c)
 	fnLinkProgram = c.Get("linkProgram").Call("bind", c)
 	fnTexImage2D = c.Get("texImage2D").Call("bind", c)
+	fnTexSubImage2D = c.Get("texSubImage2D").Call("bind", c)
 
 	// WebGL2 Only
 	if !webgl1Mode {
@@ -1013,8 +1016,15 @@ func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, for
 
 func TexSubImage2D(target Enum, level int, x, y, width, height int, format, ty Enum, data interface{}) {
 	array, length := SliceToTypedArray(data)
-	subarray := array.Call("subarray", 0, length)
-	c.Call("texSubImage2D", int(target), level, x, y, width, height, format, int(ty), subarray)
+	if !array.IsNull() {
+		subarray := array.Call("subarray", 0, length)
+		fnTexSubImage2D.Invoke(int(target), level, x, y, width, height, int(format), int(ty), subarray)
+	} else {
+		// TODO: is this the correct behavior?
+		fnTexSubImage2D.Invoke(int(target), level, x, y, width, height, int(format), int(ty), nil)
+	}
+	// subarray := array.Call("subarray", 0, length)
+	// c.Call("texSubImage2D", int(target), level, x, y, width, height, format, int(ty), subarray)
 }
 
 // func TexParameterf(target, pname Enum, param float32) {

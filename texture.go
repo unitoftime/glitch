@@ -15,17 +15,21 @@ var whiteTexture *Texture
 func WhiteTexture() *Texture {
 	if whiteTexture != nil { return whiteTexture }
 	max := 128 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
-	img := image.NewRGBA(image.Rect(0,0,max,max))
 
-	col := uint8(255)
-	for x:=0; x<max; x++ {
-		for y:=0; y<max; y++ {
-			img.SetRGBA(x,y, color.RGBA{col,col,col, 255})
+	whiteColor := color.RGBA{0xFF, 0xFF, 0xFF, 0xFF}
+	whiteTexture = NewRGBATexture(max, max, whiteColor, true)
+	return whiteTexture
+}
+
+func NewRGBATexture(width, height int, col color.RGBA, smooth bool) *Texture {
+	img := image.NewRGBA(image.Rect(0, 0, width, height))
+
+	for x:=0; x<width; x++ {
+		for y:=0; y<height; y++ {
+			img.SetRGBA(x,y, col)
 		}
 	}
-
-	whiteTexture = NewTexture(img, true)
-	return whiteTexture
+	return NewTexture(img, smooth)
 }
 
 func NewTransparentTexture64() *Texture {
