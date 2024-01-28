@@ -254,8 +254,9 @@ func rectSnap(r glitch.Rect) glitch.Rect {
 }
 
 
-func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) {
-	if str == "" { return }
+// Returns the rectangular bounds of the drawn text
+func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
+	if str == "" { return rect } // TODO: Return empty?
 
 	// text := g.getText(str, t.scale)
 	text := g.getText(str, t)
@@ -278,7 +279,7 @@ func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) {
 
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
-	return
+	return rect
 }
 
 func (g *Group) drawSprite(rect glitch.Rect, style SpriteStyle) {
@@ -489,8 +490,9 @@ func (s TextStyle) Shadow(v glitch.Vec2) TextStyle {
 }
 
 
-func (g *Group) Text(str string, rect glitch.Rect, s TextStyle) {
-	g.drawText(str, rect, s)
+// Returns the rectangular bounds of the drawn text
+func (g *Group) Text(str string, rect glitch.Rect, s TextStyle) glitch.Rect {
+	return g.drawText(str, rect, s)
 }
 func (g *Group) TextPanel(str string, rect glitch.Rect, s Style) {
 	g.drawSprite(rect, s.Normal)
