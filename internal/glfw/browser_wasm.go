@@ -320,21 +320,37 @@ func SetupEventListeners(w *Window) {
 		deltaX := we.Get("deltaX").Float()
 		deltaY := we.Get("deltaY").Float()
 
-		var multiplier float64
-		/*
-			switch we.DeltaMode {
-			case dom.DeltaPixel:
-				multiplier = 0.1
-			case dom.DeltaLine:
-				multiplier = 1
-			default:
-				log.Println("unsupported WheelEvent.DeltaMode:", we.DeltaMode)
-				multiplier = 1
-			}*/
-		multiplier = 1
+		// var multiplier float64
+		// /*
+		// 	switch we.DeltaMode {
+		// 	case dom.DeltaPixel:
+		// 		multiplier = 0.1
+		// 	case dom.DeltaLine:
+		// 		multiplier = 1
+		// 	default:
+		// 		log.Println("unsupported WheelEvent.DeltaMode:", we.DeltaMode)
+		// 		multiplier = 1
+		// 	}*/
+		// multiplier = 1
+
+		// if w.scrollCallback != nil {
+		// 	go w.scrollCallback(w, -deltaX*multiplier, -deltaY*multiplier)
+		// }
+
+		// TODO: Snap scroll to individual ticks. This isn't exactly correct, but browsers return larger values that dont really match what GLFW typically returns
+		if deltaX > 0 {
+			deltaX = 1
+		} else if deltaX < 0 {
+			deltaX = -1
+		}
+		if deltaY > 0 {
+			deltaY = 1
+		} else if deltaY < 0 {
+			deltaY = -1
+		}
 
 		if w.scrollCallback != nil {
-			go w.scrollCallback(w, -deltaX*multiplier, -deltaY*multiplier)
+			go w.scrollCallback(w, -deltaX, -deltaY)
 		}
 
 		we.Call("preventDefault")
@@ -390,6 +406,15 @@ func SetupEventListeners(w *Window) {
 		}()
 		return nil
 	}))
+
+	// TODO: Maybe in the future I'll allow people to set this. It kinda doesn't work well b/c it freezes the window. so the game locks up
+	// htmlWindow.Call("addEventListener", "beforeunload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	// 	fmt.Println("Catching BeforeUnload!")
+	// 	we := args[0]
+	// 	we.Call("preventDefault")
+
+	// 	return js.ValueOf("Sure?")
+	// }))
 
 	/*
 		// Hacky mouse-emulation-via-touch.
