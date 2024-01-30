@@ -514,6 +514,11 @@ func (r Rect) SliceVertical(amount float64) Rect {
 	return r.CutRight(amount)
 }
 
+// Adds padding to a rectangle consistently
+func (r Rect) PadAll(padding float64) Rect {
+	return r.Pad(R(padding, padding, padding, padding))
+}
+
 // Adds padding to a rectangle (pads inward if padding is negative)
 func (r Rect) Pad(pad Rect) Rect {
 	return R(r.Min[0] - pad.Min[0], r.Min[1] - pad.Min[1], r.Max[0] + pad.Max[0], r.Max[1] + pad.Max[1])
