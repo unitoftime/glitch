@@ -373,6 +373,7 @@ func (r Rect) WithCenter(v Vec2) Rect {
 	return R(v[0] - w, v[1] - h, v[0] + w, v[1] + h)
 }
 
+// TODO: Should I make a pointer version of this that handles the nil case too?
 // Returns the smallest rect which contains both input rects
 func (r Rect) Union(s Rect) Rect {
 	r = r.Norm()

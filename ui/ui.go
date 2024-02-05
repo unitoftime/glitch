@@ -82,8 +82,9 @@ type Group struct {
 	mousePos, mouseDownPos glitch.Vec2
 
 	// New Way
-	hotId, activeId eid
-	downId eid
+	hotId eid    // The element id that you are hovering over or about to interact with
+	downId eid   // The element id that you have selected or are holding down on
+	activeId eid // The element id that is active?
 	tmpHotId eid
 
 	idCounter eid
@@ -527,7 +528,8 @@ func (g *Group) button(label string, rect glitch.Rect, style Style) (pressed, he
 
 	if g.activeId == id {
 		held = true
-		if g.win.JustReleased(glitch.MouseButtonLeft) {
+		// if g.win.JustReleased(glitch.MouseButtonLeft) {
+		if !g.win.Pressed(glitch.MouseButtonLeft) {
 			g.activeId = invalidId
 			if g.hotId == id {
 				released = true
@@ -717,7 +719,8 @@ func (g *Group) DragAndDropItem(label string, style Style, rect glitch.Rect) (bo
 
 	dropSlot := false
 	if g.activeId == id {
-		if g.win.JustReleased(glitch.MouseButtonLeft) {
+		// if g.win.JustReleased(glitch.MouseButtonLeft) {
+		if !g.win.Pressed(glitch.MouseButtonLeft) {
 			g.activeId = invalidId
 		}
 	} else if g.downId == id {
@@ -726,7 +729,8 @@ func (g *Group) DragAndDropItem(label string, style Style, rect glitch.Rect) (bo
 			// fmt.Println("Drag:", elem)
 			g.activeId = id
 			g.downId = invalidId
-		} else if g.win.JustReleased(glitch.MouseButtonLeft) {
+		// } else if g.win.JustReleased(glitch.MouseButtonLeft) {
+		} else if !g.win.Pressed(glitch.MouseButtonLeft) {
 			// fmt.Println("Click:", elem)
 			buttonClick = true
 			g.downId = invalidId
