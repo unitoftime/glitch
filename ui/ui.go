@@ -696,20 +696,22 @@ func (g *Group) DragAndDropSlot(label string, style Style, rect glitch.Rect) boo
 }
 
 // returns (Clicked, hovered, isdragging, dropSlot)
-func (g *Group) DragAndDropItem(label string, style Style, rect glitch.Rect) (bool, bool, bool, bool) {
+func (g *Group) DragAndDropItem(label string, style Style, rect glitch.Rect) (bool, bool, bool, bool, glitch.Rect) {
 	id := g.getId(label)
 
 	buttonClick := false
 	buttonHover := false
+	drawRect := rect
 	if g.activeId == id {
 		global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
-		g.drawSprite(rect.WithCenter(g.mousePos), style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5}))
+		drawRect = rect.WithCenter(g.mousePos)
+		g.drawSprite(drawRect, style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5}))
 	} else if g.downId == id {
-		g.drawSprite(rect, style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5})) //TODO Push outward
+		g.drawSprite(drawRect, style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5})) //TODO Push outward
 	} else if g.hotId == id {
-		g.drawSprite(rect, style.Normal)
+		g.drawSprite(drawRect, style.Normal)
 	} else {
-		g.drawSprite(rect, style.Normal)
+		g.drawSprite(drawRect, style.Normal)
 	}
 
 	// Make it so we can't hover ourself if we are currently being dragged
@@ -753,7 +755,7 @@ func (g *Group) DragAndDropItem(label string, style Style, rect glitch.Rect) (bo
 	// This item is currently dragging if the active element is itself
 	currentlyDragging := (g.activeId == id)
 
-	return buttonClick, buttonHover, currentlyDragging, dropSlot
+	return buttonClick, buttonHover, currentlyDragging, dropSlot, drawRect
 }
 
 func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2, style TextStyle) {
