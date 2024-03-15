@@ -80,6 +80,13 @@ func (v Vec2) Sub(u Vec2) Vec2 {
 	return Vec2{v[0] - u[0], v[1] - u[1]}
 }
 
+func (v Vec2) Snap() Vec2 {
+	return Vec2{
+		math.Round(v[0]),
+		math.Round(v[1]),
+	}
+}
+
 func (v Vec2) Unit() Vec2 {
 	len := v.Len()
 	return Vec2{v[0]/len, v[1]/len}
@@ -514,6 +521,13 @@ func (r Rect) SliceVertical(amount float64) Rect {
 	r.CutRight((r.W() - amount) / 2)
 	return r.CutRight(amount)
 }
+
+func (r Rect) Snap() Rect {
+	r.Min = r.Min.Snap()
+	r.Max = r.Max.Snap()
+	return r
+}
+
 
 // Adds padding to a rectangle consistently
 func (r Rect) PadAll(padding float64) Rect {

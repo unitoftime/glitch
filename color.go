@@ -37,6 +37,17 @@ func FromStraightRGBA(r, g, b float64, a float64) RGBA {
 	return RGBA{r * a, g * a, b * a, a}
 }
 
+// func FromNRGBA(c color.NRGBA) RGBA {
+// 	r, g, b, a := c.RGBA()
+
+// 	return RGBA{
+// 		float64(r) / float64(math.MaxUint16),
+// 		float64(g) / float64(math.MaxUint16),
+// 		float64(b) / float64(math.MaxUint16),
+// 		float64(a) / float64(math.MaxUint16),
+// 	}
+// }
+
 func FromRGBA(c color.RGBA) RGBA {
 	return FromUint8(c.R, c.G, c.B, c.A)
 }
