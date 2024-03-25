@@ -463,28 +463,17 @@ func BlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha Enum) 
 // }
 
 func BufferSubDataByte(target Enum, offset int, data []byte) {
-	js.CopyBytesToJS(jsMemory, data)
-	runtime.KeepAlive(data)
-	fnBufferSubData.Invoke(int(target), offset, jsMemory, 0, len(data))
+	array, length := SliceToTypedArray(data)
+	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
 }
 
 func BufferSubDataUint32(target Enum, offset int, data []uint32) {
-	copyData := data
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&copyData))
-	h.Len *= 4
-	h.Cap *= 4
-	byteData := *(*[]byte)(unsafe.Pointer(h))
-
-	js.CopyBytesToJS(jsMemory, byteData)
-	runtime.KeepAlive(byteData)
-	fnBufferSubData.Invoke(int(target), offset, jsMemoryUint32, 0, len(data))
+	array, length := SliceToTypedArray(data)
+	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
 }
 
 func BufferSubData(target Enum, offset int, data interface{}) {
-	// c.Call("bufferSubData", int(target), offset, SliceToTypedArray(data))
 	array, length := SliceToTypedArray(data)
-	// subarray := array.Call("subarray", 0, length)
-	// fnBufferSubData.Invoke(int(target), offset, subarray)
 	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
 }
 
