@@ -421,6 +421,12 @@ func (w *Window) ScreenMode() ScreenModeType {
 	return ScreenModeType(w.window.ScreenMode())
 }
 
+// Returns true if the window is embedded in an iframe, else returns false.
+// Always returns false on desktop
+func (w *Window) EmbeddedIframe() bool {
+	return w.window.EmbeddedIframe()
+}
+
 
 // --- Dear Imgui required ---
 func (w *Window) GetMouse() (x, y float64) {

@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package glfw
@@ -5,6 +6,7 @@ package glfw
 import (
 	"io"
 	"os"
+
 	// "runtime"
 	// "fmt"
 
@@ -552,6 +554,10 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 	}
 
 	w.currentScreenMode = smt
+}
+
+func (w *Window) EmbeddedIframe() bool {
+	return false
 }
 
 // Note: Passing in nil here gives you a window instead of fullscreen

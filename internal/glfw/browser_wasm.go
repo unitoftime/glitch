@@ -70,6 +70,20 @@ func resolveNavigatorKeyboard() {
 	}))
 }
 
+func resolveIframeEmbedding() bool {
+	// Notes: https://stackoverflow.com/questions/326069/how-to-identify-if-a-webpage-is-being-loaded-inside-an-iframe-or-directly-into-t
+	// window.self !== window.top;
+	self := htmlWindow.Get("self")
+	top := htmlWindow.Get("top")
+	if self.IsNull() {
+		return true // Something is weird, assume we are in an iframe
+	}
+	if top.IsNull() {
+		return true // Assume that we were blocked from accessing it do to cors
+	}
+	return !self.Equal(top)
+}
+
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
 	// Find a canvas, preferably one with an id of glfw
 	canvas := resolveCanvas()
@@ -127,6 +141,7 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 	}
 
 	resolveNavigatorKeyboard()
+	w.embeddedIframe = resolveIframeEmbedding()
 
 	if w.canvas.Get("requestPointerLock").Equal(js.Undefined()) ||
 		document.Get("exitPointerLock").Equal(js.Undefined()) {
@@ -459,6 +474,7 @@ type Window struct {
 	context           js.Value
 	requestFullscreen bool // requestFullscreen is set to true when fullscreen should be entered as soon as possible (in a user input handler).
 	fullscreen        bool // fullscreen is true if we're currently in fullscreen mode.
+	embeddedIframe    bool // true if the window is embedded in an iframe
 
 	// Unavailable browser APIs.
 	missing struct {
@@ -535,6 +551,10 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 			w.fullscreen = false
 		}
 	}
+}
+
+func (w *Window) EmbeddedIframe() bool {
+	return w.embeddedIframe
 }
 
 type Monitor struct{}
