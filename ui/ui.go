@@ -353,8 +353,9 @@ func removeDedup(label string) string {
 }
 
 func (g *Group) Panel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
-	ss := SpriteStyle{sprite, color}
-	g.drawSprite(rect, ss)
+	// ss := SpriteStyle{sprite, color}
+	// g.drawSprite(rect, ss)
+	g.HoverPanel(sprite, rect, color)
 }
 
 func (g *Group) Hovered(rect glitch.Rect) bool {
