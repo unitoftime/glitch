@@ -225,8 +225,8 @@ func (m *Mat4) Translate(x, y, z float64) *Mat4 {
 	return m
 }
 
-func (m *Mat4) GetTranslation() (float64, float64, float64) {
-	return m[i4_3_0], m[i4_3_1], m[i4_3_2]
+func (m *Mat4) GetTranslation() Vec3 {
+	return Vec3{m[i4_3_0], m[i4_3_1], m[i4_3_2]}
 }
 
 // https://github.com/go-gl/mathgl/blob/v1.0.0/mgl32/transform.go#L159
@@ -560,9 +560,9 @@ func (r Rect) Anchor(r2 Rect, anchor Vec2) Rect {
 
 // Anchors r2 to r1 based on two anchors, one for r and one for r2
 // TODO - rename to Anchor?
-func (r Rect) FullAnchor(r2 Rect, rAnchor, r2Anchor Vec2) Rect {
-	anchorPoint := Vec2{r.Min[0] + (rAnchor[0] * r.W()), r.Min[1] + (rAnchor[1] * r.H())}
-	pivotPoint := Vec2{r2.Min[0] + (r2Anchor[0] * r2.W()) , r2.Min[1] + (r2Anchor[1] * r2.H())}
+func (r Rect) FullAnchor(r2 Rect, anchor, pivot Vec2) Rect {
+	anchorPoint := Vec2{r.Min[0] + (anchor[0] * r.W()), r.Min[1] + (anchor[1] * r.H())}
+	pivotPoint := Vec2{r2.Min[0] + (pivot[0] * r2.W()) , r2.Min[1] + (pivot[1] * r2.H())}
 
 	a := Vec2{anchorPoint[0] - pivotPoint[0], anchorPoint[1] - pivotPoint[1]}
 	return R(a[0], a[1], a[0] + r2.W(), a[1] + r2.H()).Norm()
