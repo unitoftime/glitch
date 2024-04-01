@@ -175,6 +175,12 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 	}
 }
 
+func (s *NinePanelSprite) SetTranslucent(translucent bool) {
+	for i := range s.sprites {
+		s.sprites[i].Translucent = translucent
+	}
+}
+
 // Should 'matrix' just be scale and rotation? to scale up and down border pieces
 // func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
 // 	s.DrawColorMask(pass, bounds, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
