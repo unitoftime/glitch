@@ -135,6 +135,9 @@ type RenderPass struct {
 	DepthTest bool // If set true, enable hardware depth testing. This changes how software sorting works. currently If you change this mid-pass you might get weird behavior.
 	SoftwareSort SoftwareSortMode
 
+	DepthBump bool
+	depthBump float32
+
 	drawCalls []drawCall
 }
 
@@ -166,6 +169,8 @@ func NewRenderPass(shader *Shader) *RenderPass {
 }
 
 func (r *RenderPass) Clear() {
+	r.depthBump = 0
+
 	// Clear stuff
 	r.buffer.Clear()
 	for l := range r.commands {
@@ -196,11 +201,27 @@ func (r *RenderPass) Batch() {
 	r.SortInSoftware()
 
 	// TODO: This isn't an efficient order for fill rate. You should reverse the order (but make an initial batch pass where you draw translucent geometry in the right order)
-	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+	// for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+	// 	for i := range r.commands[l].Opaque {
+	// 		r.applyDrawCommand(r.commands[l].Opaque[i])
+	// 	}
+	// 	for i := range r.commands[l].Translucent {
+	// 		r.applyDrawCommand(r.commands[l].Translucent[i])
+	// 	}
+	// }
+
+	// Opaque goes front to back (0 to 255)
+	for l := range r.commands {
 		for i := range r.commands[l].Opaque {
+			// fmt.Println("- Opaque: (layer, x, z)", l, r.commands[l].Opaque[i].matrix[i4_3_1], r.commands[l].Opaque[i].matrix[i4_3_2])
 			r.applyDrawCommand(r.commands[l].Opaque[i])
 		}
+	}
+
+	// Translucent goes from back to front (255 to 0)
+	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 		for i := range r.commands[l].Translucent {
+			// fmt.Println("- Transl: (layer, x, z)", l, r.commands[l].Translucent[i].matrix[i4_3_1], r.commands[l].Translucent[i].matrix[i4_3_2])
 			r.applyDrawCommand(r.commands[l].Translucent[i])
 		}
 	}
@@ -236,8 +257,8 @@ func (r *RenderPass) Draw(target Target) {
 
 	state.enableDepthTest(r.DepthTest)
 	if r.DepthTest {
-		state.setDepthFunc(gl.LEQUAL)
-		// state.setDepthFunc(gl.LESS)
+		// state.setDepthFunc(gl.LEQUAL)
+		state.setDepthFunc(gl.LESS)
 	}
 
 	r.shader.Bind()
@@ -273,8 +294,9 @@ func (r *RenderPass) setUniform(name string, value any) {
 // Option 2: I could also just offset the geometry when I create the sprite (or after). Then simply use the transforms like normal. I'd just have to offset the sprite by the height, and then not add the height to the Y transformation
 // Option 3: I can batch together these sprites into a single thing that is then rendered
 func (r *RenderPass) Add(filler *Mesh, mat glMat4, mask RGBA, material Material, translucent bool) {
-	// TODO: mask.A == 0 { skip } ???
-	if mask.A != 0 && mask.A != 1 {
+	if mask.A == 0 { return } // discard b/c its completely transparent
+
+	if mask.A != 1 {
 		translucent = true
 	}
 
@@ -290,7 +312,10 @@ func (r *RenderPass) Add(filler *Mesh, mat glMat4, mask RGBA, material Material,
 		// mat[i4_3_2] = mat[i4_3_1] // Set Z translation to the y point
 
 		// Add the layer to the depth
-		mat[i4_3_2] -= float32(r.currentLayer)
+		if r.DepthBump {
+			r.depthBump -= 0.0001 // TODO: Very very arbitrary
+		}
+		mat[i4_3_2] -= float32(r.currentLayer) + r.depthBump
 		// fmt.Println("Depth: ", mat[i4_3_2])
 	}
 

@@ -446,13 +446,12 @@ func (t *Text) AppendStringVerts(text string) Rect {
 			continue
 		}
 
-		// runeMesh, newDot, ascent := a.RuneVerts(r, *dot, scale)
-		// fmt.Println("dot", *dot)
+		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.Color)
+
 		noShadow := Vec2{}
 		if t.shadow != noShadow {
 			_, _ = t.atlas.RuneVerts(t.mesh, r, t.Dot.Add(t.shadow), t.scale, Black)
 		}
-		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.Color)
 
 		t.Dot = newDot
 
