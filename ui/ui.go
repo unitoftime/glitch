@@ -157,6 +157,9 @@ func (g *Group) getGraph(bounds glitch.Rect) *graph.Graph {
 func (g *Group) SetLayer(layer int8) {
 	g.pass.SetLayer(layer)
 }
+func (g *Group) Layer() int8 {
+	return g.pass.Layer()
+}
 
 func (g *Group) mousePosition() (float64, float64) {
 	x, y := g.win.MousePosition()

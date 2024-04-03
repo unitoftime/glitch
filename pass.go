@@ -192,6 +192,7 @@ func (r RenderPass) Layer() int8 {
 	return r.currentLayer
 }
 
+// TODO: This shouldnt be global on the pass, but rather local on material
 // Sets the blend mode for this render pass
 func (r *RenderPass) SetBlendMode(bm BlendMode) {
 	r.blendMode = bm
@@ -313,7 +314,7 @@ func (r *RenderPass) Add(filler *Mesh, mat glMat4, mask RGBA, material Material,
 
 		// Add the layer to the depth
 		if r.DepthBump {
-			r.depthBump -= 0.0001 // TODO: Very very arbitrary
+			r.depthBump -= 0.00001 // TODO: Very very arbitrary
 		}
 		mat[i4_3_2] -= float32(r.currentLayer) + r.depthBump
 		// fmt.Println("Depth: ", mat[i4_3_2])
