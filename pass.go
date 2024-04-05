@@ -126,6 +126,7 @@ type RenderPass struct {
 	shader *Shader
 	texture *Texture
 	uniforms map[string]any
+	uniformMat4 map[string]glMat4
 	buffer *BufferPool
 	commands []cmdList
 	currentLayer int8 // TODO - layering code relies on the fact that this is a uint8, when you change, double check every usage of layers.
@@ -160,6 +161,7 @@ func NewRenderPass(shader *Shader) *RenderPass {
 		shader: shader,
 		texture: nil,
 		uniforms: make(map[string]any),
+		uniformMat4: make(map[string]glMat4),
 		buffer: NewBufferPool(shader, defaultBatchSize),
 		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
 		drawCalls: make([]drawCall, 0),
@@ -263,7 +265,14 @@ func (r *RenderPass) Draw(target Target) {
 	}
 
 	r.shader.Bind()
-	for k,v := range r.uniforms {
+	for k, v := range r.uniformMat4 {
+		ok := r.shader.SetUniformMat4(k, v)
+		if !ok {
+			panic("Error setting uniform - todo decrease this to log")
+		}
+	}
+
+	for k, v := range r.uniforms {
 		ok := r.shader.SetUniform(k, v)
 		if !ok {
 			panic("Error setting uniform - todo decrease this to log")
@@ -283,8 +292,8 @@ func (r *RenderPass) SetTexture(slot int, texture *Texture) {
 // }
 
 func (r *RenderPass) SetCamera2D(camera *CameraOrtho) {
-	r.setUniform("projection", camera.Projection)
-	r.setUniform("view", camera.View)
+	r.uniformMat4["projection"] = camera.Projection.gl()
+	r.uniformMat4["view"] = camera.View.gl()
 }
 
 func (r *RenderPass) setUniform(name string, value any) {
@@ -360,7 +369,7 @@ func openglDraw(shader *Shader, draws []drawCall) {
 			lastState.Bind()
 		}
 
-		ok := shader.SetUniformMat4("model", &(draws[i].model))
+		ok := shader.SetUniformMat4("model", (draws[i].model))
 		if !ok {
 			panic("Error setting model uniform - all shaders must have 'model' uniform")
 		}
