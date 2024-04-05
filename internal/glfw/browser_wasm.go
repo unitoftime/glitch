@@ -21,7 +21,7 @@ var navigator = htmlWindow.Get("navigator")
 var (
 	navKeyboard js.Value
 	keyboardLayoutMap js.Value
-	fnKeyboardLayoutMapGet js.Value
+	// fnKeyboardLayoutMapGet js.Value
 )
 
 func isNilOrUndefined(val js.Value) bool {
@@ -64,8 +64,8 @@ func resolveNavigatorKeyboard() {
 		keyboardLayoutMap = args[0]
 		if isNilOrUndefined(keyboardLayoutMap) { return nil }
 
-		// TODO: This is a nice optimization, but I'd have to bind it to something, maybe the window?
-		// fnKeyboardLayoutMapGet = keyboardLayoutMap.Get("get").Bind(???)
+		// // TODO: This is a nice optimization, but I'd have to bind it to something, maybe the window?
+		// fnKeyboardLayoutMapGet = keyboardLayoutMap.Get("get").Call("bind", htmlWindow)
 		return nil
 	}))
 }
@@ -1098,13 +1098,21 @@ func GetKeyScanCode(key Key) int {
 }
 
 // TODO: scancode doesn't work
+var keynameCache = make(map[Key]string)
 func GetKeyName(key Key, scancode int) string {
+	name, has := keynameCache[key]
+	if has {
+		return name
+	}
+
 	if !isNilOrUndefined(keyboardLayoutMap) {
 		str := reverseKeycodeMap[key]
 		val := keyboardLayoutMap.Call("get", str)
+
 		if !isNilOrUndefined(val) {
 			ret := val.String()
 			if ret != "" {
+				keynameCache[key] = ret
 				return ret
 			}
 		}
@@ -1114,8 +1122,10 @@ func GetKeyName(key Key, scancode int) string {
 	name, ok := qwertyKeyNameMap[key]
 	if !ok {
 		// TODO: Use scancode to lookup
-		return "Unknown"
+		name = "Unknown"
 	}
+
+	keynameCache[key] = name
 	return name
 }
 
