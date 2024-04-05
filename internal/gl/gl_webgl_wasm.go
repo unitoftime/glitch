@@ -193,7 +193,7 @@ var c js.Value
 var versionStr string
 var webgl1Mode bool
 
-func sliceToByteSlice(s interface{}) []byte {
+func sliceToByteSlice(s any) []byte {
 	switch s := s.(type) {
 	case []int8:
 		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
@@ -324,6 +324,61 @@ func SliceToTypedArray(s interface{}) (js.Value, int) {
 	}
 }
 
+// -----
+
+func float32SliceToByteSlice(s []float32) []byte {
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	h.Len *= 4
+	h.Cap *= 4
+	return *(*[]byte)(unsafe.Pointer(h))
+}
+
+func float32SliceToTypedArray(s []float32) (js.Value, int) {
+	if s == nil {
+		return js.Null(), 0
+	}
+
+	resizeJavascriptCopyBuffer(4 * len(s))
+	js.CopyBytesToJS(jsMemory, float32SliceToByteSlice(s))
+	runtime.KeepAlive(s)
+	return jsMemoryFloat32, len(s)
+}
+
+// -----
+
+func uint32SliceToByteSlice(s []uint32) []byte {
+	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
+	h.Len *= 4
+	h.Cap *= 4
+	return *(*[]byte)(unsafe.Pointer(h))
+}
+
+func uint32SliceToTypedArray(s []uint32) (js.Value, int) {
+	if s == nil {
+		return js.Null(), 0
+	}
+
+	resizeJavascriptCopyBuffer(4 * len(s))
+	js.CopyBytesToJS(jsMemory, uint32SliceToByteSlice(s))
+	runtime.KeepAlive(s)
+	return jsMemoryUint32, len(s)
+}
+
+// -----
+
+func byteSliceToTypedArray(s []byte) (js.Value, int) {
+	if s == nil {
+		return js.Null(), 0
+	}
+
+	resizeJavascriptCopyBuffer(1 * len(s))
+	js.CopyBytesToJS(jsMemory, s)
+	runtime.KeepAlive(s)
+	return jsMemory, len(s)
+}
+
+//--------------------------------------------------------------------------------
+
 func GenVertexArrays() Buffer {
 	return Buffer{Value: fnCreateVertexArray.Invoke()}
 	// if webgl1Mode {
@@ -355,7 +410,7 @@ func DeleteVertexArrays(b Buffer) {
 	// c.Call("deleteVertexArray", b.Value)
 }
 
-func BufferData(target Enum, size int, data interface{}, usage Enum) {
+func BufferData(target Enum, size int, data any, usage Enum) {
 	if data == nil {
 		// Note: Webgl2 only
 		fnBufferData.Invoke(int(target), size, int(usage))
@@ -365,10 +420,6 @@ func BufferData(target Enum, size int, data interface{}, usage Enum) {
 	array, length := SliceToTypedArray(data)
 	subarray := array.Call("subarray", 0, length)
 	fnBufferData.Invoke(int(target), subarray, int(usage))
-
-	// c.Call("bufferData", int(target), SliceToTypedArray(data), int(usage))
-// 	c.Call("bufferData", int(target), SliceToTypedArray(data), int(usage))
-	//	gl.BufferData(uint32(target), size, data, uint32(usage))
 }
 
 func BlitFramebuffer(srcX0 int32, srcY0 int32, srcX1 int32, srcY1 int32, dstX0 int32, dstY0 int32, dstX1 int32, dstY1 int32, mask uint32, filter uint32) {
@@ -463,19 +514,20 @@ func BlendFuncSeparate(sfactorRGB, dfactorRGB, sfactorAlpha, dfactorAlpha Enum) 
 // }
 
 func BufferSubDataByte(target Enum, offset int, data []byte) {
-	array, length := SliceToTypedArray(data)
+	array, length := byteSliceToTypedArray(data)
 	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
 }
 
 func BufferSubDataUint32(target Enum, offset int, data []uint32) {
-	array, length := SliceToTypedArray(data)
+	array, length := uint32SliceToTypedArray(data)
 	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
 }
 
-func BufferSubData(target Enum, offset int, data interface{}) {
-	array, length := SliceToTypedArray(data)
-	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
-}
+// Note: I removed this because it requires me to do interface-based type switches which causes allocs
+// func BufferSubData(target Enum, offset int, data any) {
+// 	array, length := SliceToTypedArray(data)
+// 	fnBufferSubData.Invoke(int(target), offset, array, 0, length)
+// }
 
 // func GetBufferSubData(target Enum, offset int, data interface{}) {
 // 	array, length := SliceToTypedArray(data)
@@ -982,18 +1034,19 @@ func ShaderSource(s Shader, src string) {
 // 	c.Call("stencilOpSeparate", face, sfail, dpfail, dppass)
 // }
 
-func TexImage2D(target Enum, level int, width, height int, format Enum, ty Enum, data interface{}) {
-	array, length := SliceToTypedArray(data)
-	if !array.IsNull() {
-		subarray := array.Call("subarray", 0, length)
-		fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
-	} else {
-		fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), nil)
-	}
-}
+// Note: I removed this because it requires me to do interface-based type switches which causes allocs
+// func TexImage2D(target Enum, level int, width, height int, format Enum, ty Enum, data interface{}) {
+// 	array, length := SliceToTypedArray(data)
+// 	if !array.IsNull() {
+// 		subarray := array.Call("subarray", 0, length)
+// 		fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), subarray)
+// 	} else {
+// 		fnTexImage2D.Invoke(int(target), level, int(format), width, height, 0, int(format), int(ty), nil)
+// 	}
+// }
 
-func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, format Enum, ty Enum, data interface{}) {
-	array, length := SliceToTypedArray(data)
+func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, format Enum, ty Enum, data []byte) {
+	array, length := byteSliceToTypedArray(data)
 	if !array.IsNull() {
 		subarray := array.Call("subarray", 0, length)
 		fnTexImage2D.Invoke(int(target), level, int(format1), width, height, 0, int(format), int(ty), subarray)
@@ -1003,8 +1056,8 @@ func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, for
 }
 
 
-func TexSubImage2D(target Enum, level int, x, y, width, height int, format, ty Enum, data interface{}) {
-	array, length := SliceToTypedArray(data)
+func TexSubImage2D(target Enum, level int, x, y, width, height int, format, ty Enum, data []byte) {
+	array, length := byteSliceToTypedArray(data)
 	if !array.IsNull() {
 		subarray := array.Call("subarray", 0, length)
 		fnTexSubImage2D.Invoke(int(target), level, x, y, width, height, int(format), int(ty), subarray)
@@ -1044,7 +1097,7 @@ func TexParameteri(target, pname Enum, param int) {
 
 func Uniform1fv(dst Uniform, src []float32) {
 	// TODO: invoke
-	array, length := SliceToTypedArray(src)
+	array, length := float32SliceToTypedArray(src)
 	subarray := array.Call("subarray", 0, length)
 	c.Call("uniform1fv", dst.Value, subarray)
 }
@@ -1135,12 +1188,8 @@ func Uniform1fv(dst Uniform, src []float32) {
 // }
 
 func UniformMatrix4fv(dst Uniform, src []float32) {
-	SliceToTypedArray(src)
+	float32SliceToTypedArray(src)
 	fnUniformMatrix4fv.Invoke(dst.Value, false, jsMemoryBufferMat4)
-
-	// array, length := SliceToTypedArray(src)
-	// subarray := array.Call("subarray", 0, length)
-	// c.Call("uniformMatrix4fv", dst.Value, false, subarray)
 }
 
 func UseProgram(p Program) {
