@@ -18,7 +18,6 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		bounds.Max[1] / float64(texture.height),
 	)
 
-
 	mesh := NewSpriteMesh(bounds.W(), bounds.H(), uvBounds)
 	return &Sprite{
 		mesh: mesh,
@@ -62,6 +61,31 @@ func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 
 func (s *Sprite) Bounds() Rect {
 	return s.bounds
+}
+
+func (s *Sprite) SetTextureBounds(bounds Rect) {
+	s.frame = bounds
+	s.bounds = bounds.Moved(bounds.Center().Scaled(-1))
+	s.uvBounds = R(
+		bounds.Min[0] / float64(s.texture.width),
+		bounds.Min[1] / float64(s.texture.height),
+		bounds.Max[0] / float64(s.texture.width),
+		bounds.Max[1] / float64(s.texture.height),
+	)
+
+	w := bounds.W()
+	h := bounds.H()
+	meshBounds := R(-w/2, -h/2, w/2, h/2)
+
+	s.mesh.positions[0] = glVec3{float32(meshBounds.Max[0]), float32(meshBounds.Max[1]), float32(0.0)}
+	s.mesh.positions[1] = glVec3{float32(meshBounds.Max[0]), float32(meshBounds.Min[1]), float32(0.0)}
+	s.mesh.positions[2] = glVec3{float32(meshBounds.Min[0]), float32(meshBounds.Min[1]), float32(0.0)}
+	s.mesh.positions[3] = glVec3{float32(meshBounds.Min[0]), float32(meshBounds.Max[1]), float32(0.0)}
+
+	s.mesh.texCoords[0] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Min[1])}
+	s.mesh.texCoords[1] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Max[1])}
+	s.mesh.texCoords[2] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Max[1])}
+	s.mesh.texCoords[3] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Min[1])}
 }
 
 // // TODO: This stuff was somehow just about the same speed as the mesh fill function. Not sure if its worth it unless I can make it way faster
