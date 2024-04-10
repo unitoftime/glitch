@@ -399,14 +399,19 @@ func (r Rect) Moved(v Vec2) Rect {
 	}
 }
 
-// Scales rect r uniformly to fit inside rect r2
-// TODO This only scales around {0, 0}
-func (r Rect) ScaledToFit(r2 Rect) Rect {
+// Calculates the scale required to fit rect r inside r2
+func (r Rect) FitScale(r2 Rect) float64 {
 	scaleX := r2.W() / r.W()
 	scaleY := r2.H() / r.H()
 
 	min, _ := minMax(scaleX, scaleY)
-	return r.Scaled(min)
+	return min
+}
+
+// Scales rect r uniformly to fit inside rect r2
+// TODO This only scales around {0, 0}
+func (r Rect) ScaledToFit(r2 Rect) Rect {
+	return r.Scaled(r.FitScale(r2))
 }
 
 // Returns the largest square that fits inside the rectangle

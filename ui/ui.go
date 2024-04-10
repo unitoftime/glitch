@@ -272,7 +272,12 @@ func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect 
 	// 	rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	// }
 	if t.autoFit {
-		rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
+		if t.fitInteger {
+			intFitScale := math.Floor(text.Bounds().FitScale(rect))
+			rect = rect.FullAnchor(text.Bounds().Scaled(intFitScale), t.anchor, t.pivot)
+		} else {
+			rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
+		}
 	} else {
 		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
@@ -444,7 +449,8 @@ type TextStyle struct {
 	padding glitch.Rect
 	color glitch.RGBA
 	scale float64
-	autoFit bool
+	autoFit bool // Auto scale the text to fit the rectangle
+	fitInteger bool // If autoscaling, then only scale by integers (for pixel fonts)
 	shadow glitch.Vec2
 }
 
@@ -489,6 +495,11 @@ func (s TextStyle) Autofit(v bool) TextStyle {
 	s.autoFit = v
 	return s
 }
+func (s TextStyle) FitInteger(v bool) TextStyle {
+	s.fitInteger = v
+	return s
+}
+
 func (s TextStyle) Shadow(v glitch.Vec2) TextStyle {
 	s.shadow = v
 	return s
