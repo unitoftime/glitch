@@ -8,11 +8,15 @@ import (
 )
 
 type glVec2 [2]float32
+type glVec3 [3]float32
+type glVec4 [4]float32
+
 func (v glVec3) Add(u glVec3) glVec3 {
 	return glVec3{v[0] + u[0], v[1] + u[1], v[2] + u[2]}
 }
-type glVec3 [3]float32
-type glVec4 [4]float32
+func (v glVec3) Float64() Vec3 {
+	return Vec3{float64(v[0]), float64(v[1]), float64(v[2])}
+}
 
 type glMat4 [16]float32
 
@@ -32,6 +36,36 @@ func (m *glMat4) Inv() *glMat4 {
 func (m *glMat4) Transpose() *glMat4 {
 	retMat := glMat4(mgl32.Mat4(*m).Transpose())
 	return &retMat
+}
+func (m *glMat4) Mul(n *glMat4) *glMat4 {
+	// This is in column major order
+	*m = glMat4{
+	// return &Mat4{
+		// Column 0
+		m[i4_0_0] * n[i4_0_0] + m[i4_1_0] * n[i4_0_1] + m[i4_2_0] * n[i4_0_2] + m[i4_3_0] * n[i4_0_3],
+		m[i4_0_1] * n[i4_0_0] + m[i4_1_1] * n[i4_0_1] + m[i4_2_1] * n[i4_0_2] + m[i4_3_1] * n[i4_0_3],
+		m[i4_0_2] * n[i4_0_0] + m[i4_1_2] * n[i4_0_1] + m[i4_2_2] * n[i4_0_2] + m[i4_3_2] * n[i4_0_3],
+		m[i4_0_3] * n[i4_0_0] + m[i4_1_3] * n[i4_0_1] + m[i4_2_3] * n[i4_0_2] + m[i4_3_3] * n[i4_0_3],
+
+		// Column 1
+		m[i4_0_0] * n[i4_1_0] + m[i4_1_0] * n[i4_1_1] + m[i4_2_0] * n[i4_1_2] + m[i4_3_0] * n[i4_1_3],
+		m[i4_0_1] * n[i4_1_0] + m[i4_1_1] * n[i4_1_1] + m[i4_2_1] * n[i4_1_2] + m[i4_3_1] * n[i4_1_3],
+		m[i4_0_2] * n[i4_1_0] + m[i4_1_2] * n[i4_1_1] + m[i4_2_2] * n[i4_1_2] + m[i4_3_2] * n[i4_1_3],
+		m[i4_0_3] * n[i4_1_0] + m[i4_1_3] * n[i4_1_1] + m[i4_2_3] * n[i4_1_2] + m[i4_3_3] * n[i4_1_3],
+
+		// Column 2
+		m[i4_0_0] * n[i4_2_0] + m[i4_1_0] * n[i4_2_1] + m[i4_2_0] * n[i4_2_2] + m[i4_3_0] * n[i4_2_3],
+		m[i4_0_1] * n[i4_2_0] + m[i4_1_1] * n[i4_2_1] + m[i4_2_1] * n[i4_2_2] + m[i4_3_1] * n[i4_2_3],
+		m[i4_0_2] * n[i4_2_0] + m[i4_1_2] * n[i4_2_1] + m[i4_2_2] * n[i4_2_2] + m[i4_3_2] * n[i4_2_3],
+		m[i4_0_3] * n[i4_2_0] + m[i4_1_3] * n[i4_2_1] + m[i4_2_3] * n[i4_2_2] + m[i4_3_3] * n[i4_2_3],
+
+		// Column 3
+		m[i4_0_0] * n[i4_3_0] + m[i4_1_0] * n[i4_3_1] + m[i4_2_0] * n[i4_3_2] + m[i4_3_0] * n[i4_3_3],
+		m[i4_0_1] * n[i4_3_0] + m[i4_1_1] * n[i4_3_1] + m[i4_2_1] * n[i4_3_2] + m[i4_3_1] * n[i4_3_3],
+		m[i4_0_2] * n[i4_3_0] + m[i4_1_2] * n[i4_3_1] + m[i4_2_2] * n[i4_3_2] + m[i4_3_2] * n[i4_3_3],
+		m[i4_0_3] * n[i4_3_0] + m[i4_1_3] * n[i4_3_1] + m[i4_2_3] * n[i4_3_2] + m[i4_3_3] * n[i4_3_3],
+	}
+	return m
 }
 
 
@@ -241,9 +275,7 @@ func (m *Mat4) Rotate(angle float64, axis Vec3) *Mat4 {
 	return m
 }
 
-// TODO should this modify in place?
-// ~~Scratch that: Note: Does not modify in place~~
-// This now modifies in place! Yay less garbage
+// Note: This modifies in place
 func (m *Mat4) Mul(n *Mat4) *Mat4 {
 	// This is in column major order
 	*m = Mat4{
@@ -331,6 +363,15 @@ func (a Box) Union(b Box) Box {
 		Max: Vec3{x2, y2, z2},
 	}
 }
+
+// TODO: This is the wrong input matrix type
+func (b Box) Apply(mat glMat4) Box {
+	return Box{
+		Min: mat.Apply(b.Min.gl()).Float64(),
+		Max: mat.Apply(b.Max.gl()).Float64(),
+	}
+}
+
 
 type Rect struct {
 	Min, Max Vec2
