@@ -41,7 +41,7 @@ func (b *DrawBatch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material,
 
 	newBounds := mesh.Bounds().Apply(matrix)
 	if b.boundsSet {
-		b.bounds.Union(newBounds)
+		b.bounds = b.bounds.Union(newBounds)
 	} else {
 		b.boundsSet = true
 		b.bounds = newBounds

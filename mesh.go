@@ -319,7 +319,6 @@ func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
 
 	newMesh.origin = newOrigin
 
-	// TODO - recalculate mesh bounds/box
 	newMesh.bounds = Box{
 		Min: delta.Add(newMesh.bounds.Min.gl()).Float64(),
 		Max: delta.Add(newMesh.bounds.Max.gl()).Float64(),
