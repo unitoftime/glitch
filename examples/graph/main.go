@@ -7,6 +7,7 @@ import (
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/graph"
+
 	// "github.com/unitoftime/glitch/ui"
 	"github.com/unitoftime/glitch/shaders"
 )
@@ -66,8 +67,9 @@ func runGame() {
 
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1, 1)
-		pass.SetUniform("projection", camera.Projection)
-		pass.SetUniform("view", camera.View)
+		pass.SetCamera2D(camera)
+		// pass.SetUniform("projection", camera.Projection)
+		// pass.SetUniform("view", camera.View)
 		pass.Draw(win)
 
 		win.Update()
