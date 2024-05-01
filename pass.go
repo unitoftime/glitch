@@ -54,19 +54,19 @@ func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
 	if sortMode == SoftwareSortNone { return } // Skip if sorting disabled
 
 	if sortMode == SoftwareSortX {
-		slices.SortFunc(buf, func(a, b drawCommand) int {
+		slices.SortStableFunc(buf, func(a, b drawCommand) int {
 			return -cmp.Compare(a.matrix[i4_3_0], b.matrix[i4_3_0]) // sort by x
 		})
 	} else if sortMode == SoftwareSortY {
-		slices.SortFunc(buf, func(a, b drawCommand) int {
+		slices.SortStableFunc(buf, func(a, b drawCommand) int {
 			return -cmp.Compare(a.matrix[i4_3_1], b.matrix[i4_3_1]) // sort by y
 		})
 	} else if sortMode == SoftwareSortZ {
-		slices.SortFunc(buf, func(a, b drawCommand) int {
+		slices.SortStableFunc(buf, func(a, b drawCommand) int {
 			return -cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
 		})
 	}//  else if sortMode == SoftwareSortCommand {
-	// 	slices.SortFunc(buf, func(a, b drawCommand) int {
+	// 	slices.SortStableFunc(buf, func(a, b drawCommand) int {
 	// 		return -cmp.Compare(a.command, b.command) // sort by command
 	// 	})
 	// }
