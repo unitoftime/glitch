@@ -62,6 +62,9 @@ func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 func (s *Sprite) Bounds() Rect {
 	return s.bounds
 }
+func (s *Sprite) Frame() Rect {
+	return s.frame
+}
 
 func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds

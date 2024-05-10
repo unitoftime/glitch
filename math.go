@@ -38,6 +38,14 @@ func (m *glMat4) Transpose() *glMat4 {
 	return &retMat
 }
 func (m *glMat4) Mul(n *glMat4) *glMat4 {
+	// TODO: Does this improve performance?
+	// if *m == glMat4Ident {
+	// 	*m = *n
+	// 	return m
+	// } else if *n == glMat4Ident {
+	// 	return m
+	// }
+
 	// This is in column major order
 	*m = glMat4{
 	// return &Mat4{

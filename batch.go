@@ -40,6 +40,10 @@ func (b *DrawBatch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material,
 	})
 
 	newBounds := mesh.Bounds().Apply(matrix)
+	// TODO: Does this improve performance?
+	// if matrix != glMat4Ident {
+	// 	newBounds = newBounds.Apply(matrix)
+	// }
 	if b.boundsSet {
 		b.bounds = b.bounds.Union(newBounds)
 	} else {
