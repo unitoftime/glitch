@@ -174,6 +174,18 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 }
 
 func SetupEventListeners(w *Window) {
+	history := htmlWindow.Get("history")
+	history.Call("pushState", nil, nil)
+	history.Call("pushState", nil, nil)
+	history.Call("pushState", nil, nil)
+
+	htmlWindow.Call("addEventListener", "popstate", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		// e := args[0]
+		// e.Call("preventDefault")
+		history.Call("pushState", nil, nil)
+		return nil
+	}))
+
 	js.Global().Call("addEventListener", "resize", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// HACK: Go fullscreen?
 		width := js.Global().Get("innerWidth").Int()
@@ -271,7 +283,7 @@ func SetupEventListeners(w *Window) {
 		w.goFullscreenIfRequested()
 
 		button := me.Get("button").Int()
-		if !(button >= 0 && button <= 2) {
+		if !(button >= 0 && button < mouseButtonMax) {
 			return nil
 		}
 
@@ -290,7 +302,7 @@ func SetupEventListeners(w *Window) {
 		w.goFullscreenIfRequested()
 
 		button := me.Get("button").Int()
-		if !(button >= 0 && button <= 2) {
+		if !(button >= 0 && button < mouseButtonMax) {
 			return nil
 		}
 
@@ -486,7 +498,7 @@ type Window struct {
 
 	cursorMode  int
 	cursorPos   [2]float64
-	mouseButton [3]Action
+	mouseButton [mouseButtonMax]Action
 
 	keys []Action
 
@@ -750,7 +762,7 @@ func (w *Window) GetKey(key Key) Action {
 }
 
 func (w *Window) GetMouseButton(button MouseButton) Action {
-	if !(button >= 0 && button <= 2) {
+	if !(button >= 0 && button < mouseButtonMax) {
 		panic(fmt.Errorf("button is out of range: %v", button))
 	}
 
@@ -1159,6 +1171,7 @@ func toModifierKey(ke js.Value) ModifierKey {
 
 type MouseButton int
 
+// Documentation: https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button#value
 const (
 	MouseButton1 MouseButton = 0
 	MouseButton2 MouseButton = 2 // Web MouseEvent has middle and right mouse buttons in reverse order.
@@ -1168,13 +1181,16 @@ const (
 	MouseButtonRight  = MouseButton2
 	MouseButtonMiddle = MouseButton3
 
+	MouseButton4    = 3 // Typically Browser Back
+	MouseButton5    = 4 // Typically Browser Forward
+
+	mouseButtonMax  = 5 // This is for checking buttons to see if they are mouse buttons
+
 	// TODO - everything below this is wrong
-	MouseButton4    = 3
-	MouseButton5    = 3
-	MouseButton6    = 3
-	MouseButton7    = 3
-	MouseButton8    = 3
-	MouseButtonLast = 3
+	MouseButton6    = 5
+	MouseButton7    = 6
+	MouseButton8    = 7
+	MouseButtonLast = 8
 )
 
 type Action int

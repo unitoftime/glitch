@@ -149,15 +149,15 @@ const (
 	MouseButton1 = Key(glfw.MouseButton1)
 	MouseButton2 = Key(glfw.MouseButton2)
 	MouseButton3 = Key(glfw.MouseButton3)
-	// MouseButton4 = Key(glfw.MouseButton4)
-	// MouseButton5 = Key(glfw.MouseButton5)
+	MouseButton4 = Key(glfw.MouseButton4)
+	MouseButton5 = Key(glfw.MouseButton5)
 	// MouseButton6 = Key(glfw.MouseButton6)
 	// MouseButton7 = Key(glfw.MouseButton7)
 	// MouseButton8 = Key(glfw.MouseButton8)
-	// MouseButtonLast = Key(glfw.MouseButtonLast)
 	MouseButtonLeft = Key(glfw.MouseButtonLeft)
 	MouseButtonRight = Key(glfw.MouseButtonRight)
 	MouseButtonMiddle = Key(glfw.MouseButtonMiddle)
+	// MouseButtonLast = Key(glfw.MouseButtonLast)
 )
 
 // TODO: If you add back the mousebuttons above then uncomment this bottom return
@@ -165,8 +165,8 @@ func isMouseKey(k Key) bool {
 	return k == MouseButton1 ||
 		k == MouseButton2 ||
 		k == MouseButton3 ||
-		// k == MouseButton4 ||
-		// k == MouseButton5 ||
+		k == MouseButton4 ||
+		k == MouseButton5 ||
 		// k == MouseButton6 ||
 		// k == MouseButton7 ||
 		// k == MouseButton8 ||
@@ -335,6 +335,8 @@ var qwertyKeyDescription map[Key]string = map[Key]string{
 	MouseButtonLeft: "MouseButtonLeft",
 	MouseButtonRight: "MouseButtonRight",
 	MouseButtonMiddle: "MouseButtonMiddle",
-	// TODO: Mouse4-8
+	MouseButton4: "MouseButton4",
+	MouseButton5: "MouseButton5",
+	// TODO: Mouse5-8
 }
 

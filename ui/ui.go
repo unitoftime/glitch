@@ -20,8 +20,15 @@ import (
 
 type uiGlobals struct {
 	mouseCaught bool
+	hudScale float64
 }
-var global uiGlobals
+var global = uiGlobals{
+	hudScale: 1.0,
+}
+
+func SetHudScale(scale float64) {
+	global.hudScale = scale
+}
 
 // Must be called every frame before any UI draws happen
 // TODO - This is hard to remember to do
@@ -161,7 +168,14 @@ func (g *Group) Layer() int8 {
 	return g.pass.Layer()
 }
 
-func (g *Group) mousePosition() (float64, float64) {
+func (g *Group) Bounds() glitch.Rect {
+	bounds := g.win.Bounds()
+	bounds.Min = g.camera.Unproject(bounds.Min.Vec3()).Vec2()
+	bounds.Max = g.camera.Unproject(bounds.Max.Vec3()).Vec2()
+	return bounds
+}
+
+func (g *Group) MousePosition() (float64, float64) {
 	x, y := g.win.MousePosition()
 	worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
 	return worldSpaceMouse[0], worldSpaceMouse[1]
@@ -179,7 +193,7 @@ func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 }
 
 func (g *Group) Clear() {
-	mX, mY := g.mousePosition()
+	mX, mY := g.MousePosition()
 	g.mousePos = glitch.Vec2{mX, mY}
 
 	g.currentTextBufferIndex = 0
