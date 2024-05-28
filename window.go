@@ -270,6 +270,11 @@ func (w *Window) MousePosition() (float64, float64) {
 	return w.mousePosition[0], w.mousePosition[1]
 }
 
+func (w *Window) ContentScale() (float64, float64) {
+	x, y := w.window.GetContentScale()
+	return float64(x), float64(y)
+}
+
 func (w *Window) mainthreadCacheMousePosition() {
 	var x, y float64
 	var sx, sy float32
