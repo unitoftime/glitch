@@ -296,7 +296,7 @@ func (r *RenderPass) SetCamera2D(camera *CameraOrtho) {
 	r.uniformMat4["view"] = camera.View.gl()
 }
 
-func (r *RenderPass) setUniform(name string, value any) {
+func (r *RenderPass) SetUniform(name string, value any) {
 	r.uniforms[name] = value
 }
 

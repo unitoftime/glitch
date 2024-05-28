@@ -242,6 +242,9 @@ func (u *uniformSetter) Func() {
 	case float32:
 		sliced := []float32{val}
 		gl.Uniform1fv(uniform.loc, sliced)
+		// gl.Uniform1fv(uniform.loc, val)
+
+
 		// case Vec3:
 		// 	vec := val.gl()
 		// 	gl.Uniform3fv(uniform.loc, vec[:])

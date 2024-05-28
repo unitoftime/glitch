@@ -14,6 +14,7 @@ import (
 	"unicode"
 
 	"github.com/golang/freetype/truetype"
+	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/gofont/goregular"
 )
 
@@ -39,6 +40,26 @@ func DefaultAtlas() (*Atlas, error) {
 	atlas := NewAtlas(fontFace, runes, true, 0, 512)
 	return atlas, nil
 }
+
+func BasicFontAtlas() (*Atlas, error) {
+	runes := make([]rune, unicode.MaxASCII - 32)
+	for i := range runes {
+		runes[i] = rune(32 + i)
+	}
+
+	// font, err := truetype.Parse(gofont.TTF)
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// fontFace := truetype.NewFace(font, &truetype.Options{
+	// 	Size: size,
+	// 	// GlyphCacheEntries: 1,
+	// })
+	fontFace := basicfont.Face7x13
+	atlas := NewAtlas(fontFace, runes, true, 0, 512)
+	return atlas, nil
+}
+
 
 type Glyph struct {
 	Advance float64
