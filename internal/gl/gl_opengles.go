@@ -2,7 +2,8 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
-// +build darwin linux
+//go:build linux && (arm || arm64)
+// +build linux
 // +build arm arm64
 
 package gl

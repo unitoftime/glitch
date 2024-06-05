@@ -11,19 +11,19 @@ import (
 
 type ShaderConfig struct {
 	VertexShader, FragmentShader string
-	VertexFormat VertexFormat
-	UniformFormat UniformFormat
+	VertexFormat                 VertexFormat
+	UniformFormat                UniformFormat
 }
 
 type Shader struct {
-	program gl.Program
-	uniforms map[string]Uniform
-	attrFmt VertexFormat
-	tmpBuffers []any
+	program         gl.Program
+	uniforms        map[string]Uniform
+	attrFmt         VertexFormat
+	tmpBuffers      []any
 	tmpFloat32Slice []float32
-	mainthreadBind func()
+	mainthreadBind  func()
 
-	uniformLoc gl.Uniform
+	uniformLoc     gl.Uniform
 	setUniformMat4 func()
 }
 
@@ -39,8 +39,8 @@ func NewShader(cfg ShaderConfig) (*Shader, error) {
 
 func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uniformFmt UniformFormat) (*Shader, error) {
 	shader := &Shader{
-		uniforms: make(map[string]Uniform),
-		attrFmt: attrFmt,
+		uniforms:        make(map[string]Uniform),
+		attrFmt:         attrFmt,
 		tmpFloat32Slice: make([]float32, 0),
 	}
 	err := mainthread.CallErr(func() error {
@@ -91,6 +91,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 func (s *Shader) Bind() {
 	mainthread.Call(s.mainthreadBind)
 }
+
 // func (s *Shader) Bind() {
 // 	mainthreadCall(func() {
 // 		gl.UseProgram(s.program)
@@ -201,6 +202,7 @@ func (s *Shader) SetUniformMat4(uniformName string, value glMat4) bool {
 
 // Note: This was me playing around with a way to reduce the amount of memory allocations
 var tmpUniformSetter uniformSetter
+
 func init() {
 	tmpUniformSetter.FUNC = func() {
 		tmpUniformSetter.Func()
@@ -215,11 +217,12 @@ func (s *Shader) SetUniform(uniformName string, value any) bool {
 	mainthread.Call(tmpUniformSetter.FUNC)
 	return true // TODO - wrong
 }
+
 type uniformSetter struct {
 	shader *Shader
-	name string
-	value any
-	FUNC func()
+	name   string
+	value  any
+	FUNC   func()
 }
 
 func (u *uniformSetter) Func() {
@@ -242,29 +245,23 @@ func (u *uniformSetter) Func() {
 	case float32:
 		sliced := []float32{val}
 		gl.Uniform1fv(uniform.loc, sliced)
-		// gl.Uniform1fv(uniform.loc, val)
+	// gl.Uniform1fv(uniform.loc, val)
 
-
-		// case Vec3:
-		// 	vec := val.gl()
-		// 	gl.Uniform3fv(uniform.loc, vec[:])
-		// case Vec4:
-		// 	vec := val.gl()
-		// 	gl.Uniform4fv(uniform.loc, vec[:])
+	case Vec3:
+		vec := val.gl()
+		gl.Uniform3fv(uniform.loc, vec[:])
+	case Vec4:
+		vec := val.gl()
+		gl.Uniform4fv(uniform.loc, vec[:])
 	case Mat4:
 		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
 		s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
 		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
-		// mat := val.gl()
-		// gl.UniformMatrix4fv(uniform.loc, mat[:])
 	case *Mat4:
 		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
 		s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
 		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
-		// mat := val.gl()
-		// gl.UniformMatrix4fv(uniform.loc, mat[:])
 	default:
-		// fmt.Println("ERROR", uniform)
 		panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
 	}
 }

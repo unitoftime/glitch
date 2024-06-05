@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package gl
@@ -6,6 +7,7 @@ import (
 	"log"
 	"strings"
 	"unsafe"
+
 	// "math/f32"
 
 	//	"github.com/go-gl/gl/v2.1/gl"
@@ -455,6 +457,7 @@ func DeleteTexture(v Texture) {
 // DepthFunc sets the function used for depth buffer comparisons.
 //
 // Valid fn values:
+//
 //	NEVER
 //	LESS
 //	EQUAL
@@ -666,7 +669,7 @@ func GetIntegerv(pname Enum, data []int32) {
 //
 // http://www.khronos.org/opengles/sdk/docs/man3/html/glGet.xhtml
 func GetInteger(pname Enum) Object {
-// func GetInteger(pname Enum) int {
+	// func GetInteger(pname Enum) int {
 	var data int32
 	gl.GetIntegerv(uint32(pname), &data)
 	return Object{uint32(data)}
@@ -796,6 +799,7 @@ func GetShaderSource(s Shader) string {
 // GetString reports current GL state.
 //
 // Valid name values:
+//
 //	EXTENSIONS
 //	RENDERER
 //	SHADING_LANGUAGE_VERSION
@@ -1211,12 +1215,12 @@ func Uniform4f(dst Uniform, v0, v1, v2, v3 float32) {
 func Uniform4fv(dst Uniform, src []float32) {
 	gl.Uniform4fv(dst.Value, int32(len(src)/4), &src[0])
 }
+
 // func Uniform4fv(dst Uniform, src []float32) {
 // func Uniform4fv(dst Uniform, count int32, value *float32) {
 // 	gl.Uniform4fv(dst.Value, count, value)
 // 	// gl.Uniform4fv(dst.Value, int32(len(src)/4), &src[0])
 // }
-
 
 // Uniform4i writes an ivec4 uniform variable.
 //
@@ -1248,13 +1252,13 @@ func UniformMatrix2fv(dst Uniform, src []float32) {
 // Each matrix must be supplied in column major order.
 //
 // http://www.khronos.org/opengles/sdk/docs/man3/html/glUniform.xhtml
-// func UniformMatrix3fv(dst Uniform, src []float32) {
-// 	gl.UniformMatrix3fv(dst.Value, int32(len(src)/(3*3)), false, &src[0])
-// }
+//
+//	func UniformMatrix3fv(dst Uniform, src []float32) {
+//		gl.UniformMatrix3fv(dst.Value, int32(len(src)/(3*3)), false, &src[0])
+//	}
 func UniformMatrix3fv(dst Uniform, count int32, transpose bool, value *float32) {
 	gl.UniformMatrix3fv(dst.Value, count, transpose, value)
 }
-
 
 // UniformMatrix4fv writes 4x4 matrices. Each matrix uses 16
 // float32 values, so the number of matrices written is len(src)/16.

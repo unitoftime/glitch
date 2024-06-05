@@ -13,7 +13,9 @@ import (
 )
 
 func check(err error) {
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
@@ -23,19 +25,21 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch - Graph Demo", glitch.WindowConfig{
-		Vsync: true,
+		Vsync:   true,
 		Samples: 4,
 	})
 	check(err)
 
 	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	pass := glitch.NewRenderPass(shader)
 
 	dat := make([]glitch.Vec2, 0)
 	for i := 0; i < 1000; i++ {
-		dat = append(dat, glitch.Vec2{float64(i)/100.0, float64(math.Sin(float64(i) / 100.0))})
+		dat = append(dat, glitch.Vec2{float64(i) / 100.0, float64(math.Sin(float64(i) / 100.0))})
 	}
 
 	// lightBlue := glitch.RGBA{0x8a, 0xeb, 0xf1, 0xff}
@@ -45,7 +49,7 @@ func runGame() {
 	// rect := glitch.R(0 + pad, 0 + pad, 1920 - pad, 1080 - pad)
 	// rect := glitch.R(0, 0, 1, 1)
 	rect := win.Bounds()
-	rect = glitch.R(rect.Min[0], rect.Min[1], rect.Min[0] + 500, rect.Min[1] + 500)
+	rect = glitch.R(rect.Min[0], rect.Min[1], rect.Min[0]+500, rect.Min[1]+500)
 
 	graph := graph.NewGraph(rect)
 
