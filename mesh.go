@@ -616,9 +616,8 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
-				for i := range mesh.positions {
-					posBuf[i] = mesh.positions[i]
-				}
+				copy(posBuf, mesh.positions)
+
 			} else {
 				for i := range mesh.positions {
 					vec := mat32.Apply(mesh.positions[i])
@@ -635,13 +634,18 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			// 		normBuf[i] = *(*Vec2)(vec[:2])
 			// 	}
 
-			// TODO: Re enable when you have funcs like inv(), transpose() on glMat4
 		case NormalXYZ:
-			// renormalizeMat := mat32.Inv().Transpose()
-			normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-			for i := range mesh.normals {
-				vec := mesh.normals[i]
-				normBuf[i] = vec
+			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+			if mat32 == glMat4Ident {
+				// If matrix is identity, don't transform anything
+				copy(posBuf, mesh.positions)
+			} else {
+				normMat32 := mat32.Inv().Transpose()
+				normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+				for i := range mesh.normals {
+					vec := normMat32.Apply(mesh.normals[i])
+					normBuf[i] = vec
+				}
 			}
 
 		// Colors
@@ -680,9 +684,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 
 		case TexCoordXY:
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			for i := range mesh.texCoords {
-				texBuf[i] = mesh.texCoords[i]
-			}
+			copy(texBuf, mesh.texCoords)
 		default:
 			panic(fmt.Sprintf("Unsupported %T: %+v", attr, attr))
 		}
