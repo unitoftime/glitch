@@ -1,23 +1,25 @@
 package glitch
 
+import "fmt"
+
 // For batching multiple sprites into one
 type Batch struct {
-	mesh *Mesh
-	material Material
+	mesh        *Mesh
+	material    Material
 	Translucent bool
 }
 
 func NewBatch() *Batch {
 	return &Batch{
-		mesh: NewMesh(),
+		mesh:     NewMesh(),
 		material: nil,
 	}
 }
 
 func (b *Batch) Buffer(pass *RenderPass) *Batch {
 	return &Batch{
-		mesh: b.mesh.Buffer(pass, b.material, b.Translucent),
-		material: b.material,
+		mesh:        b.mesh.Buffer(pass, b.material, b.Translucent),
+		material:    b.material,
 		Translucent: b.Translucent,
 	}
 }
@@ -41,7 +43,7 @@ func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, tra
 	// Append each index
 	currentElement := uint32(len(b.mesh.positions))
 	for i := range mesh.indices {
-		b.mesh.indices = append(b.mesh.indices, currentElement + mesh.indices[i])
+		b.mesh.indices = append(b.mesh.indices, currentElement+mesh.indices[i])
 	}
 
 	// Append each position
@@ -86,7 +88,6 @@ func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, tra
 	}
 	b.mesh.bounds = b.mesh.bounds.Union(newBounds)
 
-
 	if len(mesh.normals) > 0 {
 		renormalizeMat := matrix.Inv().Transpose()
 		for i := range mesh.normals {
@@ -123,7 +124,6 @@ func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, tra
 	// for i := range mesh.positions {
 	// 	posBuf[i] = mat.Apply(mesh.positions[i])
 	// }
-
 
 	// min := posBuf[0]
 	// max := posBuf[0]
@@ -216,6 +216,7 @@ func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
 	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
 }
+
 // TODO: Generalize this rectdraw logic. Copy paseted from Sprite
 func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
@@ -223,7 +224,7 @@ func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min[0], bounds.H()/2+bounds.Min[1], 0)
 	target.Add(b.mesh, matrix.gl(), mask, b.material, false)
 }
 
@@ -233,11 +234,11 @@ func (b *Batch) Bounds() Box {
 
 type Mesh struct {
 	positions []glVec3
-	normals []glVec3
-	colors []glVec4
+	normals   []glVec3
+	colors    []glVec4
 	texCoords []glVec2
-	indices []uint32
-	bounds Box
+	indices   []uint32
+	bounds    Box
 
 	origin Vec3
 
@@ -248,10 +249,10 @@ type Mesh struct {
 func NewMesh() *Mesh {
 	return &Mesh{
 		positions: make([]glVec3, 0),
-		normals: make([]glVec3, 0),
-		colors: make([]glVec4, 0),
+		normals:   make([]glVec3, 0),
+		colors:    make([]glVec4, 0),
 		texCoords: make([]glVec2, 0),
-		indices: make([]uint32, 0),
+		indices:   make([]uint32, 0),
 	}
 }
 
@@ -292,7 +293,7 @@ func (m *Mesh) Bounds() Box {
 func (m *Mesh) Append(m2 *Mesh) {
 	currentElement := uint32(len(m.positions))
 	for i := range m2.indices {
-		m.indices = append(m.indices, currentElement + m2.indices[i])
+		m.indices = append(m.indices, currentElement+m2.indices[i])
 	}
 
 	m.positions = append(m.positions, m2.positions...)
@@ -306,7 +307,9 @@ func (m *Mesh) Append(m2 *Mesh) {
 // Changes the origin point of the mesh by translating all the geometry to the new origin. This shouldn't be called frequently
 // Returns a newly allocated mesh and does not modify the original
 func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
-	if originalMesh.origin == newOrigin { return originalMesh } // Skip if we've already translated this amount
+	if originalMesh.origin == newOrigin {
+		return originalMesh
+	} // Skip if we've already translated this amount
 	// delta := pos.Sub(m.translation)
 
 	newMesh := NewMesh()
@@ -375,7 +378,7 @@ func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect, color RGBA) {
 
 	currentElement := uint32(len(m.positions))
 	for i := range inds {
-		m.indices = append(m.indices, currentElement + inds[i])
+		m.indices = append(m.indices, currentElement+inds[i])
 	}
 
 	m.positions = append(m.positions, positions...)
@@ -423,47 +426,47 @@ func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 
 	return &Mesh{
 		positions: positions,
-		colors: colors,
+		colors:    colors,
 		texCoords: texCoords,
-		indices: inds,
-		bounds: bounds.ToBox(),
+		indices:   inds,
+		bounds:    bounds.ToBox(),
 	}
 }
 
 func NewCubeMesh(size float64) *Mesh {
-	f32size := float32(size/2)
+	f32size := float32(size / 2)
 
 	positions := []glVec3{
 		// Front face
-		glVec3{-f32size, -f32size,  f32size},
-		glVec3{f32size, -f32size,  f32size},
-		glVec3{f32size,  f32size,  f32size},
-		glVec3{-f32size,  f32size,  f32size},
+		glVec3{-f32size, -f32size, f32size},
+		glVec3{f32size, -f32size, f32size},
+		glVec3{f32size, f32size, f32size},
+		glVec3{-f32size, f32size, f32size},
 		// Back face
 		glVec3{-f32size, -f32size, -f32size},
-		glVec3{-f32size,  f32size, -f32size},
-		glVec3{f32size,  f32size, -f32size},
+		glVec3{-f32size, f32size, -f32size},
+		glVec3{f32size, f32size, -f32size},
 		glVec3{f32size, -f32size, -f32size},
 		// Top face
-		glVec3{-f32size,  f32size, -f32size},
-		glVec3{-f32size,  f32size,  f32size},
-		glVec3{f32size,  f32size,  f32size},
-		glVec3{f32size,  f32size, -f32size},
+		glVec3{-f32size, f32size, -f32size},
+		glVec3{-f32size, f32size, f32size},
+		glVec3{f32size, f32size, f32size},
+		glVec3{f32size, f32size, -f32size},
 		// Bottom face
 		glVec3{-f32size, -f32size, -f32size},
 		glVec3{f32size, -f32size, -f32size},
-		glVec3{f32size, -f32size,  f32size},
-		glVec3{-f32size, -f32size,  f32size},
+		glVec3{f32size, -f32size, f32size},
+		glVec3{-f32size, -f32size, f32size},
 		// Right face
 		glVec3{f32size, -f32size, -f32size},
-		glVec3{f32size,  f32size, -f32size},
-		glVec3{f32size,  f32size,  f32size},
-		glVec3{f32size, -f32size,  f32size},
+		glVec3{f32size, f32size, -f32size},
+		glVec3{f32size, f32size, f32size},
+		glVec3{f32size, -f32size, f32size},
 		// Left face
 		glVec3{-f32size, -f32size, -f32size},
-		glVec3{-f32size, -f32size,  f32size},
-		glVec3{-f32size,  f32size,  f32size},
-		glVec3{-f32size,  f32size, -f32size},
+		glVec3{-f32size, -f32size, f32size},
+		glVec3{-f32size, f32size, f32size},
+		glVec3{-f32size, f32size, -f32size},
 	}
 
 	col := glVec4{1.0, 1.0, 1.0, 1.0}
@@ -514,18 +517,18 @@ func NewCubeMesh(size float64) *Mesh {
 		// Front face
 		glVec2{-0, -0},
 		glVec2{0, -0},
-		glVec2{0,  0},
-		glVec2{-0,  0},
+		glVec2{0, 0},
+		glVec2{-0, 0},
 		// Back face
 		glVec2{-0, -0},
-		glVec2{-0,  0},
-		glVec2{0,  0},
+		glVec2{-0, 0},
+		glVec2{0, 0},
 		glVec2{0, -0},
 		// Top face
-		glVec2{-0,  0},
-		glVec2{-0,  0},
-		glVec2{0,  0},
-		glVec2{0,  0},
+		glVec2{-0, 0},
+		glVec2{-0, 0},
+		glVec2{0, 0},
+		glVec2{0, 0},
 		// Bottom face
 		glVec2{-0, -0},
 		glVec2{0, -0},
@@ -533,37 +536,38 @@ func NewCubeMesh(size float64) *Mesh {
 		glVec2{-0, -0},
 		// Right face
 		glVec2{0, -0},
-		glVec2{0,  0},
-		glVec2{0,  0},
+		glVec2{0, 0},
+		glVec2{0, 0},
 		glVec2{0, -0},
 		// Left face
 		glVec2{-0, -0},
 		glVec2{-0, -0},
-		glVec2{-0,  0},
-		glVec2{-0,  0},
+		glVec2{-0, 0},
+		glVec2{-0, 0},
 	}
 
 	indices := []uint32{
-		0,  1,  2,      0,  2,  3,    // front
-    4,  5,  6,      4,  6,  7,    // back
-    8,  9,  10,     8,  10, 11,   // top
-    12, 13, 14,     12, 14, 15,   // bottom
-    16, 17, 18,     16, 18, 19,   // right
-    20, 21, 22,     20, 22, 23,   // left
+		0, 1, 2, 0, 2, 3, // front
+		4, 5, 6, 4, 6, 7, // back
+		8, 9, 10, 8, 10, 11, // top
+		12, 13, 14, 12, 14, 15, // bottom
+		16, 17, 18, 16, 18, 19, // right
+		20, 21, 22, 20, 22, 23, // left
 	}
 
 	return &Mesh{
 		positions: positions,
-		normals: normals,
-		colors: colors,
+		normals:   normals,
+		colors:    colors,
 		texCoords: texCoords,
-		indices: indices,
+		indices:   indices,
 		bounds: Box{
 			Min: Vec3{-size, -size, -size},
 			Max: Vec3{size, size, size},
 		},
 	}
 }
+
 //--------------------------------------------------------------------------------
 
 func (m *Mesh) GetBuffer() *VertexBuffer {
@@ -593,7 +597,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 	for bufIdx, attr := range shader.attrFmt {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
-			// Positions
+		// Positions
 		case PositionXY:
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 			if mat32 == glMat4Ident {
@@ -612,9 +616,8 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
-				for i := range mesh.positions {
-					posBuf[i] = mesh.positions[i]
-				}
+				copy(posBuf, mesh.positions)
+
 			} else {
 				for i := range mesh.positions {
 					vec := mat32.Apply(mesh.positions[i])
@@ -631,16 +634,21 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			// 		normBuf[i] = *(*Vec2)(vec[:2])
 			// 	}
 
-			// TODO: Re enable when you have funcs like inv(), transpose() on glMat4
-		// case NormalXYZ:
-		// 	renormalizeMat := c.matrix.Inv().Transpose().gl()
-		// 	normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-		// 	for i := range mesh.normals {
-		// 		vec := renormalizeMat.Apply(mesh.normals[i])
-		// 		normBuf[i] = vec
-		// 	}
+		case NormalXYZ:
+			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+			if mat32 == glMat4Ident {
+				// If matrix is identity, don't transform anything
+				copy(posBuf, mesh.positions)
+			} else {
+				normMat32 := mat32.Inv().Transpose()
+				normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+				for i := range mesh.normals {
+					vec := normMat32.Apply(mesh.normals[i])
+					normBuf[i] = vec
+				}
+			}
 
-			// Colors
+		// Colors
 		case ColorR:
 			colBuf := *(destBuffs[bufIdx]).(*[]float32)
 			for i := range mesh.colors {
@@ -676,11 +684,9 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 
 		case TexCoordXY:
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			for i := range mesh.texCoords {
-				texBuf[i] = mesh.texCoords[i]
-			}
+			copy(texBuf, mesh.texCoords)
 		default:
-			panic("Unsupported")
+			panic(fmt.Sprintf("Unsupported %T: %+v", attr, attr))
 		}
 	}
 

@@ -1,18 +1,18 @@
 package main
 
 import (
-	"fmt"
-	"log"
 	"embed"
+	"flag"
+	"fmt"
 	"image"
 	"image/draw"
 	_ "image/png"
-	"time"
+	"log"
+	"math"
+	"os"
 	"runtime"
 	"runtime/pprof"
-	"flag"
-	"os"
-	"math"
+	"time"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
@@ -23,6 +23,7 @@ var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
 
 //go:embed gopher.png
 var f embed.FS
+
 func loadImage(path string) (*image.NRGBA, error) {
 	file, err := f.Open(path)
 	if err != nil {
@@ -63,7 +64,7 @@ func main() {
 			log.Fatal("could not create memory profile: ", err)
 		}
 		defer f.Close() // error handling omitted for example
-		runtime.GC() // get up-to-date statistics
+		runtime.GC()    // get up-to-date statistics
 		if err := pprof.WriteHeapProfile(f); err != nil {
 			log.Fatal("could not write memory profile: ", err)
 		}
@@ -72,18 +73,24 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch", glitch.WindowConfig{
-		Vsync: true,
+		Vsync:   true,
 		Samples: 8,
 	})
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	pass := glitch.NewRenderPass(shader)
 
 	diffuseShader, err := glitch.NewShader(shaders.DiffuseShader)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	diffusePass := glitch.NewRenderPass(diffuseShader)
 	diffusePass.DepthTest = true
 
@@ -102,9 +109,11 @@ func runGame() {
 
 	// Text
 	atlas, err := glitch.DefaultAtlas()
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
-	text := atlas.Text("hello world")
+	text := atlas.Text("hello world", 1)
 
 	cube := glitch.NewModel(glitch.NewCubeMesh(50), glitch.DefaultMaterial())
 
@@ -142,7 +151,7 @@ func runGame() {
 		mat.Scale(0.25, 0.25, 1.0).Translate(100, 100, 0)
 
 		pass.SetLayer(0)
-		manSprite.DrawColorMask(pass, mat, glitch.RGBA{1, 1, 1, 1})
+		manSprite.DrawColorMask(pass, mat, glitch.RGBA{R: 1, G: 1, B: 1, A: 1})
 		quadModel.Draw(pass, glitch.Mat4Ident)
 
 		cubeMat := glitch.Mat4Ident
@@ -153,9 +162,9 @@ func runGame() {
 		mat = glitch.Mat4Ident
 		mat.Translate(0, 0, 0)
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
-		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
+		text.DrawColorMask(pass, mat, glitch.RGBA{R: 1.0, G: 1.0, B: 0.0, A: 1.0})
 
-		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+		glitch.Clear(win, glitch.RGBA{R: 0.1, G: 0.2, B: 0.3, A: 1.0})
 
 		pass.SetUniform("projection", camera.Projection)
 		pass.SetUniform("view", camera.View)
@@ -165,7 +174,7 @@ func runGame() {
 		diffusePass.SetUniform("view", pCam.View)
 		// diffusePass.SetUniform("model", cubeMat)
 
-		diffusePass.SetUniform("viewPos", pCam.Position);
+		diffusePass.SetUniform("viewPos", pCam.Position)
 
 		diffusePass.SetUniform("material.ambient", glitch.Vec3{1, 0.5, 0.31})
 		diffusePass.SetUniform("material.diffuse", glitch.Vec3{1, 0.5, 0.31})

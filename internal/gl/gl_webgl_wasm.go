@@ -37,9 +37,10 @@ var jsMemory js.Value
 var jsMemoryBuffer, jsMemoryFloat32, jsMemoryInt32, jsMemoryUint32 js.Value
 var jsMemoryBufferVec2, jsMemoryBufferVec3, jsMemoryBufferVec4 js.Value
 var jsMemoryBufferMat4 js.Value
+
 func init() {
 	// TODO: Reasonable default?
-	resizeJavascriptCopyBuffer(16*1024*1024)  // x * MB
+	resizeJavascriptCopyBuffer(16 * 1024 * 1024) // x * MB
 }
 
 func resizeJavascriptCopyBuffer(size int) {
@@ -73,49 +74,51 @@ var ContextWatcher contextWatcher
 type contextWatcher struct{}
 
 var (
-	fnBufferSubData js.Value
-	fnBufferData js.Value
-	fnBindVertexArray js.Value
-	fnCreateVertexArray js.Value
-	fnCreateBuffer js.Value
-	fnBindBuffer js.Value
-	fnBindTexture js.Value
-	fnGetAttribLocation js.Value
-	fnVertexAttribPointer js.Value
+	fnBufferSubData           js.Value
+	fnBufferData              js.Value
+	fnBindVertexArray         js.Value
+	fnCreateVertexArray       js.Value
+	fnCreateBuffer            js.Value
+	fnBindBuffer              js.Value
+	fnBindTexture             js.Value
+	fnGetAttribLocation       js.Value
+	fnVertexAttribPointer     js.Value
 	fnEnableVertexAttribArray js.Value
-	fnDeleteVertexArray js.Value
-	fnDeleteBuffer js.Value
-	fnDrawElements js.Value
+	fnDeleteVertexArray       js.Value
+	fnDeleteBuffer            js.Value
+	fnDrawElements            js.Value
 
-	fnEnable js.Value
+	fnEnable    js.Value
 	fnDepthFunc js.Value
-	fnDisable js.Value
+	fnDisable   js.Value
 
-	fnBindFramebuffer js.Value
-
+	fnBindFramebuffer  js.Value
+	fnUniform1fv       js.Value
+	fnUniform3fv       js.Value
+	fnUniform4fv       js.Value
 	fnUniformMatrix4fv js.Value
-	fnViewport js.Value
+	fnViewport         js.Value
 
-	fnClear js.Value
+	fnClear      js.Value
 	fnClearColor js.Value
 
 	fnUseProgram js.Value
 
 	fnFinish js.Value
-	fnFlush js.Value
+	fnFlush  js.Value
 
-	fnGetParameter js.Value
-	fnCreateFramebuffer js.Value
-	fnCreateProgram js.Value
-	fnCreateTexture js.Value
-	fnDeleteFramebuffer js.Value
-	fnDeleteShader js.Value
+	fnGetParameter         js.Value
+	fnCreateFramebuffer    js.Value
+	fnCreateProgram        js.Value
+	fnCreateTexture        js.Value
+	fnDeleteFramebuffer    js.Value
+	fnDeleteShader         js.Value
 	fnFramebufferTexture2D js.Value
-	fnGenerateMipmap js.Value
-	fnGetUniformLocation js.Value
-	fnLinkProgram js.Value
-	fnTexImage2D js.Value
-	fnTexSubImage2D js.Value
+	fnGenerateMipmap       js.Value
+	fnGetUniformLocation   js.Value
+	fnLinkProgram          js.Value
+	fnTexImage2D           js.Value
+	fnTexSubImage2D        js.Value
 )
 
 func (contextWatcher) OnMakeCurrent(context interface{}) {
@@ -131,7 +134,7 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 		webgl1Mode = true
 	} else {
 		if strings.HasPrefix(versionStr, "WebGL 2.0") {
-		fmt.Println("Switching to WebGL 2.0 mode")
+			fmt.Println("Switching to WebGL 2.0 mode")
 			webgl1Mode = false
 		} else {
 			fmt.Println("Was unable to determine webgl mode from version string! Sticking with webgl1 mode!")
@@ -156,6 +159,9 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnEnable = c.Get("enable").Call("bind", c)
 	fnDisable = c.Get("disable").Call("bind", c)
 	fnDepthFunc = c.Get("depthFunc").Call("bind", c)
+	fnUniform1fv = c.Get("uniform1fv").Call("bind", c)
+	fnUniform3fv = c.Get("uniform3fv").Call("bind", c)
+	fnUniform4fv = c.Get("uniform4fv").Call("bind", c)
 	fnUniformMatrix4fv = c.Get("uniformMatrix4fv").Call("bind", c)
 	fnBindFramebuffer = c.Get("bindFramebuffer").Call("bind", c)
 	fnViewport = c.Get("viewport").Call("bind", c)
@@ -424,7 +430,7 @@ func BufferData(target Enum, size int, data any, usage Enum) {
 
 func BlitFramebuffer(srcX0 int32, srcY0 int32, srcX1 int32, srcY1 int32, dstX0 int32, dstY0 int32, dstX1 int32, dstY1 int32, mask uint32, filter uint32) {
 	panic("Not supported!") // TODO
-//	gl.BlitFrameBuffer(srcX0 int32, srcY0 int32, srcX1 int32, srcY1 int32, dstX0 int32, dstY0 int32, dstX1 int32, dstY1 int32, mask uint32, filter uint32)
+	// gl.BlitFrameBuffer(srcX0 int32, srcY0 int32, srcX1 int32, srcY1 int32, dstX0 int32, dstY0 int32, dstX1 int32, dstY1 int32, mask uint32, filter uint32)
 }
 
 // func PtrOffset(offset int) unsafe.Pointer {
@@ -452,7 +458,6 @@ func ReadBuffer(target Enum) {
 func PolygonMode(face, mode Enum) {
 	//	fmt.Println("Error: PolygonMode not supported in webgl")
 }
-
 
 func ActiveTexture(texture Enum) {
 	c.Call("activeTexture", int(texture))
@@ -784,7 +789,6 @@ func GetAttribLocation(p Program, name string) Attrib {
 // 	return Object{c.Call("getParameter", int(pname))}
 // }
 
-
 // func GetBufferParameteri(target, pname Enum) int {
 // 	return c.Call("getBufferParameter", int(target), int(pname)).Int()
 // }
@@ -1055,7 +1059,6 @@ func TexImage2DFull(target Enum, level int, format1 Enum, width, height int, for
 	}
 }
 
-
 func TexSubImage2D(target Enum, level int, x, y, width, height int, format, ty Enum, data []byte) {
 	array, length := byteSliceToTypedArray(data)
 	if !array.IsNull() {
@@ -1096,10 +1099,9 @@ func TexParameteri(target, pname Enum, param int) {
 // }
 
 func Uniform1fv(dst Uniform, src []float32) {
-	// TODO: invoke
 	array, length := float32SliceToTypedArray(src)
 	subarray := array.Call("subarray", 0, length)
-	c.Call("uniform1fv", dst.Value, subarray)
+	fnUniform1fv.Invoke(dst.Value, subarray)
 }
 
 // func Uniform1i(dst Uniform, v int) {
@@ -1133,16 +1135,11 @@ func Uniform1fv(dst Uniform, src []float32) {
 // 	c.Call("uniform3f", dst.Value, v0, v1, v2)
 // }
 
-// func Uniform3fv(dst Uniform, src []float32) {
-// 	// c.Call("uniform3fv", dst.Value, src)
-
-// 	SliceToTypedArray(src)
-// 	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec3)
-
-// 	// array, length := SliceToTypedArray(src)
-// 	// subarray := array.Call("subarray", 0, length)
-// 	// c.Call("uniform3fv", dst.Value, subarray)
-// }
+func Uniform3fv(dst Uniform, src []float32) {
+	array, length := SliceToTypedArray(src)
+	subarray := array.Call("subarray", 0, length)
+	fnUniform3fv.Invoke(dst.Value, subarray)
+}
 
 // func Uniform3i(dst Uniform, v0, v1, v2 int32) {
 // 	c.Call("uniform3i", dst.Value, v0, v1, v2)
@@ -1156,16 +1153,11 @@ func Uniform1fv(dst Uniform, src []float32) {
 // 	c.Call("uniform4f", dst.Value, v0, v1, v2, v3)
 // }
 
-// func Uniform4fv(dst Uniform, src []float32) {
-// 	// c.Call("uniform4fv", dst.Value, src)
-
-// 	SliceToTypedArray(src)
-// 	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec4)
-
-// 	// array, length := SliceToTypedArray(src)
-// 	// subarray := array.Call("subarray", 0, length)
-// 	// c.Call("uniform4fv", dst.Value, subarray) // TODO - I think probably most uniforms need this
-// }
+func Uniform4fv(dst Uniform, src []float32) {
+	array, length := SliceToTypedArray(src)
+	subarray := array.Call("subarray", 0, length)
+	fnUniform4fv.Invoke(dst.Value, subarray)
+}
 
 // func Uniform4i(dst Uniform, v0, v1, v2, v3 int32) {
 // 	c.Call("uniform4i", dst.Value, v0, v1, v2, v3)

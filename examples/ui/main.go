@@ -37,29 +37,42 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch UI Demo", glitch.WindowConfig{
-		Vsync: true,
+		Vsync:   true,
 		Samples: 0,
 	})
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	shader, err := glitch.NewShader(shaders.PixelArtShader)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	pass := glitch.NewRenderPass(shader)
 	// pass.SoftwareSort = glitch.SoftwareSortY
 	// pass.DepthTest = true
 	// pass.DepthBump = true
 
 	buttonImage, err := loadImage("button.png")
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	buttonHoverImage, err := loadImage("button_hover.png")
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	buttonPressImage, err := loadImage("button_press.png")
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	panelImage, err := loadImage("panel.png")
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 	panelInnerImage, err := loadImage("panel_inner.png")
-	if err != nil { panic(err) }
-
+	if err != nil {
+		panic(err)
+	}
 
 	scale := 4.0
 	texture := glitch.NewTexture(buttonImage, false)
@@ -85,7 +98,9 @@ func runGame() {
 
 	// Text
 	atlas, err := glitch.BasicFontAtlas()
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	screenScale := 1.5 // This is just a weird scaling number
 
@@ -98,10 +113,10 @@ func runGame() {
 
 	textStyle := ui.NewTextStyle().Scale(4)
 	buttonStyle := ui.Style{
-		Normal: ui.NewSpriteStyle(buttonSprite, glitch.White),
+		Normal:  ui.NewSpriteStyle(buttonSprite, glitch.White),
 		Hovered: ui.NewSpriteStyle(buttonHoverSprite, glitch.White),
 		Pressed: ui.NewSpriteStyle(buttonPressSprite, glitch.White),
-		Text: textStyle,
+		Text:    textStyle,
 	}
 
 	for !win.Closed() {
@@ -177,9 +192,6 @@ func runGame() {
 	}
 }
 
-
-
-
 // package main
 
 // import (
@@ -241,7 +253,6 @@ func runGame() {
 // 	if err != nil { panic(err) }
 // 	panelInnerImage, err := loadImage("panel_inner.png")
 // 	if err != nil { panic(err) }
-
 
 // 	texture := glitch.NewTexture(buttonImage, false)
 // 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
@@ -336,4 +347,3 @@ func runGame() {
 // 		win.Update()
 // 	}
 // }
-

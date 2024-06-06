@@ -1,13 +1,13 @@
 package main
 
 import (
-	"fmt"
 	"embed"
+	"fmt"
 	"image"
 	"image/draw"
 	_ "image/png"
-	"time"
 	"math/rand"
+	"time"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/shaders"
@@ -15,6 +15,7 @@ import (
 
 //go:embed gopher.png
 var f embed.FS
+
 func loadImage(path string) (*image.NRGBA, error) {
 	file, err := f.Open(path)
 	if err != nil {
@@ -38,10 +39,14 @@ func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch - Framebuffer", glitch.WindowConfig{
 		Vsync: false,
 	})
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
 	pass := glitch.NewRenderPass(shader)
 	windowPass := glitch.NewRenderPass(shader)
@@ -67,9 +72,11 @@ func runGame() {
 
 	// Text
 	atlas, err := glitch.DefaultAtlas()
-	if err != nil { panic(err) }
+	if err != nil {
+		panic(err)
+	}
 
-	text := atlas.Text("hello world")
+	text := atlas.Text("hello world", 1)
 
 	fmt.Println(win.Bounds())
 	frame := glitch.NewFrame(win.Bounds(), false)
@@ -114,9 +121,9 @@ func runGame() {
 		mat.Translate(0, 0, 0)
 		pass.SetLayer(0)
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
-		text.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 0.0, 1.0})
+		text.DrawColorMask(pass, mat, glitch.RGBA{R: 1.0, G: 1.0, B: 0.0, A: 1.0})
 
-		glitch.Clear(frame, glitch.RGBA{1, 1, 1, 1})
+		glitch.Clear(frame, glitch.RGBA{R: 1, G: 1, B: 1, A: 1})
 
 		pass.SetUniform("projection", camera.Projection)
 		pass.SetUniform("view", camera.View)
@@ -127,7 +134,7 @@ func runGame() {
 		windowPass.SetUniform("view", glitch.Mat4Ident)
 		frame.Draw(windowPass, glitch.Mat4Ident)
 
-		glitch.Clear(win, glitch.RGBA{0.1, 0.2, 0.3, 1.0})
+		glitch.Clear(win, glitch.RGBA{R: 0.1, G: 0.2, B: 0.3, A: 1.0})
 		windowPass.Draw(win)
 		win.Update()
 
@@ -139,14 +146,15 @@ func runGame() {
 
 type Man struct {
 	position, velocity glitch.Vec2
-	color glitch.RGBA
-	layer int8
+	color              glitch.RGBA
+	layer              int8
 }
+
 func NewMan() Man {
 	colors := []glitch.RGBA{
-		glitch.RGBA{1.0, 0, 0, 1.0},
-		glitch.RGBA{0, 1.0, 0, 1.0},
-		glitch.RGBA{0, 0, 1.0, 1.0},
+		glitch.RGBA{R: 1.0, G: 0, B: 0, A: 1.0},
+		glitch.RGBA{R: 0, G: 1.0, B: 0, A: 1.0},
+		glitch.RGBA{R: 0, G: 0, B: 1.0, A: 1.0},
 	}
 	randIndex := rand.Intn(len(colors))
 	vScale := 5.0
@@ -154,9 +162,9 @@ func NewMan() Man {
 		// position: mgl32.Vec2{100, 100},
 		// position: mgl32.Vec2{float32(float64(width/2) * rand.Float64()),
 		// 	float32(float64(height/2) * rand.Float64())},
-		position: glitch.Vec2{1920/2, 1080/2},
-		velocity: glitch.Vec2{float64(2*vScale * (rand.Float64()-0.5)),
-			float64(2*vScale * (rand.Float64()-0.5))},
+		position: glitch.Vec2{1920 / 2, 1080 / 2},
+		velocity: glitch.Vec2{float64(2 * vScale * (rand.Float64() - 0.5)),
+			float64(2 * vScale * (rand.Float64() - 0.5))},
 		color: colors[randIndex],
 		layer: int8(randIndex) + 1,
 	}
