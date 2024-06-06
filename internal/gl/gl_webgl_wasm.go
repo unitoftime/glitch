@@ -92,8 +92,10 @@ var (
 	fnDepthFunc js.Value
 	fnDisable   js.Value
 
-	fnBindFramebuffer js.Value
-
+	fnBindFramebuffer  js.Value
+	fnUniform1fv       js.Value
+	fnUniform3fv       js.Value
+	fnUniform4fv       js.Value
 	fnUniformMatrix4fv js.Value
 	fnViewport         js.Value
 
@@ -157,6 +159,9 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnEnable = c.Get("enable").Call("bind", c)
 	fnDisable = c.Get("disable").Call("bind", c)
 	fnDepthFunc = c.Get("depthFunc").Call("bind", c)
+	fnUniform1fv = c.Get("uniform1fv").Call("bind", c)
+	fnUniform3fv = c.Get("uniform3fv").Call("bind", c)
+	fnUniform4fv = c.Get("uniform4fv").Call("bind", c)
 	fnUniformMatrix4fv = c.Get("uniformMatrix4fv").Call("bind", c)
 	fnBindFramebuffer = c.Get("bindFramebuffer").Call("bind", c)
 	fnViewport = c.Get("viewport").Call("bind", c)
@@ -1094,10 +1099,9 @@ func TexParameteri(target, pname Enum, param int) {
 // }
 
 func Uniform1fv(dst Uniform, src []float32) {
-	// TODO: invoke
 	array, length := float32SliceToTypedArray(src)
 	subarray := array.Call("subarray", 0, length)
-	c.Call("uniform1fv", dst.Value, subarray)
+	fnUniform1fv.Invoke(dst.Value, subarray)
 }
 
 // func Uniform1i(dst Uniform, v int) {
@@ -1132,14 +1136,9 @@ func Uniform1fv(dst Uniform, src []float32) {
 // }
 
 func Uniform3fv(dst Uniform, src []float32) {
-	// c.Call("uniform3fv", dst.Value, src)
-
-	// SliceToTypedArray(src)
-	// c.Call("uniform3fv", dst.Value, jsMemoryBufferVec3)
-
 	array, length := SliceToTypedArray(src)
 	subarray := array.Call("subarray", 0, length)
-	c.Call("uniform3fv", dst.Value, subarray)
+	fnUniform3fv.Invoke(dst.Value, subarray)
 }
 
 // func Uniform3i(dst Uniform, v0, v1, v2 int32) {
@@ -1155,14 +1154,9 @@ func Uniform3fv(dst Uniform, src []float32) {
 // }
 
 func Uniform4fv(dst Uniform, src []float32) {
-	// c.Call("uniform4fv", dst.Value, src)
-
-	// SliceToTypedArray(src)
-	// c.Call("uniform3fv", dst.Value, jsMemoryBufferVec4)
-
 	array, length := SliceToTypedArray(src)
 	subarray := array.Call("subarray", 0, length)
-	c.Call("uniform4fv", dst.Value, subarray) // TODO - I think probably most uniforms need this
+	fnUniform4fv.Invoke(dst.Value, subarray)
 }
 
 // func Uniform4i(dst Uniform, v0, v1, v2, v3 int32) {
