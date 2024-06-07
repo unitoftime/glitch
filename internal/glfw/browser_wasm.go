@@ -84,6 +84,16 @@ func resolveIframeEmbedding() bool {
 	return !self.Equal(top)
 }
 
+func getDevicePixelRatio() float64 {
+	devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
+	if devicePixelRatio <= 0 {
+		devicePixelRatio = 1.0
+	} else {
+		devicePixelRatio = 1 / devicePixelRatio
+	}
+	return devicePixelRatio
+}
+
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
 	// Find a canvas, preferably one with an id of glfw
 	canvas := resolveCanvas()
@@ -104,9 +114,9 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 	width := js.Global().Get("innerWidth").Int()
 	height := js.Global().Get("innerHeight").Int()
 
-	devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
-	canvas.Set("width", int(float64(width)*devicePixelRatio+0.5))   // Nearest non-negative int.
-	canvas.Set("height", int(float64(height)*devicePixelRatio+0.5)) // Nearest non-negative int.
+	devicePixelRatio := getDevicePixelRatio()
+	canvas.Set("width", int((float64(width) * devicePixelRatio) + 0.5))   // Nearest non-negative int.
+	canvas.Set("height", int((float64(height) * devicePixelRatio) + 0.5)) // Nearest non-negative int.
 	canvas.Get("style").Call("setProperty", "width", fmt.Sprintf("%vpx", width))
 	canvas.Get("style").Call("setProperty", "height", fmt.Sprintf("%vpx", height))
 
@@ -191,11 +201,10 @@ func SetupEventListeners(w *Window) {
 		width := js.Global().Get("innerWidth").Int()
 		height := js.Global().Get("innerHeight").Int()
 
-		w.devicePixelRatio = js.Global().Get("devicePixelRatio").Float()
+		w.devicePixelRatio = getDevicePixelRatio()
 		// fmt.Println("DevicePixelRatio:", w.devicePixelRatio)
-
-		w.canvas.Set("width", int(float64(width)*w.devicePixelRatio+0.5))   // Nearest non-negative int.
-		w.canvas.Set("height", int(float64(height)*w.devicePixelRatio+0.5)) // Nearest non-negative int.
+		w.canvas.Set("width", int((float64(width) * w.devicePixelRatio) + 0.5))   // Nearest non-negative int.
+		w.canvas.Set("height", int((float64(height) * w.devicePixelRatio) + 0.5)) // Nearest non-negative int.
 		w.canvas.Get("style").Call("setProperty", "width", fmt.Sprintf("%vpx", width))
 		w.canvas.Get("style").Call("setProperty", "height", fmt.Sprintf("%vpx", height))
 
@@ -204,6 +213,7 @@ func SetupEventListeners(w *Window) {
 			//       GLFW API promises the callbacks will occur from one thread (i.e., sequentially), so may want to do that.
 
 			go w.framebufferSizeCallback(w, w.canvas.Get("width").Int(), w.canvas.Get("height").Int())
+			// go w.framebufferSizeCallback(w, width, height) // TODO: Is it just this?
 		}
 		if w.sizeCallback != nil {
 			boundingW, boundingH := w.GetSize()
@@ -382,7 +392,9 @@ func SetupEventListeners(w *Window) {
 
 		we.Call("preventDefault")
 		return nil
-	}))
+	}),
+		map[string]any{"passive": false}, // Note: Lets us preventDefault on wheel events to prevent "ctrl-zoom"
+	)
 
 	htmlWindow.Call("addEventListener", "focus", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
 		// fmt.Println("FOCUS")
