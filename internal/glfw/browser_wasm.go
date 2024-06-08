@@ -86,11 +86,11 @@ func resolveIframeEmbedding() bool {
 
 func getDevicePixelRatio() float64 {
 	devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
-	if devicePixelRatio <= 0 {
-		devicePixelRatio = 1.0
-	} else {
-		devicePixelRatio = 1 / devicePixelRatio
-	}
+	// if devicePixelRatio <= 0 {
+	// 	devicePixelRatio = 1.0
+	// } else {
+	// 	devicePixelRatio = 1 / devicePixelRatio
+	// }
 	return devicePixelRatio
 }
 
