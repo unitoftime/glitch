@@ -61,13 +61,27 @@ func (f *Frame) Texture() *Texture {
 	return f.tex
 }
 
-func (f *Frame) Draw(pass *RenderPass, matrix Mat4) {
-	f.DrawColorMask(pass, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
+func (f *Frame) Draw(target BatchTarget, matrix Mat4) {
+	f.DrawColorMask(target, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
 }
-func (f *Frame) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
+func (f *Frame) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	pass.Add(f.mesh, matrix.gl(), mask, f.material, false)
+	target.Add(f.mesh, matrix.gl(), mask, f.material, false)
 }
+
+func (f *Frame) RectDraw(target BatchTarget, bounds Rect) {
+	f.RectDrawColorMask(target, bounds, White)
+}
+
+func (f *Frame) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
+	matrix := Mat4Ident
+	matrix.Scale(bounds.W() / f.bounds.W(), bounds.H() / f.bounds.H(), 1).
+		Translate(bounds.Min[0], bounds.Min[1], 0)
+	// Note: because frames are anchored to the bottom left, we don't have to shift by center
+	// .Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	f.DrawColorMask(target, matrix, mask)
+}
+
 
 func (f *Frame) delete() {
 	mainthread.CallNonBlock(func() {
