@@ -453,7 +453,7 @@ func (r Rect) FitScale(r2 Rect) float64 {
 	scaleX := r2.W() / r.W()
 	scaleY := r2.H() / r.H()
 
-	min, _ := minMax(scaleX, scaleY)
+	min := min(scaleX, scaleY)
 	return min
 }
 
@@ -685,6 +685,10 @@ func NewCameraOrtho() *CameraOrtho {
 	}
 }
 
+func (c *CameraOrtho) Bounds() Rect {
+	return c.bounds
+}
+
 func (c *CameraOrtho) SetOrtho2D(bounds Rect) {
 	c.dirtyViewInv = true
 
@@ -717,8 +721,6 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 		Translate(-cX, -cY, 0).
 		Scale(scaleX, scaleY, 1.0).
 		Translate(cX, cY, 0)
-
-
 
 
 	// // TODO - this is literally only for pixel art

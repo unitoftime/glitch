@@ -169,16 +169,37 @@ func (g *Group) Layer() int8 {
 }
 
 func (g *Group) Bounds() glitch.Rect {
-	bounds := g.win.Bounds()
+	bounds := g.camera.Bounds()
 	bounds.Min = g.camera.Unproject(bounds.Min.Vec3()).Vec2()
 	bounds.Max = g.camera.Unproject(bounds.Max.Vec3()).Vec2()
 	return bounds
 }
 
+// Returns the mouse position with respect to the group camera
 func (g *Group) MousePosition() (float64, float64) {
+	// x, y := g.win.MousePosition()
+	// worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
+	// return worldSpaceMouse[0], worldSpaceMouse[1]
+
+	// 1. Get mouse position in window bounds
+	// 2. Convert to (0, 1) ratios
+	// 3. Convert back to group camera bounds
 	x, y := g.win.MousePosition()
-	worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
-	return worldSpaceMouse[0], worldSpaceMouse[1]
+	// winSpacePos := g.camera.Unproject(glitch.Vec3{x, y, 0}) // TODO: Is this right? Or does it just not matter because my camera is identity?
+	winSpacePos := glitch.Vec2{x, y}
+	winBounds := g.win.Bounds()
+	normBoundsX := winSpacePos[0] / winBounds.W()
+	normBoundsY := winSpacePos[1] / winBounds.H()
+
+	uiBounds := g.Bounds()
+	uiPosX := normBoundsX * uiBounds.W()
+	uiPosY := normBoundsY * uiBounds.H()
+
+	return uiPosX, uiPosY
+
+	// TODO: I think I need to do this if I ever have a scaling camera
+	// unprojPos := g.camera.Project(glitch.Vec3{uiPosX, uiPosY})
+	// return unprojPos[0], unprojPos[1]
 }
 
 // TODO - Should this be a list of rects that we loop through?
@@ -661,7 +682,7 @@ func (g *Group) Tooltip(tip string, rect glitch.Rect, style Style) {
 	}
 
 	// padding := 10.0
-	quadrant := g.win.Bounds().Center().Sub(g.mousePos).Unit()
+	quadrant := g.Bounds().Center().Sub(g.mousePos).Unit()
 
 	var movement glitch.Vec2
 	if quadrant[0] < 0 {
