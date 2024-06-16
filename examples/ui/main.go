@@ -1,34 +1,14 @@
 package main
 
 import (
-	"embed"
-	"image"
-	"image/draw"
 	_ "image/png"
 	"log"
 
 	"github.com/unitoftime/glitch"
+	"github.com/unitoftime/glitch/examples/assets"
 	"github.com/unitoftime/glitch/shaders"
 	"github.com/unitoftime/glitch/ui"
 )
-
-//go:embed button.png button_hover.png button_press.png panel.png panel_inner.png
-var f embed.FS
-
-func loadImage(path string) (*image.NRGBA, error) {
-	file, err := f.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-	bounds := img.Bounds()
-	nrgba := image.NewNRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
-	draw.Draw(nrgba, nrgba.Bounds(), img, bounds.Min, draw.Src)
-	return nrgba, nil
-}
 
 func main() {
 	log.Println("Begin")
@@ -53,23 +33,23 @@ func runGame() {
 	// pass.DepthTest = true
 	// pass.DepthBump = true
 
-	buttonImage, err := loadImage("button.png")
+	buttonImage, err := assets.LoadImage("button.png")
 	if err != nil {
 		panic(err)
 	}
-	buttonHoverImage, err := loadImage("button_hover.png")
+	buttonHoverImage, err := assets.LoadImage("button_hover.png")
 	if err != nil {
 		panic(err)
 	}
-	buttonPressImage, err := loadImage("button_press.png")
+	buttonPressImage, err := assets.LoadImage("button_press.png")
 	if err != nil {
 		panic(err)
 	}
-	panelImage, err := loadImage("panel.png")
+	panelImage, err := assets.LoadImage("panel.png")
 	if err != nil {
 		panic(err)
 	}
-	panelInnerImage, err := loadImage("panel_inner.png")
+	panelInnerImage, err := assets.LoadImage("panel_inner.png")
 	if err != nil {
 		panic(err)
 	}

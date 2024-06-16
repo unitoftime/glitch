@@ -1,11 +1,8 @@
 package main
 
 import (
-	"embed"
 	"flag"
 	"fmt"
-	"image"
-	"image/draw"
 	_ "image/png"
 	"log"
 	"math"
@@ -15,29 +12,12 @@ import (
 	"time"
 
 	"github.com/unitoftime/glitch"
+	"github.com/unitoftime/glitch/examples/assets"
 	"github.com/unitoftime/glitch/shaders"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
 var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
-
-//go:embed gopher.png
-var f embed.FS
-
-func loadImage(path string) (*image.NRGBA, error) {
-	file, err := f.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-	bounds := img.Bounds()
-	nrgba := image.NewNRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
-	draw.Draw(nrgba, nrgba.Bounds(), img, bounds.Min, draw.Src)
-	return nrgba, nil
-}
 
 func main() {
 	flag.Parse()
@@ -94,7 +74,7 @@ func runGame() {
 	diffusePass := glitch.NewRenderPass(diffuseShader)
 	diffusePass.DepthTest = true
 
-	manImage, err := loadImage("gopher.png")
+	manImage, err := assets.LoadImage("gopher.png")
 	if err != nil {
 		panic(err)
 	}

@@ -1,35 +1,15 @@
 package main
 
 import (
-	"embed"
 	"fmt"
-	"image"
-	"image/draw"
 	_ "image/png"
 	"math/rand"
 	"time"
 
 	"github.com/unitoftime/glitch"
+	"github.com/unitoftime/glitch/examples/assets"
 	"github.com/unitoftime/glitch/shaders"
 )
-
-//go:embed gopher.png
-var f embed.FS
-
-func loadImage(path string) (*image.NRGBA, error) {
-	file, err := f.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-	bounds := img.Bounds()
-	nrgba := image.NewNRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
-	draw.Draw(nrgba, nrgba.Bounds(), img, bounds.Min, draw.Src)
-	return nrgba, nil
-}
 
 func main() {
 	glitch.Run(runGame)
@@ -51,7 +31,7 @@ func runGame() {
 	pass := glitch.NewRenderPass(shader)
 	windowPass := glitch.NewRenderPass(shader)
 
-	manImage, err := loadImage("gopher.png")
+	manImage, err := assets.LoadImage("gopher.png")
 	if err != nil {
 		panic(err)
 	}
