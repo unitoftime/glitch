@@ -213,19 +213,30 @@ func (r *RenderPass) Batch() {
 	// 	}
 	// }
 
-	// Opaque goes front to back (0 to 255)
-	for l := range r.commands {
-		for i := range r.commands[l].Opaque {
-			// fmt.Println("- Opaque: (layer, x, z)", l, r.commands[l].Opaque[i].matrix[i4_3_1], r.commands[l].Opaque[i].matrix[i4_3_2])
-			r.applyDrawCommand(r.commands[l].Opaque[i])
+	if r.DepthTest {
+		// Opaque goes front to back (0 to 255)
+		for l := range r.commands {
+			for i := range r.commands[l].Opaque {
+				// fmt.Println("- Opaque: (layer, x, z)", l, r.commands[l].Opaque[i].matrix[i4_3_1], r.commands[l].Opaque[i].matrix[i4_3_2])
+				r.applyDrawCommand(r.commands[l].Opaque[i])
+			}
 		}
-	}
 
-	// Translucent goes from back to front (255 to 0)
-	for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
-		for i := range r.commands[l].Translucent {
-			// fmt.Println("- Transl: (layer, x, z)", l, r.commands[l].Translucent[i].matrix[i4_3_1], r.commands[l].Translucent[i].matrix[i4_3_2])
-			r.applyDrawCommand(r.commands[l].Translucent[i])
+		// Translucent goes from back to front (255 to 0)
+		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+			for i := range r.commands[l].Translucent {
+				// fmt.Println("- Transl: (layer, x, z)", l, r.commands[l].Translucent[i].matrix[i4_3_1], r.commands[l].Translucent[i].matrix[i4_3_2])
+				r.applyDrawCommand(r.commands[l].Translucent[i])
+			}
+		}
+	} else {
+		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+			for i := range r.commands[l].Opaque {
+				r.applyDrawCommand(r.commands[l].Opaque[i])
+			}
+			for i := range r.commands[l].Translucent {
+				r.applyDrawCommand(r.commands[l].Translucent[i])
+			}
 		}
 	}
 }
@@ -347,6 +358,10 @@ func (r *RenderPass) SortInSoftware() {
 		}
 
 		return
+	}
+
+	for l := range r.commands {
+		r.commands[l].SortTranslucent(r.SoftwareSort)
 	}
 
 	for l := range r.commands {

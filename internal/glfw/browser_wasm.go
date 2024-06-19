@@ -85,6 +85,8 @@ func resolveIframeEmbedding() bool {
 }
 
 func getDevicePixelRatio() float64 {
+	// devicePixelRatio := 1 // If you do this, it let's people set their zoom from scrolling
+
 	devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
 	// if devicePixelRatio <= 0 {
 	// 	devicePixelRatio = 1.0
@@ -486,6 +488,48 @@ func SetupEventListeners(w *Window) {
 		document.AddEventListener("touchend", false, touchHandler)
 	*/
 
+	// // Hacky mouse-emulation-via-touch.
+	// touchHandler := js.FuncOf(func(this js.Value, args []js.Value) any {
+	// 	w.goFullscreenIfRequested()
+	// 	te := args[0]
+	// 	touches := te.Get("touches")
+	// 	if touches.Length() > 0 {
+	// 		t := touches.Index(0)
+
+	// 		if !isNilOrUndefined(w.touches) && w.touches.Length() > 0 { // This event is a movement only if we previously had > 0 touch points.
+	// 			if w.mouseMovementCallback != nil {
+	// 				go w.mouseMovementCallback(w, t.Get("clientX").Float(), t.Get("clientY").Float(), t.Get("clientX").Float()-w.cursorPos[0], t.Get("clientY").Float()-w.cursorPos[1])
+	// 			}
+	// 		}
+
+	// 		w.cursorPos[0], w.cursorPos[1] = t.Get("clientX").Float(), t.Get("clientY").Float()
+	// 		if w.cursorPosCallback != nil {
+	// 			go w.cursorPosCallback(w, w.cursorPos[0], w.cursorPos[1])
+	// 		}
+	// 	}
+	// 	w.touches = touches
+
+	// 	todo: What you need to do is add the mousebuttoncallback depending on the event handler
+	// touchstart:
+	// 			w.mouseButton[button] = Press
+	// 	if w.mouseButtonCallback != nil {
+	// 		go w.mouseButtonCallback(w, MouseButton(button), Press, 0)
+	// 	}
+
+	// 	w.mouseButton[button] = Release
+	// 	if w.mouseButtonCallback != nil {
+	// 		go w.mouseButtonCallback(w, MouseButton(button), Release, 0)
+	// 	}
+
+	// 	te.Call("preventDefault")
+	// 	return nil
+	// })
+	// document.Call("addEventListener", "touchstart", touchHandler,
+	// 	map[string]any{"passive": false}) // Note: Lets us preventDefault on event
+	// document.Call("addEventListener", "touchmove", touchHandler,
+	// 	map[string]any{"passive": false}) // Note: Lets us preventDefault on event
+	// document.Call("addEventListener", "touchend", touchHandler,
+	// 	map[string]any{"passive": false}) // Note: Lets us preventDefault on event
 }
 
 func SwapInterval(interval int) error {
@@ -779,20 +823,27 @@ func (w *Window) GetMouseButton(button MouseButton) Action {
 	}
 
 	// Hacky mouse-emulation-via-touch.
+	// fmt.Printf("Check %v\n", w.touches.Length())
 	if !w.touches.Equal(js.Value{}) {
+		// fmt.Printf("Touch! %v\n", w.touches.Length())
 		switch button {
 		case MouseButton1:
 			if w.touches.Length() == 1 || w.touches.Length() == 3 {
+				// fmt.Printf("PRESS MB1")
 				return Press
 			}
 		case MouseButton2:
 			if w.touches.Length() == 2 || w.touches.Length() == 3 {
+				// fmt.Printf("PRESS MB2")
 				return Press
 			}
 		}
 
+		// fmt.Printf("RELEASE")
 		return Release
 	}
+
+	// fmt.Printf("Other")
 
 	return w.mouseButton[button]
 }

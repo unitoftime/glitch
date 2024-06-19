@@ -53,15 +53,13 @@ void main()
   /* // output */
   /* vec4 color = texture(texture1, uv / textureSize2d.xy); */
 
-  // --------------------------------------------------------------------------------
-  // Attempt 2: https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/
-  // --------------------------------------------------------------------------------
-  // Note: This looks less blurry
-  /* float texelsPerPixel = 100.0; // TODO - Not sure where to get this from */
-  /* float texelsPerPixel = 1.0 / 8.0; */
-  /* float texelsPerPixel = 1.0 / 4.0; // (1920.0 / 4.0))/ 1920.0; // TODO: pass in with uniform */
-
-
+  /* // -------------------------------------------------------------------------------- */
+  /* // Attempt 2: https://colececil.io/blog/2017/scaling-pixel-art-without-destroying-it/ */
+  /* // -------------------------------------------------------------------------------- */
+  /* // Note: This looks less blurry */
+  /* /\* float texelsPerPixel = 100.0; // TODO - Not sure where to get this from *\/ */
+  /* /\* float texelsPerPixel = 1.0 / 8.0; *\/ */
+  /* /\* float texelsPerPixel = 1.0 / 4.0; // (1920.0 / 4.0))/ 1920.0; // TODO: pass in with uniform *\/ */
   /* float texelsPerPixel = 1.0 / 8.0; */
   /* float texelsPerPixel = 1.0 / view[0][0]; */
   /* float texelsPerPixel = view[0][0]; */
@@ -88,6 +86,45 @@ void main()
 
   /* // sample and return */
   /* vec4 color = texture(texture1, pix / textureSize2d.xy); */
+
+  // Attempt 2
+  /* vec2 textureSize2d = vec2(textureSize(texture1, 0)); */
+  /* vec2 pix = (TexCoord * textureSize2d.xy); */
+
+  /* /\* pix = floor(pix) + min(fract(pix) / fwidth(pix), 1.0) - 0.5; *\/ */
+  /* pix = floor(pix) + smoothstep(0.0, 1.0, fract(pix) / fwidth(pix)) - 0.5; // Sharper */
+
+  /* // sample and return */
+  /* vec4 color = texture(texture1, pix / textureSize2d.xy); */
+
+
+  //--------------------------------------------------------------------------------
+  // https://jorenjoestar.github.io/post/pixel_art_filtering/
+  //--------------------------------------------------------------------------------
+  /* // Nearest */
+  /* vec2 textureSize2d = vec2(textureSize(texture1, 0)); */
+  /* vec2 pixel = TexCoord * textureSize2d; */
+  /* pixel = floor(pixel) + 0.5; */
+  /* vec4 color = texture(texture1, pixel / textureSize2d.xy); */
+
+  /* // CSantos */
+  /* vec2 textureSize2d = vec2(textureSize(texture1, 0)); */
+  /* vec2 pixel = TexCoord * textureSize2d; */
+  /* vec2 alpha = 0.7 * fwidth(pixel); */
+  /* vec2 pixel_fract = fract(pixel); */
+  /* vec2 pixel_diff1 = clamp(0.5 / alpha * pixel_fract, 0.0, 0.5); */
+  /* vec2 pfSub1 = pixel_fract - vec2(1, 1); */
+  /* vec2 pixel_diff2 = clamp(0.5 / alpha * (pfSub1) + 0.5, 0.0, 0.5); */
+  /* vec2 pixel_diff = pixel_diff1 + pixel_diff2; */
+  /* pixel = floor(pixel) + pixel_diff; */
+  /* vec4 color = texture(texture1, pixel / textureSize2d.xy); */
+
+  /* // FatPixel */
+  /* vec2 textureSize2d = vec2(textureSize(texture1, 0)); */
+  /* vec2 pixel = TexCoord * textureSize2d; */
+  /* vec2 fat_pixel = floor(pixel) + 0.5; */
+  /* fat_pixel += vec2(1, 1) - clamp((vec2(1, 1) - fract(pixel)) * texelsPerPixel, 0.0, 1.0); */
+  /* vec4 color = texture(texture1, pixel / textureSize2d.xy); */
 
   if (color.a == 0.0) {
     discard;
