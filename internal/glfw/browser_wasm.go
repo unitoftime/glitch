@@ -85,15 +85,16 @@ func resolveIframeEmbedding() bool {
 }
 
 func getDevicePixelRatio() float64 {
-	// devicePixelRatio := 1 // If you do this, it let's people set their zoom from scrolling
+	// TODO: This is obviously not right, but I'd like to consolidate the contentscale with this and glfw at the same time. Right now the game just scales based on resolution which seems good enough
+	return 1.0
 
-	devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
-	// if devicePixelRatio <= 0 {
-	// 	devicePixelRatio = 1.0
-	// } else {
-	// 	devicePixelRatio = 1 / devicePixelRatio
-	// }
-	return devicePixelRatio
+	// devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
+	// // if devicePixelRatio <= 0 {
+	// // 	devicePixelRatio = 1.0
+	// // } else {
+	// // 	devicePixelRatio = 1 / devicePixelRatio
+	// // }
+	// return devicePixelRatio
 }
 
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
