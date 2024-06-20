@@ -366,7 +366,7 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 		mesh: NewMesh(),
 		tmpMesh: NewMesh(),
 
-		Color: RGBA{1, 1, 1, 1},
+		color: RGBA{1, 1, 1, 1},
 	}
 
 	t.Set(str)
@@ -388,7 +388,7 @@ type Text struct {
 
 	Orig Vec2 // The baseline starting point from which to draw the text
 	Dot Vec2 // The location of the next rune to draw
-	Color RGBA // The color with which to draw the next text
+	color RGBA // The color with which to draw the next text
 }
 
 func (t *Text) Bounds() Rect {
@@ -401,6 +401,9 @@ func (t *Text) MeshBounds() Rect {
 
 func (t *Text) SetScale(scale float64) {
 	t.scale = scale
+}
+func (t *Text) SetColor(col RGBA) {
+	t.color = col
 }
 
 func (t *Text) SetShadow(shadow Vec2) {
@@ -425,6 +428,10 @@ func (t *Text) Set(str string) {
 func (t *Text) regenerate() {
 	t.Clear()
 	t.bounds = t.AppendStringVerts(t.currentString)
+}
+
+func (t *Text) WriteString(str string) (n int, err error) {
+	return t.Write([]byte(str))
 }
 
 // This appends the list of bytes onto the end of the string
@@ -479,15 +486,15 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	lineHeight := t.atlas.UngappedLineHeight() * t.scale
 	initialDot := t.Dot
 
-	for _,r := range text {
+	for _, r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			t.Dot[1] += lineHeight
+			t.Dot[1] -= (lineHeight / 2)
 			t.Dot[0] = t.Orig[0]
 			continue
 		}
 
-		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.Color)
+		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.color)
 
 		noShadow := Vec2{}
 		if t.shadow != noShadow {

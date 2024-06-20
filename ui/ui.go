@@ -550,7 +550,6 @@ func (s TextStyle) Shadow(v glitch.Vec2) TextStyle {
 	return s
 }
 
-
 // Returns the rectangular bounds of the drawn text
 func (g *Group) Text(str string, rect glitch.Rect, s TextStyle) glitch.Rect {
 	return g.drawText(str, rect, s)
