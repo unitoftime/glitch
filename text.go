@@ -37,7 +37,13 @@ func DefaultAtlas() (*Atlas, error) {
 		Size: 64,
 		// GlyphCacheEntries: 1,
 	})
-	atlas := NewAtlas(fontFace, runes, true, 0, 512)
+	cfg := AtlasConfig{
+		Smooth: true,
+		TextureSize: 512,
+		Padding: 10,
+	}
+
+	atlas := NewAtlas(fontFace, runes, cfg)
 	return atlas, nil
 }
 
@@ -56,7 +62,12 @@ func BasicFontAtlas() (*Atlas, error) {
 	// 	// GlyphCacheEntries: 1,
 	// })
 	fontFace := basicfont.Face7x13
-	atlas := NewAtlas(fontFace, runes, true, 0, 512)
+	cfg := AtlasConfig{
+		Smooth: true,
+		TextureSize: 512,
+		Padding: 10,
+	}
+	atlas := NewAtlas(fontFace, runes, cfg)
 	return atlas, nil
 }
 
@@ -77,6 +88,7 @@ type Atlas struct {
 	texture *Texture
 	border int // Specifies a border on the font.
 	pixelPerfect bool // if true anti-aliasing will be disabled
+	defaultKerning float64
 }
 
 func fixedToFloat(val fixed.Int26_6) float64 {
@@ -87,7 +99,15 @@ func fixedToFloat(val fixed.Int26_6) float64 {
 	return float64(val) / (1 << 6)
 }
 
-func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize int) *Atlas {
+type AtlasConfig struct {
+	Border float64
+	Smooth bool
+	Padding int
+	Kerning float64
+	TextureSize int // TODO: automagically calculate
+}
+
+func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	metrics := face.Metrics()
 	// fmt.Println("Metrics: ", fixedToFloat(metrics.Height), fixedToFloat(metrics.Ascent), fixedToFloat(metrics.Descent))
 	atlas := &Atlas{
@@ -96,11 +116,14 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 		ascent: metrics.Ascent,
 		descent: metrics.Descent,
 		lineGap: metrics.Height,
-		border: int(border),
-		pixelPerfect: !smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
+		border: int(config.Border),
+		pixelPerfect: !config.Smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
+		defaultKerning: config.Kerning,
 	}
 
-	size := textureSize
+	border := int(config.Border)
+	basePadding := config.Padding
+	size := config.TextureSize
 	fixedSize := fixed.I(size)
 	fSize := float64(size)
 
@@ -112,7 +135,6 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
-	basePadding := 8
 	padding := fixed.I(basePadding + (2 * atlas.border)) // Padding for runes drawn to atlas
 	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
@@ -165,7 +187,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 		// draw.DrawMask(img, bounds.Add(image.Point{border + shadow, border + shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
 		// // draw.DrawMask(img, bounds.Add(image.Point{0, -border-shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
 
-		if border > 0 && smooth {
+		if border > 0 && config.Smooth {
 			// Draw nine slots around
 			// x = dist * cos(pi/2)
 			diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
@@ -188,7 +210,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 
 
 		atlas.mapping[r] = Glyph{
-			Advance: float64(adv.Floor() + (2*border))/fSize,
+			// Advance: float64(adv.Floor() + (2*border))/fSize,
+			Advance: float64(adv.Floor())/fSize,
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
@@ -231,7 +254,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 	// }
 
 	// This runs a box filter based on the border side
-	if atlas.border != 0 && !smooth {
+	if atlas.border != 0 && !config.Smooth {
 		// Only border this way for pixel fonts
 		// Finds white pixels and draws borders around the edges
 		imgBounds := img.Bounds()
@@ -287,7 +310,7 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 	// png.Encode(outputFile, img)
 	// outputFile.Close()
 
-	atlas.texture = NewTexture(img, smooth)
+	atlas.texture = NewTexture(img, config.Smooth)
 	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
 }
@@ -297,15 +320,10 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 // 	return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap)) + float64(2 * a.border)
 // }
 
-func (a *Atlas) kerning() float64 {
-	return 0
-	// return float64(a.border)
-}
-
 func (a *Atlas) UngappedLineHeight() float64 {
 	// TODO - scale?
 	// return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
-	return (fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
+	return (fixedToFloat(a.ascent) + fixedToFloat(a.descent)) // + float64(2 * a.border)
 }
 
 func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
@@ -350,7 +368,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	mesh.AppendQuadMesh(destRect, R(u1, v1, u2, v2), color)
 	// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 
-	dot[0] += (scaleX * glyph.Advance) + a.kerning()
+	dot[0] += (scaleX * glyph.Advance) + a.defaultKerning // TOO: Kerning should come from text, not atlas
 
 	return dot, y2
 }
