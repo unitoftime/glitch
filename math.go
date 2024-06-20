@@ -662,6 +662,14 @@ func (m *Mat4) Transpose() *Mat4 {
 	return &retMat
 }
 
+func (r Rect) RectDraw(r2 Rect) Mat4 {
+	mat := Mat4Ident
+	mat.
+		Scale(r2.W() / r.W(), r2.H() / r.H(), 1).
+		Translate(r2.Min[0], r2.Min[1], 0)
+	return mat
+}
+
 // TODO - I feel like camera should be a higher-up abstraction and not held here
 type CameraOrtho struct {
 	Projection Mat4

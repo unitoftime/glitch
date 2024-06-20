@@ -21,13 +21,19 @@ import (
 type uiGlobals struct {
 	mouseCaught bool
 	hudScale float64
+	fontScale float64
 }
 var global = uiGlobals{
 	hudScale: 1.0,
+	fontScale: 1.0,
 }
 
 func SetHudScale(scale float64) {
 	global.hudScale = scale
+}
+
+func SetFontScale(scale float64) {
+	global.fontScale = scale
 }
 
 // Must be called every frame before any UI draws happen
@@ -177,29 +183,33 @@ func (g *Group) Bounds() glitch.Rect {
 
 // Returns the mouse position with respect to the group camera
 func (g *Group) MousePosition() (float64, float64) {
+	// // x, y := g.win.MousePosition()
+	// // worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
+	// // return worldSpaceMouse[0], worldSpaceMouse[1]
+
+	// // 1. Get mouse position in window bounds
+	// // 2. Convert to (0, 1) ratios
+	// // 3. Convert back to group camera bounds
 	// x, y := g.win.MousePosition()
-	// worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
-	// return worldSpaceMouse[0], worldSpaceMouse[1]
+	// // winSpacePos := g.camera.Unproject(glitch.Vec3{x, y, 0}) // TODO: Is this right? Or does it just not matter because my camera is identity?
+	// winSpacePos := glitch.Vec2{x, y}
+	// winBounds := g.win.Bounds()
+	// normBoundsX := winSpacePos[0] / winBounds.W()
+	// normBoundsY := winSpacePos[1] / winBounds.H()
 
-	// 1. Get mouse position in window bounds
-	// 2. Convert to (0, 1) ratios
-	// 3. Convert back to group camera bounds
+	// uiBounds := g.Bounds()
+	// uiPosX := normBoundsX * uiBounds.W()
+	// uiPosY := normBoundsY * uiBounds.H()
+
+	// return uiPosX, uiPosY
+
+	// // TODO: I think I need to do this if I ever have a scaling camera
+	// // unprojPos := g.camera.Project(glitch.Vec3{uiPosX, uiPosY})
+	// // return unprojPos[0], unprojPos[1]
+
 	x, y := g.win.MousePosition()
-	// winSpacePos := g.camera.Unproject(glitch.Vec3{x, y, 0}) // TODO: Is this right? Or does it just not matter because my camera is identity?
-	winSpacePos := glitch.Vec2{x, y}
-	winBounds := g.win.Bounds()
-	normBoundsX := winSpacePos[0] / winBounds.W()
-	normBoundsY := winSpacePos[1] / winBounds.H()
-
-	uiBounds := g.Bounds()
-	uiPosX := normBoundsX * uiBounds.W()
-	uiPosY := normBoundsY * uiBounds.H()
-
-	return uiPosX, uiPosY
-
-	// TODO: I think I need to do this if I ever have a scaling camera
-	// unprojPos := g.camera.Project(glitch.Vec3{uiPosX, uiPosY})
-	// return unprojPos[0], unprojPos[1]
+	worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
+	return worldSpaceMouse[0], worldSpaceMouse[1]
 }
 
 // TODO - Should this be a list of rects that we loop through?
@@ -314,7 +324,7 @@ func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect 
 			rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
 		}
 	} else {
-		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
+		rect = rect.FullAnchor(text.Bounds().Scaled(global.fontScale * t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
 

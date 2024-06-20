@@ -112,7 +112,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
-	padding := fixed.I(2 + (2 * atlas.border)) // Padding for runes drawn to atlas
+	basePadding := 8
+	padding := fixed.I(basePadding + (2 * atlas.border)) // Padding for runes drawn to atlas
 	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
@@ -164,8 +165,26 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 		// draw.DrawMask(img, bounds.Add(image.Point{border + shadow, border + shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
 		// // draw.DrawMask(img, bounds.Add(image.Point{0, -border-shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
 
+		if border > 0 && smooth {
+			// Draw nine slots around
+			// x = dist * cos(pi/2)
+			diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
+			// diagDist := int(float64(border)/2)
+			draw.DrawMask(img, bounds.Add(image.Point{border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+			draw.DrawMask(img, bounds.Add(image.Point{diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+			draw.DrawMask(img, bounds.Add(image.Point{diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+			draw.DrawMask(img, bounds.Add(image.Point{-border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+			draw.DrawMask(img, bounds.Add(image.Point{-diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+			draw.DrawMask(img, bounds.Add(image.Point{-diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+			draw.DrawMask(img, bounds.Add(image.Point{0, border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+			draw.DrawMask(img, bounds.Add(image.Point{0, -border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+		}
+
 		draw.Draw(img, bounds, mask, maskp, draw.Over)
 		// draw.DrawMask(img, bounds, blackImg, image.Point{}, mask, maskp, draw.Src)
+
 
 
 		atlas.mapping[r] = Glyph{
@@ -212,7 +231,8 @@ func NewAtlas(face font.Face, runes []rune, smooth bool, border int, textureSize
 	// }
 
 	// This runs a box filter based on the border side
-	if atlas.border != 0 {
+	if atlas.border != 0 && !smooth {
+		// Only border this way for pixel fonts
 		// Finds white pixels and draws borders around the edges
 		imgBounds := img.Bounds()
 		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
@@ -432,13 +452,13 @@ func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	// mat2.Translate(0, -0.5, 0)
 	// target.Add(t.mesh, mat2, Black, t.material, false)
 
-	target.Add(t.mesh, matrix.gl(), color, t.material, false)
+	target.Add(t.mesh, matrix.gl(), color, t.material, true)
 }
 
 func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
 	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
-	target.Add(t.mesh, mat.gl(), color, t.material, false)
+	target.Add(t.mesh, mat.gl(), color, t.material, true)
 }
 
 func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
@@ -450,7 +470,7 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// TODO!!! - There's something wrong with this
 	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
 
-	target.Add(t.mesh, mat.gl(), mask, t.material, false)
+	target.Add(t.mesh, mat.gl(), mask, t.material, true)
 }
 
 func (t *Text) AppendStringVerts(text string) Rect {

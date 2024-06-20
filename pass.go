@@ -225,6 +225,7 @@ func (r *RenderPass) Batch() {
 		// Translucent goes from back to front (255 to 0)
 		for l := len(r.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for i := range r.commands[l].Translucent {
+			// for i := len(r.commands[l].Translucent)-1; i >= 0; i-- {
 				// fmt.Println("- Transl: (layer, x, z)", l, r.commands[l].Translucent[i].matrix[i4_3_1], r.commands[l].Translucent[i].matrix[i4_3_2])
 				r.applyDrawCommand(r.commands[l].Translucent[i])
 			}
