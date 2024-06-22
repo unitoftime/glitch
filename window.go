@@ -267,7 +267,7 @@ func (w *Window) Bounds() Rect {
 }
 
 func (w *Window) MousePosition() (float64, float64) {
-	return w.mousePosition[0], w.mousePosition[1]
+	return w.mousePosition.X, w.mousePosition.Y
 }
 
 func (w *Window) ContentScale() (float64, float64) {
@@ -287,8 +287,8 @@ func (w *Window) mainthreadCacheMousePosition() {
 	xPos := x * float64(sx)
 	yPos := float64(w.height) - (y * float64(sy)) // This flips the coordinate to quadrant 1
 	// return xPos, yPos
-	w.mousePosition[0] = xPos
-	w.mousePosition[1] = yPos
+	w.mousePosition.X = xPos
+	w.mousePosition.Y = yPos
 
 	// fmt.Println("ContentScale:", sx, sy)
 	// fmt.Println("CursorPos:", x, y)

@@ -92,14 +92,14 @@ func run() {
 		counter = (counter + 1) % 60
 
 		radius := 50.0
-		man[0].position[0] = radius * math.Cos(t.Seconds()) + targetBounds.Center()[0]
-		man[0].position[1] = radius * math.Sin(t.Seconds()) + targetBounds.Center()[1]
+		man[0].position.X = radius * math.Cos(t.Seconds()) + targetBounds.Center().X
+		man[0].position.Y = radius * math.Sin(t.Seconds()) + targetBounds.Center().Y
 
-		man[1].position[0] = radius * math.Cos(t.Seconds()) + targetBounds.Center()[0]
-		man[1].position[1] = (2 * radius) + targetBounds.Center()[1]
+		man[1].position.X = radius * math.Cos(t.Seconds()) + targetBounds.Center().X
+		man[1].position.Y = (2 * radius) + targetBounds.Center().Y
 
-		man[2].position[0] = (2 * radius) + targetBounds.Center()[0]
-		man[2].position[1] = radius * math.Sin(t.Seconds()) + targetBounds.Center()[1]
+		man[2].position.X = (2 * radius) + targetBounds.Center().X
+		man[2].position.Y = radius * math.Sin(t.Seconds()) + targetBounds.Center().Y
 
 		pass.Clear()
 
@@ -122,7 +122,7 @@ func run() {
 		for i := range man {
 			mat = glitch.Mat4Ident
 			// mat.Translate(math.Round(man[i].position[0]), math.Round(man[i].position[1]), 0)
-			mat.Scale(4, 4, 1).Translate(math.Round(man[i].position[0]), math.Round(man[i].position[1]), 0)
+			mat.Scale(4, 4, 1).Translate(math.Round(man[i].position.X), math.Round(man[i].position.Y), 0)
 			// mat.Scale(1, 1, 1).Translate(man[i].position[0], man[i].position[1], 0)
 			sprite.DrawColorMask(pass, mat, man[i].color)
 		}

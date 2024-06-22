@@ -86,7 +86,7 @@ func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 func (b *DrawBatch) RectDraw(target BatchTarget, bounds Rect) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
 
 	b.Draw(target, matrix)
 
@@ -97,7 +97,7 @@ func (b *DrawBatch) RectDraw(target BatchTarget, bounds Rect) {
 func (b *DrawBatch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
 
 	b.DrawColorMask(target, matrix, mask)
 

@@ -51,10 +51,10 @@ func (s Rect) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *
 		case TexCoordXY:
 			uvBounds := bounds
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			texBuf[0] = glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])}
-			texBuf[1] = glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])}
-			texBuf[2] = glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])}
-			texBuf[3] = glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])}
+			texBuf[0] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)}
+			texBuf[1] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)}
+			texBuf[2] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)}
+			texBuf[3] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)}
 		default:
 			panic("Unsupported")
 		}
@@ -173,20 +173,20 @@ func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
 	{
 		uvBounds := rect // TODO: idk
 		mesh.texCoords = append(mesh.texCoords,
-			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
-			glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
-			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
-			glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
+			glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)},
+			glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)},
+			glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)},
+			glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)},
 			)
 	}
 }
 
 func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 	positions := []glVec3{
-		glVec3{float32(rect.Min[0]), float32(rect.Max[1]), 0},
-		glVec3{float32(rect.Min[0]), float32(rect.Min[1]), 0},
-		glVec3{float32(rect.Max[0]), float32(rect.Min[1]), 0},
-		glVec3{float32(rect.Max[0]), float32(rect.Max[1]), 0},
+		glVec3{float32(rect.Min.X), float32(rect.Max.Y), 0},
+		glVec3{float32(rect.Min.X), float32(rect.Min.Y), 0},
+		glVec3{float32(rect.Max.X), float32(rect.Min.Y), 0},
+		glVec3{float32(rect.Max.X), float32(rect.Max.Y), 0},
 	}
 	colors := []glVec4{
 		glVec4{float32(g.color.R), float32(g.color.G), float32(g.color.B), float32(g.color.A)},
@@ -246,8 +246,8 @@ func (g *GeomDraw) Ellipse(mesh *Mesh, center Vec3, size Vec2, rotation float64,
 
 	alpha := rotation
 
-	a := math.Max(size[0], size[1]) // SemiMajorAxis
-	b := math.Min(size[0], size[1]) // SemiMinorAxis
+	a := math.Max(size.X, size.Y) // SemiMajorAxis
+	b := math.Min(size.X, size.Y) // SemiMinorAxis
 	// TODO - Rotate pi/2 if width < height?
 	e := math.Sqrt(1 - (b*b)/(a*a)) // Eccintricity
 
@@ -434,8 +434,8 @@ func (g *GeomDraw) Line(mesh *Mesh, a, b Vec3, lastAngle, nextAngle float64, wid
 func EllipsePoints(size Vec2, rotation float64, divisions int) []Vec3 {
 	alpha := rotation
 
-	a := math.Max(size[0], size[1]) // SemiMajorAxis
-	b := math.Min(size[0], size[1]) // SemiMinorAxis
+	a := math.Max(size.X, size.Y) // SemiMajorAxis
+	b := math.Min(size.X, size.Y) // SemiMinorAxis
 	// TODO - Rotate pi/2 if width < height?
 	e := math.Sqrt(1 - (b*b)/(a*a)) // Eccintricity
 

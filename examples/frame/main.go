@@ -70,14 +70,14 @@ func runGame() {
 		}
 		start = time.Now()
 		for i := range man {
-			man[i].position[0] += man[i].velocity[0]
-			man[i].position[1] += man[i].velocity[1]
+			man[i].position.X += man[i].velocity.X
+			man[i].position.Y += man[i].velocity.Y
 
-			if man[i].position[0] <= 0 || (man[i].position[0]+w) >= float64(1920) {
-				man[i].velocity[0] = -man[i].velocity[0]
+			if man[i].position.X <= 0 || (man[i].position.X+w) >= float64(1920) {
+				man[i].velocity.X = -man[i].velocity.X
 			}
-			if man[i].position[1] <= 0 || (man[i].position[1]+h) >= float64(1080) {
-				man[i].velocity[1] = -man[i].velocity[1]
+			if man[i].position.Y <= 0 || (man[i].position.Y+h) >= float64(1080) {
+				man[i].velocity.Y = -man[i].velocity.Y
 			}
 		}
 
@@ -88,8 +88,8 @@ func runGame() {
 
 		for i := range man {
 			mat := glitch.Mat4Ident
-			// mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], -man[i].position[1])
-			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position[0], man[i].position[1], 0)
+			// mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position.X, man[i].position.Y, -man[i].position.Y)
+			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position.X, man[i].position.Y, 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
 			pass.SetLayer(man[i].layer)

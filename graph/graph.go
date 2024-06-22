@@ -46,11 +46,11 @@ func (g *Graph) Line(series []glitch.Vec2) {
 	minRange := math.MaxFloat64
 	maxRange := -math.MaxFloat64
 	for _, p := range series {
-		minDomain = math.Min(minDomain, float64(p[0]))
-		maxDomain = math.Max(maxDomain, float64(p[0]))
+		minDomain = math.Min(minDomain, float64(p.X))
+		maxDomain = math.Max(maxDomain, float64(p.X))
 
-		minRange = math.Min(minRange, float64(p[1]))
-		maxRange = math.Max(maxRange, float64(p[1]))
+		minRange = math.Min(minRange, float64(p.Y))
+		maxRange = math.Max(maxRange, float64(p.Y))
 	}
 
 	g.axes = glitch.R(minDomain, minRange, maxDomain, maxRange)
@@ -61,8 +61,8 @@ func (g *Graph) Line(series []glitch.Vec2) {
 	g.points = g.points[:0]
 	for _, p := range series {
 		g.points = append(g.points, glitch.Vec3{
-			g.bounds.Min[0] + (p[0] - (minDomain)) * dx,
-			g.bounds.Min[1] + (p[1] - (minRange)) * dy,
+			g.bounds.Min.X + (p.X - (minDomain)) * dx,
+			g.bounds.Min.Y + (p.Y - (minRange)) * dy,
 			0,
 		})
 	}
@@ -73,18 +73,18 @@ func (g *Graph) Line(series []glitch.Vec2) {
 func (g *Graph) Axes() {
 	g.geom.LineStrip(g.mesh,
 		[]glitch.Vec3{
-			glitch.Vec3{g.bounds.Min[0], g.bounds.Max[1], 0},
-			glitch.Vec3{g.bounds.Min[0], g.bounds.Min[1], 0},
-			glitch.Vec3{g.bounds.Max[0], g.bounds.Min[1], 0},
+			glitch.Vec3{g.bounds.Min.X, g.bounds.Max.Y, 0},
+			glitch.Vec3{g.bounds.Min.X, g.bounds.Min.Y, 0},
+			glitch.Vec3{g.bounds.Max.X, g.bounds.Min.Y, 0},
 		},
 		2,
 	)
 
 	// g.mesh.Append(g.geom.LineStrip(
 	// 	[]glitch.Vec3{
-	// 		glitch.Vec3{g.bounds.Min[0], g.bounds.Max[1], 0},
-	// 		glitch.Vec3{g.bounds.Min[0], g.bounds.Min[1], 0},
-	// 		glitch.Vec3{g.bounds.Max[0], g.bounds.Min[1], 0},
+	// 		glitch.Vec3{g.bounds.Min.X, g.bounds.Max.Y, 0},
+	// 		glitch.Vec3{g.bounds.Min.X, g.bounds.Min.Y, 0},
+	// 		glitch.Vec3{g.bounds.Max.X, g.bounds.Min.Y, 0},
 	// 	},
 	// 	2,
 	// ))

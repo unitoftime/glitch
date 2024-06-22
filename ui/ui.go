@@ -56,7 +56,7 @@ func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
 	// if global.mouseCaught {
 	// 	return false
 	// }
-	if rect.Contains(point[0], point[1]) {
+	if rect.Contains(point.X, point.Y) {
 		global.mouseCaught = true
 		return true
 	}
@@ -194,8 +194,8 @@ func (g *Group) MousePosition() (float64, float64) {
 	// // winSpacePos := g.camera.Unproject(glitch.Vec3{x, y, 0}) // TODO: Is this right? Or does it just not matter because my camera is identity?
 	// winSpacePos := glitch.Vec2{x, y}
 	// winBounds := g.win.Bounds()
-	// normBoundsX := winSpacePos[0] / winBounds.W()
-	// normBoundsY := winSpacePos[1] / winBounds.H()
+	// normBoundsX := winSpacePos.X / winBounds.W()
+	// normBoundsY := winSpacePos.Y / winBounds.H()
 
 	// uiBounds := g.Bounds()
 	// uiPosX := normBoundsX * uiBounds.W()
@@ -205,11 +205,11 @@ func (g *Group) MousePosition() (float64, float64) {
 
 	// // TODO: I think I need to do this if I ever have a scaling camera
 	// // unprojPos := g.camera.Project(glitch.Vec3{uiPosX, uiPosY})
-	// // return unprojPos[0], unprojPos[1]
+	// // return unprojPos.X, unprojPos.Y
 
 	x, y := g.win.MousePosition()
 	worldSpaceMouse := g.camera.Unproject(glitch.Vec3{x, y, 0})
-	return worldSpaceMouse[0], worldSpaceMouse[1]
+	return worldSpaceMouse.X, worldSpaceMouse.Y
 }
 
 // TODO - Should this be a list of rects that we loop through?
@@ -295,10 +295,10 @@ func (g *Group) Clear() {
 // 	g.debugRect(rect)
 // }
 func rectSnap(r glitch.Rect) glitch.Rect {
-	r.Min[0] = math.Round(r.Min[0])
-	r.Max[0] = math.Round(r.Max[0])
-	r.Min[1] = math.Round(r.Min[1])
-	r.Max[1] = math.Round(r.Max[1])
+	r.Min.X = math.Round(r.Min.X)
+	r.Max.X = math.Round(r.Max.X)
+	r.Min.Y = math.Round(r.Min.Y)
+	r.Max.Y = math.Round(r.Max.Y)
 	return r
 }
 
@@ -694,17 +694,17 @@ func (g *Group) Tooltip(tip string, rect glitch.Rect, style Style) {
 	quadrant := g.Bounds().Center().Sub(g.mousePos).Unit()
 
 	var movement glitch.Vec2
-	if quadrant[0] < 0 {
-		movement[0] = 1
+	if quadrant.X < 0 {
+		movement.X = 1
 	} else {
-		movement[0] = 0
+		movement.X = 0
 	}
 
 	// TODO: Maybe make this configurable? I removed the Y flip because most tooltips are just single lines, and the cursor ends up blocking the text if we anchor below
-	// if quadrant[1] < 0 {
-	// 	movement[1] = 1
+	// if quadrant.Y < 0 {
+	// 	movement.Y = 1
 	// } else {
-	// 	movement[1] = 0
+	// 	movement.Y = 0
 	// }
 
 	cursorRect := glitch.R(0, 0, 0, 0).WithCenter(g.mousePos)
@@ -718,8 +718,8 @@ func (g *Group) Tooltip(tip string, rect glitch.Rect, style Style) {
 	// tipRect = tipRect.WithCenter(g.mousePos)
 	// tipRect = tipRect.
 	// 	Moved(glitch.Vec2{
-	// 	(padding + (tipRect.W() / 2)) * movement[0],
-	// 	(padding + (tipRect.H() / 2)) * movement[1],
+	// 	(padding + (tipRect.W() / 2)) * movement.X,
+	// 	(padding + (tipRect.H() / 2)) * movement.Y,
 	// })
 
 	// g.drawSprite(tipRect, style.Normal)
@@ -832,9 +832,9 @@ func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2, style TextStyl
 
 	style.anchor = glitch.Vec2{0, 0}
 	style.pivot = glitch.Vec2{1, 0.5}
-	g.drawText(fmt.Sprintf("%.2f ms", axes.Min[1]), rect, style)
+	g.drawText(fmt.Sprintf("%.2f ms", axes.Min.Y), rect, style)
 
 	style.anchor = glitch.Vec2{0, 1}
 	style.pivot = glitch.Vec2{1, 0.5}
-	g.drawText(fmt.Sprintf("%.2f ms", axes.Max[1]), rect, style)
+	g.drawText(fmt.Sprintf("%.2f ms", axes.Max.Y), rect, style)
 }

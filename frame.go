@@ -24,7 +24,7 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 
 	// Create texture
 	// TODO - Note: I'm passing actual data to the texture object, rather than null. That might be suboptimal. This fills the GPU memory, whereas if I pass null I can just allocate it.
-	img := image.NewRGBA(image.Rect(int(bounds.Min[0]), int(bounds.Min[1]), int(bounds.Max[0]), int(bounds.Max[1])))
+	img := image.NewRGBA(image.Rect(int(bounds.Min.X), int(bounds.Min.Y), int(bounds.Max.X), int(bounds.Max.Y)))
 	frame.tex = NewTexture(img, smooth)
 	// frame.tex = NewEmptyTexture(int(bounds.W()), int(bounds.H()), smooth)
 
@@ -76,7 +76,7 @@ func (f *Frame) RectDraw(target BatchTarget, bounds Rect) {
 func (f *Frame) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W() / f.bounds.W(), bounds.H() / f.bounds.H(), 1).
-		Translate(bounds.Min[0], bounds.Min[1], 0)
+		Translate(bounds.Min.X, bounds.Min.Y, 0)
 	// Note: because frames are anchored to the bottom left, we don't have to shift by center
 	// .Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
 	f.DrawColorMask(target, matrix, mask)

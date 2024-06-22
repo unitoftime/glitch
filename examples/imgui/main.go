@@ -54,7 +54,7 @@ func runGame() {
 	// rect := glitch.R(0 + pad, 0 + pad, 1920 - pad, 1080 - pad)
 	// rect := glitch.R(0, 0, 1, 1)
 	rect := win.Bounds()
-	rect = glitch.R(rect.Min[0], rect.Min[1], rect.Min[0]+500, rect.Min[1]+500)
+	rect = glitch.R(rect.Min.X, rect.Min.Y, rect.Min.X+500, rect.Min.Y+500)
 
 	graph := graph.NewGraph(rect)
 
@@ -93,7 +93,7 @@ func runGame() {
 		win.Update()
 
 		dt = time.Since(start)
-		dat[index][1] = float64(dt.Seconds())
+		dat[index].Y = float64(dt.Seconds())
 		index = (index + 1) % len(dat)
 		start = time.Now()
 	}

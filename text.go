@@ -359,17 +359,17 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	//	log.Println(glyph.Bearing)
 
 	// UV coordinates of the quad
-	u1 := glyph.BoundsUV.Min[0]
-	u2 := glyph.BoundsUV.Max[0]
-	v1 := glyph.BoundsUV.Min[1]
-	v2 := glyph.BoundsUV.Max[1]
+	u1 := glyph.BoundsUV.Min.X
+	u2 := glyph.BoundsUV.Max.X
+	v1 := glyph.BoundsUV.Min.Y
+	v2 := glyph.BoundsUV.Max.Y
 
 	// Pixel coordinates of the quad (scaled by scale)
-	x1 := dot[0] + (scaleX * glyph.Bearing[0])
+	x1 := dot.X + (scaleX * glyph.Bearing.X)
 	x2 := x1 + (scaleX * (u2 - u1))
 
 	// Note: Commented out the downard shift here, and I'm doing it in the above func
-	y1 := dot[1] + (scaleY * glyph.Bearing[1]) + fixedToFloat(a.descent)
+	y1 := dot.Y + (scaleY * glyph.Bearing.Y) + fixedToFloat(a.descent)
 	y2 := y1 + (scaleY * (v2 - v1))
 
 	destRect := R(x1, y1, x2, y2)
@@ -380,7 +380,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	mesh.AppendQuadMesh(destRect, R(u1, v1, u2, v2), color)
 	// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 
-	dot[0] += (scaleX * glyph.Advance) + a.defaultKerning // TOO: Kerning should come from text, not atlas
+	dot.X += (scaleX * glyph.Advance) + a.defaultKerning // TOO: Kerning should come from text, not atlas
 
 	return dot, y2
 }
@@ -494,18 +494,19 @@ func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 
 func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
-	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
+
+	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min.X, rect.Min.Y, 0)
 	target.Add(t.mesh, mat.gl(), color, t.material, true)
 }
 
 func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	mat := Mat4Ident
 	// TODO why shouldn't I be shifting to the middle?
-	// mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
-	// mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min[0], rect.Min[1], 0)
+	// mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
+	// mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min.X, rect.Min.Y, 0)
 
 	// TODO!!! - There's something wrong with this
-	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min[0], bounds.Min[1], 0)
+	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min.X, bounds.Min.Y, 0)
 
 	target.Add(t.mesh, mat.gl(), mask, t.material, true)
 }
@@ -520,9 +521,9 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	for _, r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			// t.Dot[1] -= t.atlas.LineHeight()
-			t.Dot[1] -= lineHeight
-			t.Dot[0] = t.Orig[0]
+			// t.Dot.Y -= t.atlas.LineHeight()
+			t.Dot.Y -= lineHeight
+			t.Dot.X = t.Orig.X
 			numLines++
 			continue
 		}
@@ -537,21 +538,20 @@ func (t *Text) AppendStringVerts(text string) Rect {
 		t.Dot = newDot
 
 		// if maxAscent < ascent {
-		// 	maxAscent = dot[1] + ascent
+		// 	maxAscent = dot.Y + ascent
 		// }
 	}
-
-	// return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], initialDot[1] - (numLines * lineHeight)).Norm()
+	// return R(meshBounds.Min.X, initialDot.Y, meshBounds.Max.X, initialDot.Y - (numLines * lineHeight)).Norm()
 
 	// Attempt 4 - use mesh bounds for X and line height for Y
 	meshBounds := t.mesh.Bounds().Rect()
 
 	// Note: The RuneVerts function corners the glyph into the bounds by applying the descent. So I dont need to track ascent/descent here
-	// top := initialDot[1] + (fixedToFloat(t.atlas.ascent) * t.scale)
+	// top := initialDot.Y + (fixedToFloat(t.atlas.ascent) * t.scale)
 	// bot := top - (numLines * lineHeight)
-	top := initialDot[1] + lineHeight
+	top := initialDot.Y + lineHeight
 	bot := top - (numLines * lineHeight)
-	return R(meshBounds.Min[0], top, meshBounds.Max[0], bot).Norm()
+	return R(meshBounds.Min.X, top, meshBounds.Max.X, bot).Norm()
 
 	// // return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
 
@@ -599,5 +599,4 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// // 	initialDot[1] - fixedToFloat(a.descent)/1024,
 	// // 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
 	// // 	dot[1] + fixedToFloat(a.ascent)/1024)
-
 }

@@ -12,10 +12,10 @@ type Sprite struct {
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	uvBounds := R(
-		bounds.Min[0] / float64(texture.width),
-		bounds.Min[1] / float64(texture.height),
-		bounds.Max[0] / float64(texture.width),
-		bounds.Max[1] / float64(texture.height),
+		bounds.Min.X / float64(texture.width),
+		bounds.Min.Y / float64(texture.height),
+		bounds.Max.X / float64(texture.width),
+		bounds.Max.Y / float64(texture.height),
 	)
 
 	mesh := NewSpriteMesh(bounds.W(), bounds.H(), uvBounds)
@@ -55,7 +55,7 @@ func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
 }
 func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)
+	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
 	s.DrawColorMask(target, matrix, mask)
 }
 
@@ -70,25 +70,25 @@ func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds
 	s.bounds = bounds.Moved(bounds.Center().Scaled(-1))
 	s.uvBounds = R(
-		bounds.Min[0] / float64(s.texture.width),
-		bounds.Min[1] / float64(s.texture.height),
-		bounds.Max[0] / float64(s.texture.width),
-		bounds.Max[1] / float64(s.texture.height),
+		bounds.Min.X / float64(s.texture.width),
+		bounds.Min.Y / float64(s.texture.height),
+		bounds.Max.X / float64(s.texture.width),
+		bounds.Max.Y / float64(s.texture.height),
 	)
 
 	w := bounds.W()
 	h := bounds.H()
 	meshBounds := R(-w/2, -h/2, w/2, h/2)
 
-	s.mesh.positions[0] = glVec3{float32(meshBounds.Max[0]), float32(meshBounds.Max[1]), float32(0.0)}
-	s.mesh.positions[1] = glVec3{float32(meshBounds.Max[0]), float32(meshBounds.Min[1]), float32(0.0)}
-	s.mesh.positions[2] = glVec3{float32(meshBounds.Min[0]), float32(meshBounds.Min[1]), float32(0.0)}
-	s.mesh.positions[3] = glVec3{float32(meshBounds.Min[0]), float32(meshBounds.Max[1]), float32(0.0)}
+	s.mesh.positions[0] = glVec3{float32(meshBounds.Max.X), float32(meshBounds.Max.Y), float32(0.0)}
+	s.mesh.positions[1] = glVec3{float32(meshBounds.Max.X), float32(meshBounds.Min.Y), float32(0.0)}
+	s.mesh.positions[2] = glVec3{float32(meshBounds.Min.X), float32(meshBounds.Min.Y), float32(0.0)}
+	s.mesh.positions[3] = glVec3{float32(meshBounds.Min.X), float32(meshBounds.Max.Y), float32(0.0)}
 
-	s.mesh.texCoords[0] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Min[1])}
-	s.mesh.texCoords[1] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Max[1])}
-	s.mesh.texCoords[2] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Max[1])}
-	s.mesh.texCoords[3] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Min[1])}
+	s.mesh.texCoords[0] = glVec2{float32(s.uvBounds.Max.X), float32(s.uvBounds.Min.Y)}
+	s.mesh.texCoords[1] = glVec2{float32(s.uvBounds.Max.X), float32(s.uvBounds.Max.Y)}
+	s.mesh.texCoords[2] = glVec2{float32(s.uvBounds.Min.X), float32(s.uvBounds.Max.Y)}
+	s.mesh.texCoords[3] = glVec2{float32(s.uvBounds.Min.X), float32(s.uvBounds.Min.Y)}
 }
 
 // // TODO: This stuff was somehow just about the same speed as the mesh fill function. Not sure if its worth it unless I can make it way faster
@@ -119,24 +119,24 @@ func (s *Sprite) SetTextureBounds(bounds Rect) {
 
 // 			// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
 // 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-// 			posBuf[0] = glVec3{float32(max[0]), float32(max[1]), float32(min[2])}
-// 			posBuf[1] = glVec3{float32(max[0]), float32(min[1]), float32(min[2])}
-// 			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
-// 			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
+// 			posBuf.X = glVec3{float32(max.X), float32(max.Y), float32(min[2])}
+// 			posBuf.Y = glVec3{float32(max.X), float32(min.Y), float32(min[2])}
+// 			posBuf[2] = glVec3{float32(min.X), float32(min.Y), float32(min[2])}
+// 			posBuf[3] = glVec3{float32(min.X), float32(max.Y), float32(min[2])}
 
 // 		case ColorRGBA:
 // 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
 // 			color := mask.gl()
-// 			colBuf[0] = color
-// 			colBuf[1] = color
+// 			colBuf.X = color
+// 			colBuf.Y = color
 // 			colBuf[2] = color
 // 			colBuf[3] = color
 // 		case TexCoordXY:
 // 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-// 			texBuf[0] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Min[1])}
-// 			texBuf[1] = glVec2{float32(s.uvBounds.Max[0]), float32(s.uvBounds.Max[1])}
-// 			texBuf[2] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Max[1])}
-// 			texBuf[3] = glVec2{float32(s.uvBounds.Min[0]), float32(s.uvBounds.Min[1])}
+// 			texBuf.X = glVec2{float32(s.uvBounds.Max.X), float32(s.uvBounds.Min.Y)}
+// 			texBuf.Y = glVec2{float32(s.uvBounds.Max.X), float32(s.uvBounds.Max.Y)}
+// 			texBuf[2] = glVec2{float32(s.uvBounds.Min.X), float32(s.uvBounds.Max.Y)}
+// 			texBuf[3] = glVec2{float32(s.uvBounds.Min.X), float32(s.uvBounds.Min.Y)}
 // 		default:
 // 			panic("Unsupported")
 // 		}
@@ -162,16 +162,16 @@ func SpriteToNinePanel(sprite *Sprite, border Rect) *NinePanelSprite {
 func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {
 	fullBounds := bounds
 
-	top := bounds.CutBottom(border.Max[1])
-	bot := bounds.CutTop(border.Min[1])
+	top := bounds.CutBottom(border.Max.Y)
+	bot := bounds.CutTop(border.Min.Y)
 
-	topLeft := top.CutLeft(border.Min[0])
-	topRight := top.CutRight(border.Max[0])
+	topLeft := top.CutLeft(border.Min.X)
+	topRight := top.CutRight(border.Max.X)
 
-	botLeft := bot.CutLeft(border.Min[0])
-	botRight := bot.CutRight(border.Max[0])
-	left := bounds.CutLeft(border.Min[0])
-	right := bounds.CutRight(border.Max[0])
+	botLeft := bot.CutLeft(border.Min.X)
+	botRight := bot.CutRight(border.Max.X)
+	left := bounds.CutLeft(border.Min.X)
+	right := bounds.CutRight(border.Max.X)
 
 	rects := []Rect{
 		bounds, // Center
@@ -222,20 +222,20 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 	// fmt.Println(bounds.W(), bounds.H())
 
 	border := R(
-		s.Scale * s.border.Min[0],
-		s.Scale * s.border.Min[1],
-		s.Scale * s.border.Max[0],
-		s.Scale * s.border.Max[1])
+		s.Scale * s.border.Min.X,
+		s.Scale * s.border.Min.Y,
+		s.Scale * s.border.Max.X,
+		s.Scale * s.border.Max.Y)
 
-	top := rect.CutTop(border.Max[1])
-	bot := rect.CutBottom(border.Min[1])
+	top := rect.CutTop(border.Max.Y)
+	bot := rect.CutBottom(border.Min.Y)
 
-	topLeft := top.CutLeft(border.Min[0])
-	topRight := top.CutRight(border.Max[0])
-	botLeft := bot.CutLeft(border.Min[0])
-	botRight := bot.CutRight(border.Max[0])
-	left := rect.CutLeft(border.Min[0])
-	right := rect.CutRight(border.Max[0])
+	topLeft := top.CutLeft(border.Min.X)
+	topRight := top.CutRight(border.Max.X)
+	botLeft := bot.CutLeft(border.Min.X)
+	botRight := bot.CutRight(border.Max.X)
+	left := rect.CutLeft(border.Min.X)
+	right := rect.CutRight(border.Max.X)
 
 	destRects := [9]Rect{
 		rect, //center
@@ -255,7 +255,7 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 	for i := range s.sprites {
 		// fmt.Println(destRects[i].W(), destRects[i].H())
 		matrix = Mat4Ident
-		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min[0], destRects[i].H()/2 + destRects[i].Min[1], 0)
+		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min.X, destRects[i].H()/2 + destRects[i].Min.Y, 0)
 		// pass.Add(s.sprites[i], matrix, mask, s.sprites[i].material, false)
 		s.sprites[i].DrawColorMask(pass, matrix, mask)
 	}

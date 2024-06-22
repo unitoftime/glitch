@@ -224,7 +224,7 @@ func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min[0], bounds.H()/2+bounds.Min[1], 0)
+	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
 	target.Add(b.mesh, matrix.gl(), mask, b.material, false)
 }
 
@@ -352,10 +352,10 @@ func (m *Mesh) SetColor(col RGBA) {
 
 func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect, color RGBA) {
 	positions := []glVec3{
-		glVec3{float32(bounds.Max[0]), float32(bounds.Max[1]), float32(0.0)},
-		glVec3{float32(bounds.Max[0]), float32(bounds.Min[1]), float32(0.0)},
-		glVec3{float32(bounds.Min[0]), float32(bounds.Min[1]), float32(0.0)},
-		glVec3{float32(bounds.Min[0]), float32(bounds.Max[1]), float32(0.0)},
+		glVec3{float32(bounds.Max.X), float32(bounds.Max.Y), float32(0.0)},
+		glVec3{float32(bounds.Max.X), float32(bounds.Min.Y), float32(0.0)},
+		glVec3{float32(bounds.Min.X), float32(bounds.Min.Y), float32(0.0)},
+		glVec3{float32(bounds.Min.X), float32(bounds.Max.Y), float32(0.0)},
 	}
 	// TODO normals
 	colors := []glVec4{
@@ -365,10 +365,10 @@ func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect, color RGBA) {
 		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
 	}
 	texCoords := []glVec2{
-		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
-		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
-		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
-		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
+		glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)},
+		glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)},
+		glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)},
+		glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)},
 	}
 
 	inds := []uint32{
@@ -400,10 +400,10 @@ func NewSpriteMesh(w, h float64, uvBounds Rect) *Mesh {
 func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 	color := RGBA{1.0, 1.0, 1.0, 1.0}
 	positions := []glVec3{
-		glVec3{float32(bounds.Max[0]), float32(bounds.Max[1]), float32(0.0)},
-		glVec3{float32(bounds.Max[0]), float32(bounds.Min[1]), float32(0.0)},
-		glVec3{float32(bounds.Min[0]), float32(bounds.Min[1]), float32(0.0)},
-		glVec3{float32(bounds.Min[0]), float32(bounds.Max[1]), float32(0.0)},
+		glVec3{float32(bounds.Max.X), float32(bounds.Max.Y), float32(0.0)},
+		glVec3{float32(bounds.Max.X), float32(bounds.Min.Y), float32(0.0)},
+		glVec3{float32(bounds.Min.X), float32(bounds.Min.Y), float32(0.0)},
+		glVec3{float32(bounds.Min.X), float32(bounds.Max.Y), float32(0.0)},
 	}
 	// TODO normals
 	colors := []glVec4{
@@ -413,10 +413,10 @@ func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {
 		glVec4{float32(color.R), float32(color.G), float32(color.B), float32(color.A)},
 	}
 	texCoords := []glVec2{
-		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Min[1])},
-		glVec2{float32(uvBounds.Max[0]), float32(uvBounds.Max[1])},
-		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Max[1])},
-		glVec2{float32(uvBounds.Min[0]), float32(uvBounds.Min[1])},
+		glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)},
+		glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)},
+		glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)},
+		glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)},
 	}
 
 	inds := []uint32{

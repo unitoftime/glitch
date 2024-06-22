@@ -78,10 +78,10 @@ func (m *glMat4) Mul(n *glMat4) *glMat4 {
 
 
 func (v Vec2) gl() glVec2 {
-	return glVec2{float32(v[0]), float32(v[1])}
+	return glVec2{float32(v.X), float32(v.Y)}
 }
 func (v Vec3) gl() glVec3 {
-	return glVec3{float32(v[0]), float32(v[1]), float32(v[2])}
+	return glVec3{float32(v.X), float32(v.Y), float32(v.Z)}
 }
 func (v Vec4) gl() glVec4 {
 	return glVec4{float32(v[0]), float32(v[1]), float32(v[2]), float32(v[3])}
@@ -110,56 +110,60 @@ func (m Mat4) writeToFloat32(s []float32) []float32 {
 }
 
 // TODO - conver these to structs {x, y}
-type Vec2 [2]float64
-type Vec3 [3]float64
+type Vec2 struct {
+	X, Y float64
+}
+type Vec3 struct {
+	X, Y, Z float64
+}
 type Vec4 [4]float64
 
 func (v Vec2) Add(u Vec2) Vec2 {
-	return Vec2{v[0] + u[0], v[1] + u[1]}
+	return Vec2{v.X + u.X, v.Y + u.Y}
 }
 
 func (v Vec2) Sub(u Vec2) Vec2 {
-	return Vec2{v[0] - u[0], v[1] - u[1]}
+	return Vec2{v.X - u.X, v.Y - u.Y}
 }
 
 func (v Vec2) Snap() Vec2 {
 	return Vec2{
-		math.Round(v[0]),
-		math.Round(v[1]),
+		math.Round(v.X),
+		math.Round(v.Y),
 	}
 }
 
 func (v Vec2) Unit() Vec2 {
 	len := v.Len()
-	return Vec2{v[0]/len, v[1]/len}
+	return Vec2{v.X/len, v.Y/len}
 }
 
 func (v Vec2) Len() float64 {
-	return math.Hypot(float64(v[0]), float64(v[1]))
+	return math.Hypot(float64(v.X), float64(v.Y))
 }
 
 func (v Vec2) Scaled(s float64) Vec2 {
-	return Vec2{s * v[0], s * v[1]}
+	return Vec2{s * v.X, s * v.Y}
 }
 func (v Vec2) ScaledXY(s Vec2) Vec2 {
-	return Vec2{v[0] * s[0], v[1] * s[1]}
+	return Vec2{v.X * s.X, v.Y * s.Y}
 }
 
 func (v Vec2) Vec3() Vec3 {
-	return Vec3{v[0], v[1], 0}
+	return Vec3{v.X, v.Y, 0}
 }
 
 func (v Vec3) Add(u Vec3) Vec3 {
-	return Vec3{v[0] + u[0], v[1] + u[1], v[2] + u[2]}
+	return Vec3{v.X + u.X, v.Y + u.Y, v.Z + u.Z}
 }
 
 func (v Vec3) Sub(u Vec3) Vec3 {
-	return Vec3{v[0] - u[0], v[1] - u[1], v[2] - u[2]}
+	return Vec3{v.X - u.X, v.Y - u.Y, v.Z - u.Z}
 }
 
 // Finds the dot product of two vectors
 func (v Vec3) Dot(u Vec3) float64 {
-	return (v[0] * u[0]) + (v[1] * u[1]) + (v[2] * u[2])
+	return (v.X * u.X) + (v.Y * u.Y) + (v.Z * u.Z)
 }
 
 // Finds the angle between two vectors
@@ -168,40 +172,40 @@ func (v Vec3) Angle(u Vec3) float64 {
 }
 
 func (v Vec3) Theta() float64 {
-	return math.Atan2(v[1], v[0])
+	return math.Atan2(v.Y, v.X)
 }
 
 // Rotates the vector by theta on the XY 2d plane
 func (v Vec3) Rotate2D(theta float64) Vec3 {
 	t := theta
-	x := v[0]
-	y := v[1]
+	x := v.X
+	y := v.Y
 	x1 := x * math.Cos(t) - y * math.Sin(t)
 	y1 := x * math.Sin(t) + y * math.Cos(t)
-	return Vec3{x1, y1, v[2]}
+	return Vec3{x1, y1, v.Z}
 }
 
 func (v Vec3) Len() float64 {
-	// return float32(math.Hypot(float64(v[0]), float64(v[1])))
-	a := v[0]
-	b := v[1]
-	c := v[2]
+	// return float32(math.Hypot(float64(v.X), float64(v.Y)))
+	a := v.X
+	b := v.Y
+	c := v.Z
 	return math.Sqrt((a * a) + (b * b) + (c * c))
 }
 
 func (v Vec3) Vec2() Vec2 {
-	return Vec2{v[0], v[1]}
+	return Vec2{v.X, v.Y}
 }
 
 func (v Vec3) Unit() Vec3 {
 	len := v.Len()
-	return Vec3{v[0]/len, v[1]/len, v[2]/len}
+	return Vec3{v.X/len, v.Y/len, v.Z/len}
 }
 
 func (v Vec3) Scaled(x, y, z float64) Vec3 {
-	v[0] *= x
-	v[1] *= y
-	v[2] *= z
+	v.X *= x
+	v.Y *= y
+	v.Z *= z
 
 	return v
 }
@@ -275,7 +279,7 @@ func (m *Mat4) GetTranslation() Vec3 {
 func (m *Mat4) Rotate(angle float64, axis Vec3) *Mat4 {
 	// quat := mgl32.Mat4ToQuat(mgl32.Mat4(*m))
 	// return &retMat
-	rotation := Mat4(mgl64.HomogRotate3D(angle, mgl64.Vec3(axis)))
+	rotation := Mat4(mgl64.HomogRotate3D(angle, mgl64.Vec3{axis.X, axis.Y, axis.Z}))
 	// retMat := Mat4(mgl32.Mat4(*m).)
 	// return &retMat
 	mNew := m.Mul(&rotation)
@@ -353,19 +357,19 @@ type Box struct {
 }
 func (b Box) Rect() Rect {
 	return Rect{
-		Min: Vec2{b.Min[0], b.Min[1]},
-		Max: Vec2{b.Max[0], b.Max[1]},
+		Min: Vec2{b.Min.X, b.Min.Y},
+		Max: Vec2{b.Max.X, b.Max.Y},
 	}
 }
 
 
 func (a Box) Union(b Box) Box {
-	x1, _ := minMax(a.Min[0], b.Min[0])
-	_, x2 := minMax(a.Max[0], b.Max[0])
-	y1, _ := minMax(a.Min[1], b.Min[1])
-	_, y2 := minMax(a.Max[1], b.Max[1])
-	z1, _ := minMax(a.Min[2], b.Min[2])
-	_, z2 := minMax(a.Max[2], b.Max[2])
+	x1, _ := minMax(a.Min.X, b.Min.X)
+	_, x2 := minMax(a.Max.X, b.Max.X)
+	y1, _ := minMax(a.Min.Y, b.Min.Y)
+	_, y2 := minMax(a.Max.Y, b.Max.Y)
+	z1, _ := minMax(a.Min.Z, b.Min.Z)
+	_, z2 := minMax(a.Max.Z, b.Max.Z)
 	return Box{
 		Min: Vec3{x1, y1, z1},
 		Max: Vec3{x2, y2, z2},
@@ -403,21 +407,21 @@ func (r Rect) Box() Box {
 }
 func (r Rect) ToBox() Box {
 	return Box{
-		Min: Vec3{r.Min[0], r.Min[1], 0},
-		Max: Vec3{r.Max[0], r.Max[1], 0},
+		Min: Vec3{r.Min.X, r.Min.Y, 0},
+		Max: Vec3{r.Max.X, r.Max.Y, 0},
 	}
 }
 
 func (r Rect) W() float64 {
-	return r.Max[0] - r.Min[0]
+	return r.Max.X - r.Min.X
 }
 
 func (r Rect) H() float64 {
-	return r.Max[1] - r.Min[1]
+	return r.Max.Y - r.Min.Y
 }
 
 func (r Rect) Center() Vec2 {
-	return Vec2{r.Min[0] + (r.W()/2), r.Min[1] + (r.H()/2)}
+	return Vec2{r.Min.X + (r.W()/2), r.Min.Y + (r.H()/2)}
 }
 
 // func (r Rect) CenterAt(v Vec2) Rect {
@@ -426,7 +430,7 @@ func (r Rect) Center() Vec2 {
 func (r Rect) WithCenter(v Vec2) Rect {
 	w := r.W()/2
 	h := r.H()/2
-	return R(v[0] - w, v[1] - h, v[0] + w, v[1] + h)
+	return R(v.X - w, v.Y - h, v.X + w, v.Y + h)
 }
 
 // TODO: Should I make a pointer version of this that handles the nil case too?
@@ -434,10 +438,10 @@ func (r Rect) WithCenter(v Vec2) Rect {
 func (r Rect) Union(s Rect) Rect {
 	r = r.Norm()
 	s = s.Norm()
-	x1, _ := minMax(r.Min[0], s.Min[0])
-	_, x2 := minMax(r.Max[0], s.Max[0])
-	y1, _ := minMax(r.Min[1], s.Min[1])
-	_, y2 := minMax(r.Max[1], s.Max[1])
+	x1, _ := minMax(r.Min.X, s.Min.X)
+	_, x2 := minMax(r.Max.X, s.Max.X)
+	y1, _ := minMax(r.Min.Y, s.Min.Y)
+	_, y2 := minMax(r.Max.Y, s.Max.Y)
 	return R(x1, y1, x2, y2)
 }
 
@@ -476,15 +480,15 @@ func (r Rect) CenterScaled(scale float64) Rect {
 	c := r.Center()
 	w := r.W() * scale / 2.0
 	h := r.H() * scale / 2.0
-	return R(c[0] - w, c[1] - h, c[0] + w, c[1] + h)
+	return R(c.X - w, c.Y - h, c.X + w, c.Y + h)
 }
 
 // Note: This scales around the center
 // func (r Rect) ScaledXY(scale Vec2) Rect {
 // 	c := r.Center()
-// 	w := r.W() * scale[0] / 2.0
-// 	h := r.H() * scale[1] / 2.0
-// 	return R(c[0] - w, c[1] - h, c[0] + w, c[1] + h)
+// 	w := r.W() * scale.X / 2.0
+// 	h := r.H() * scale.Y / 2.0
+// 	return R(c.X - w, c.Y - h, c.X + w, c.Y + h)
 // }
 
 // TODO: I need to deprecate this. This currently just indepentently scales the min and max point which is only useful if the center, min, or max is on (0, 0)
@@ -508,21 +512,21 @@ func (r Rect) ScaledXY(scale Vec2) Rect {
 }
 
 func (r Rect) Norm() Rect {
-	x1, x2 := minMax(r.Min[0], r.Max[0])
-	y1, y2 := minMax(r.Min[1], r.Max[1])
+	x1, x2 := minMax(r.Min.X, r.Max.X)
+	y1, y2 := minMax(r.Min.Y, r.Max.Y)
 	return R(x1, y1, x2, y2)
 }
 
 func (r Rect) Contains(x, y float64) bool {
-	return x > r.Min[0] && x < r.Max[0] && y > r.Min[1] && y < r.Max[1]
+	return x > r.Min.X && x < r.Max.X && y > r.Min.Y && y < r.Max.Y
 }
 
 func (r Rect) Intersects(r2 Rect) bool {
 	return (
-		r.Min[0] <= r2.Max[0] &&
-			r.Max[0] >= r2.Min[0] &&
-			r.Min[1] <= r2.Max[1] &&
-			r.Max[1] >= r2.Min[1])
+		r.Min.X <= r2.Max.X &&
+			r.Max.X >= r2.Min.X &&
+			r.Min.Y <= r2.Max.Y &&
+			r.Max.Y >= r2.Min.Y)
 }
 
 // Layous out 'n' rectangles horizontally with specified padding between them and returns that rect
@@ -538,29 +542,29 @@ func (r Rect) LayoutHorizontal(n int, padding float64) Rect {
 
 func (r *Rect) CutLeft(amount float64) Rect {
 	cutRect := *r
-	cutRect.Max[0] = cutRect.Min[0] + amount
-	r.Min[0] += amount
+	cutRect.Max.X = cutRect.Min.X + amount
+	r.Min.X += amount
 	return cutRect
 }
 
 func (r *Rect) CutRight(amount float64) Rect {
 	cutRect := *r
-	cutRect.Min[0] = cutRect.Max[0] - amount
-	r.Max[0] -= amount
+	cutRect.Min.X = cutRect.Max.X - amount
+	r.Max.X -= amount
 	return cutRect
 }
 
 func (r *Rect) CutBottom(amount float64) Rect {
 	cutRect := *r
-	cutRect.Max[1] = cutRect.Min[1] + amount
-	r.Min[1] += amount
+	cutRect.Max.Y = cutRect.Min.Y + amount
+	r.Min.Y += amount
 	return cutRect
 }
 
 func (r *Rect) CutTop(amount float64) Rect {
 	cutRect := *r
-	cutRect.Min[1] = cutRect.Max[1] - amount
-	r.Max[1] -= amount
+	cutRect.Min.Y = cutRect.Max.Y - amount
+	r.Max.Y -= amount
 	return cutRect
 }
 
@@ -590,7 +594,7 @@ func (r Rect) PadAll(padding float64) Rect {
 
 // Adds padding to a rectangle (pads inward if padding is negative)
 func (r Rect) Pad(pad Rect) Rect {
-	return R(r.Min[0] - pad.Min[0], r.Min[1] - pad.Min[1], r.Max[0] + pad.Max[0], r.Max[1] + pad.Max[1])
+	return R(r.Min.X - pad.Min.X, r.Min.Y - pad.Min.Y, r.Max.X + pad.Max.X, r.Max.Y + pad.Max.Y)
 }
 
 // Removes padding from a rectangle (pads outward if padding is negative). Essentially calls pad but with negative values
@@ -602,24 +606,24 @@ func (r Rect) Unpad(pad Rect) Rect {
 // TODO - rename to InnerAnchor?
 func (r Rect) Anchor(r2 Rect, anchor Vec2) Rect {
 	// Anchor point is the position in r that we are anchoring to
-	anchorPoint := Vec2{r.Min[0] + (anchor[0] * r.W()) , r.Min[1] + (anchor[1] * r.H())}
-	pivotPoint := Vec2{r2.Min[0] + (anchor[0] * r2.W()) , r2.Min[1] + (anchor[1] * r2.H())}
+	anchorPoint := Vec2{r.Min.X + (anchor.X * r.W()) , r.Min.Y + (anchor.Y * r.H())}
+	pivotPoint := Vec2{r2.Min.X + (anchor.X * r2.W()) , r2.Min.Y + (anchor.Y * r2.H())}
 
 	// fmt.Println("Anchor:", anchorPoint)
 	// fmt.Println("Pivot:", pivotPoint)
 
-	a := Vec2{anchorPoint[0] - pivotPoint[0], anchorPoint[1] - pivotPoint[1]}
-	return R(a[0], a[1], a[0] + r2.W(), a[1] + r2.H()).Norm()
+	a := Vec2{anchorPoint.X - pivotPoint.X, anchorPoint.Y - pivotPoint.Y}
+	return R(a.X, a.Y, a.X + r2.W(), a.Y + r2.H()).Norm()
 }
 
 // Anchors r2 to r1 based on two anchors, one for r and one for r2
 // TODO - rename to Anchor?
 func (r Rect) FullAnchor(r2 Rect, anchor, pivot Vec2) Rect {
-	anchorPoint := Vec2{r.Min[0] + (anchor[0] * r.W()), r.Min[1] + (anchor[1] * r.H())}
-	pivotPoint := Vec2{r2.Min[0] + (pivot[0] * r2.W()) , r2.Min[1] + (pivot[1] * r2.H())}
+	anchorPoint := Vec2{r.Min.X + (anchor.X * r.W()), r.Min.Y + (anchor.Y * r.H())}
+	pivotPoint := Vec2{r2.Min.X + (pivot.X * r2.W()) , r2.Min.Y + (pivot.Y * r2.H())}
 
-	a := Vec2{anchorPoint[0] - pivotPoint[0], anchorPoint[1] - pivotPoint[1]}
-	return R(a[0], a[1], a[0] + r2.W(), a[1] + r2.H()).Norm()
+	a := Vec2{anchorPoint.X - pivotPoint.X, anchorPoint.Y - pivotPoint.Y}
+	return R(a.X, a.Y, a.X + r2.W(), a.Y + r2.H()).Norm()
 }
 
 func lerp(a, b float64, t float64) float64 {
@@ -638,16 +642,16 @@ func minMax(a, b float64) (float64, float64) {
 
 func (m *Mat4) Apply(v Vec3) Vec3 {
 	return Vec3{
-		m[i4_0_0]*v[0] + m[i4_1_0]*v[1] + m[i4_2_0]*v[2] + m[i4_3_0], // w = 1.0
-		m[i4_0_1]*v[0] + m[i4_1_1]*v[1] + m[i4_2_1]*v[2] + m[i4_3_1], // w = 1.0
-		m[i4_0_2]*v[0] + m[i4_1_2]*v[1] + m[i4_2_2]*v[2] + m[i4_3_2], // w = 1.0
+		m[i4_0_0]*v.X + m[i4_1_0]*v.Y + m[i4_2_0]*v.Z + m[i4_3_0], // w = 1.0
+		m[i4_0_1]*v.X + m[i4_1_1]*v.Y + m[i4_2_1]*v.Z + m[i4_3_1], // w = 1.0
+		m[i4_0_2]*v.X + m[i4_1_2]*v.Y + m[i4_2_2]*v.Z + m[i4_3_2], // w = 1.0
 	}
 }
 
 func (m *Mat3) Apply( v Vec2) Vec2 {
 	return Vec2{
-		m[i3_0_0]*v[0] + m[i3_1_0]*v[1] + m[i3_2_0],
-		m[i3_0_1]*v[0] + m[i3_1_1]*v[1] + m[i3_2_1],
+		m[i3_0_0]*v.X + m[i3_1_0]*v.Y + m[i3_2_0],
+		m[i3_0_1]*v.X + m[i3_1_1]*v.Y + m[i3_2_1],
 	}
 }
 
@@ -702,7 +706,7 @@ func (c *CameraOrtho) SetOrtho2D(bounds Rect) {
 
 	c.bounds = bounds
 
-	c.Projection = Mat4(mgl64.Ortho(0, c.bounds.W(), 0, c.bounds.H(), c.DepthRange[0], c.DepthRange[1]))
+	c.Projection = Mat4(mgl64.Ortho(0, c.bounds.W(), 0, c.bounds.H(), c.DepthRange.X, c.DepthRange.Y))
 }
 
 // Helpful: https://stackoverflow.com/questions/2346238/opengl-how-do-i-avoid-rounding-errors-when-specifying-uv-co-ordinates
@@ -715,13 +719,13 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 	// 	// Translate by x, y of the camera
 	// 	Translate(-x, -y, 0).
 	// 	// Scale around the center of the camera
-	// 	Translate(-cameraCenter[0], -cameraCenter[1], 0).
+	// 	Translate(-cameraCenter.X, -cameraCenter.Y, 0).
 	// 	Scale(scaleX, scaleY, 1.0).
-	// 	Translate(cameraCenter[0], cameraCenter[1], 0)
+	// 	Translate(cameraCenter.X, cameraCenter.Y, 0)
 
 	// Rounding the cameraCenter position helps fix scaling issues where we might have scaled around a non integer position
-	cX := math.Round(cameraCenter[0])
-	cY := math.Round(cameraCenter[1])
+	cX := math.Round(cameraCenter.X)
+	cY := math.Round(cameraCenter.Y)
 	c.View.
 		// Translate by x, y of the camera
 		Translate(-x, -y, 0).
@@ -817,8 +821,8 @@ func (c *Camera) SetPerspective(win *Window) {
 
 func (c *Camera) SetViewLookAt(win *Window) {
 	c.View = Mat4(mgl64.LookAt(
-		c.Position[0], c.Position[1], c.Position[2],
-		c.Target[0], c.Target[1], c.Target[2],
+		c.Position.X, c.Position.Y, c.Position.Z,
+		c.Target.X, c.Target.Y, c.Target.Z,
 		0, 0, 1,
 	))
 }
