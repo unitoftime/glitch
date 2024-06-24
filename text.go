@@ -84,7 +84,7 @@ type Atlas struct {
 	mapping map[rune]Glyph
 	ascent fixed.Int26_6 // Distance from top of line to baseline
 	descent fixed.Int26_6 // Distance from bottom of line to baseline
-	lineGap fixed.Int26_6 // The recommended gap between two lines
+	height fixed.Int26_6 // The recommended gap between two lines
 	texture *Texture
 	border int // Specifies a border on the font.
 	pixelPerfect bool // if true anti-aliasing will be disabled
@@ -115,7 +115,7 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 		mapping: make(map[rune]Glyph),
 		ascent: metrics.Ascent,
 		descent: metrics.Descent,
-		lineGap: metrics.Height,
+		height: metrics.Height,
 		border: int(config.Border),
 		pixelPerfect: !config.Smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
 		defaultKerning: config.Kerning,
@@ -317,13 +317,18 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 
 // func (a *Atlas) GappedLineHeight() float64 {
 // 	// TODO - scale?
-// 	return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.lineGap)) + float64(2 * a.border)
+// 	return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent) - fixedToFloat(a.height)) + float64(2 * a.border)
 // }
+
+func (a *Atlas) LineHeight() float64 {
+	return fixedToFloat(a.height)
+}
 
 func (a *Atlas) UngappedLineHeight() float64 {
 	// TODO - scale?
-	// return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
+	// // return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
 	return (fixedToFloat(a.ascent) + fixedToFloat(a.descent)) // + float64(2 * a.border)
+	// return fixedToFloat(a.height) + float64(2 * a.border)
 }
 
 func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
@@ -380,7 +385,7 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 		texture: a.texture,
 		material: NewSpriteMaterial(a.texture),
 		scale: scale,
-		LineHeight: a.UngappedLineHeight(),
+		// LineHeight: a.UngappedLineHeight(),
 		mesh: NewMesh(),
 		tmpMesh: NewMesh(),
 
@@ -402,7 +407,7 @@ type Text struct {
 	material Material
 	scale float64
 	shadow Vec2
-	LineHeight float64
+	// LineHeight float64
 
 	Orig Vec2 // The baseline starting point from which to draw the text
 	Dot Vec2 // The location of the next rune to draw
@@ -504,11 +509,14 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	lineHeight := t.atlas.UngappedLineHeight() * t.scale
 	initialDot := t.Dot
 
+	numLines := 1.0
 	for _, r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
 		if r == '\n' {
-			t.Dot[1] -= (lineHeight / 2)
+			// t.Dot[1] -= t.atlas.LineHeight()
+			t.Dot[1] -= lineHeight
 			t.Dot[0] = t.Orig[0]
+			numLines++
 			continue
 		}
 
@@ -525,51 +533,64 @@ func (t *Text) AppendStringVerts(text string) Rect {
 		// 	maxAscent = dot[1] + ascent
 		// }
 	}
-	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
 
-	// fmt.Println("-----")
-	// fmt.Println(fixedToFloat(a.ascent))
-	// fmt.Println(fixedToFloat(a.descent))
-	// fmt.Println(fixedToFloat(a.lineGap))
-	// fmt.Println(maxAscent)
-	// fmt.Println(scale)
-	// bounds := R(initialDot[0], initialDot[1], dot[0], dot[1] - a.LineHeight())
+	// return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], initialDot[1] - (numLines * lineHeight)).Norm()
 
-	// bounds := R(initialDot[0],
-	// 	initialDot[1] - (2 * fixedToFloat(a.ascent)),
-	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	dot[1] - (2 * fixedToFloat(a.descent)))
-
-	// TODO - this used the glyphs to determine bounds, below I use the mesh
-	// // TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
-	// bounds := R(initialDot[0],
-	// 	initialDot[1] - (fixedToFloat(t.atlas.ascent)),
-	// 	t.Dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	t.Dot[1] - (fixedToFloat(t.atlas.descent))).
-	// 		Norm().
-	// 		Moved(Vec2{0, fixedToFloat(t.atlas.ascent)})
-	// return bounds
-
-	// Attempt 2 - Use mesh bounds
-	// return t.mesh.Bounds().Rect()
-
-	// Attempt 3 - use mesh bounds for X and line height for Y
+	// Attempt 4 - use mesh bounds for X and line height for Y
 	meshBounds := t.mesh.Bounds().Rect()
-	return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] + lineHeight)
 
-	// fmt.Println(bounds)
+	// Note: The RuneVerts function corners the glyph into the bounds by applying the descent. So I dont need to track ascent/descent here
+	// top := initialDot[1] + (fixedToFloat(t.atlas.ascent) * t.scale)
+	// bot := top - (numLines * lineHeight)
+	top := initialDot[1] + lineHeight
+	bot := top - (numLines * lineHeight)
+	return R(meshBounds.Min[0], top, meshBounds.Max[0], bot).Norm()
 
-	// bounds := R(initialDot[0],
-	// 	initialDot[1] - (fixedToFloat(a.descent)),
-	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	dot[1] - (fixedToFloat(a.ascent))).Norm()
-	// return mesh, bounds
+	// // return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
 
-	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
-	// return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] - (fixedToFloat(a.ascent) - fixedToFloat(a.descent)))
-	// return mesh, R(initialDot[0],
-	// 	initialDot[1] - fixedToFloat(a.descent)/1024,
-	// 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
-	// 	dot[1] + fixedToFloat(a.ascent)/1024)
+	// // fmt.Println("-----")
+	// // fmt.Println(fixedToFloat(a.ascent))
+	// // fmt.Println(fixedToFloat(a.descent))
+	// // fmt.Println(fixedToFloat(a.height))
+	// // fmt.Println(maxAscent)
+	// // fmt.Println(scale)
+	// // bounds := R(initialDot[0], initialDot[1], dot[0], dot[1] - a.LineHeight())
+
+	// // bounds := R(initialDot[0],
+	// // 	initialDot[1] - (2 * fixedToFloat(a.ascent)),
+	// // 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// // 	dot[1] - (2 * fixedToFloat(a.descent)))
+
+	// // TODO - this used the glyphs to determine bounds, below I use the mesh
+	// // // TODO - idk what I'm doing here, but it seems to work. Man text rendering is hard.
+	// // bounds := R(initialDot[0],
+	// // 	initialDot[1] - (fixedToFloat(t.atlas.ascent)),
+	// // 	t.Dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// // 	t.Dot[1] - (fixedToFloat(t.atlas.descent))).
+	// // 		Norm().
+	// // 		Moved(Vec2{0, fixedToFloat(t.atlas.ascent)})
+	// // return bounds
+
+	// // Attempt 2 - Use mesh bounds
+	// // return t.mesh.Bounds().Rect()
+
+	// // Attempt 3 - use mesh bounds for X and line height for Y
+	// meshBounds := t.mesh.Bounds().Rect()
+	// return R(meshBounds.Min[0], initialDot[1], meshBounds.Max[0], t.Dot[1] + lineHeight)
+
+	// // fmt.Println(bounds)
+
+	// // bounds := R(initialDot[0],
+	// // 	initialDot[1] - (fixedToFloat(a.descent)),
+	// // 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// // 	dot[1] - (fixedToFloat(a.ascent))).Norm()
+	// // return mesh, bounds
+
+	// // return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + fixedToFloat(a.lineHeight))
+	// // return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] - (fixedToFloat(a.ascent) - fixedToFloat(a.descent)))
+	// // return mesh, R(initialDot[0],
+	// // 	initialDot[1] - fixedToFloat(a.descent)/1024,
+	// // 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
+	// // 	dot[1] + fixedToFloat(a.ascent)/1024)
 
 }
