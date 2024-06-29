@@ -98,6 +98,13 @@ func fixedToFloat(val fixed.Int26_6) float64 {
 	// return float32(intVal) / 1_000_000.0
 	return float64(val) / (1 << 6)
 }
+func floatToFixed(val float64) fixed.Int26_6 {
+	// Shift to the left by 6 then convert to an int, then to a float, then shift right by 6
+	// TODO - How to handle overruns?
+	// intVal := val.Mul(fixed.I(1_000_000)).Floor()
+	// return float32(intVal) / 1_000_000.0
+	return fixed.Int26_6(val * (1 << 6))
+}
 
 type AtlasConfig struct {
 	Border float64

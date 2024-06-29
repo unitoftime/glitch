@@ -1,8 +1,9 @@
 package shaders
 
 import (
-	"github.com/unitoftime/glitch"
 	_ "embed"
+
+	"github.com/unitoftime/glitch"
 )
 
 func VertexAttribute(name string, Type glitch.AttrType, swizzle glitch.SwizzleType) glitch.VertexAttr {
@@ -45,6 +46,43 @@ var SpriteFragmentShader string;
 var SpriteShader = glitch.ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SpriteFragmentShader,
+	VertexFormat: glitch.VertexFormat{
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	},
+	UniformFormat: glitch.UniformFormat{
+		glitch.Attr{"model", glitch.AttrMat4},
+		glitch.Attr{"projection", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
+	},
+}
+
+//go:embed msdf.fs
+var MSDFFragmentShader string;
+
+var MSDFShader = glitch.ShaderConfig{
+	VertexShader: SpriteVertexShader,
+	FragmentShader: MSDFFragmentShader,
+	VertexFormat: glitch.VertexFormat{
+		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
+		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
+		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	},
+	UniformFormat: glitch.UniformFormat{
+		glitch.Attr{"model", glitch.AttrMat4},
+		glitch.Attr{"projection", glitch.AttrMat4},
+		glitch.Attr{"view", glitch.AttrMat4},
+		glitch.Attr{"u_threshold", glitch.AttrFloat},
+	},
+}
+
+//go:embed sdf.fs
+var SDFFragmentShader string;
+
+var SDFShader = glitch.ShaderConfig{
+	VertexShader: SpriteVertexShader,
+	FragmentShader: SDFFragmentShader,
 	VertexFormat: glitch.VertexFormat{
 		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
