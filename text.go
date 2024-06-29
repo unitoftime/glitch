@@ -39,7 +39,7 @@ func DefaultAtlas() (*Atlas, error) {
 	})
 	cfg := AtlasConfig{
 		Smooth: true,
-		TextureSize: 512,
+		TextureSize: 1024,
 		Padding: 10,
 	}
 

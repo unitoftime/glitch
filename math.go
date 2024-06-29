@@ -670,7 +670,7 @@ func (r Rect) RectDraw(r2 Rect) Mat4 {
 	mat := Mat4Ident
 	mat.
 		Scale(r2.W() / r.W(), r2.H() / r.H(), 1).
-		Translate(r2.Min[0], r2.Min[1], 0)
+		Translate(r2.Min.X, r2.Min.Y, 0)
 	return mat
 }
 
