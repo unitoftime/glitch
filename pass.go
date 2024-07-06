@@ -22,7 +22,7 @@ type GeometryFiller interface {
 	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
 
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
-	Fill(*RenderPass, glMat4, RGBA, BufferState) *VertexBuffer
+	Fill(*BufferPool, glMat4, RGBA, BufferState) *VertexBuffer
 }
 
 type BatchTarget interface {
@@ -48,6 +48,7 @@ type drawCommand struct {
 	matrix glMat4
 	mask RGBA
 	state BufferState
+	shader *Shader
 }
 
 func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
@@ -71,7 +72,6 @@ func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
 	// 	})
 	// }
 }
-
 
 type cmdList struct{
 	Opaque []drawCommand
@@ -100,21 +100,6 @@ func (c *cmdList) Clear() {
 	c.Opaque = c.Opaque[:0]
 	c.Translucent = c.Translucent[:0]
 }
-
-// type meshBuffer struct {
-// 	buffer *VertexBuffer
-// }
-// func newMeshBuffer(shader *Shader, mesh *Mesh) meshBuffer {
-// 	if len(mesh.indices) % 3 != 0 {
-// 		panic("Mesh indices must have 3 indices per triangle!")
-// 	}
-// 	numVerts := len(mesh.positions)
-// 	numTris := len(mesh.indices) / 3
-// 	meshBuf := meshBuffer{
-// 		buffer: NewVertexBuffer(shader, numVerts, numTris),
-// 	}
-// 	return meshBuf
-// }
 
 type drawCall struct {
 	buffer *VertexBuffer
@@ -254,7 +239,7 @@ func (r *RenderPass) applyDrawCommand(c drawCommand) {
 	}
 
 	// Else we are auto-batching the mesh because the mesh is small
-	vertexBuffer := c.filler.Fill(r, c.matrix, c.mask, c.state)
+	vertexBuffer := c.filler.Fill(r.buffer, c.matrix, c.mask, c.state)
 
 	// If the last buffer to draw isn't the currently used vertexBuffer, then we need to add it to the list
 	if len(r.drawCalls) <= 0 || r.drawCalls[len(r.drawCalls) - 1].buffer != vertexBuffer {
@@ -294,10 +279,10 @@ func (r *RenderPass) Draw(target Target) {
 	openglDraw(r.shader, r.drawCalls)
 }
 
-func (r *RenderPass) SetTexture(slot int, texture *Texture) {
-	// TODO - use correct texture slot
-	r.texture = texture
-}
+// func (r *RenderPass) SetTexture(slot int, texture *Texture) {
+// 	// TODO - use correct texture slot
+// 	r.texture = texture
+// }
 
 // TODO: Maybe do this to prevent allocations from the `any` cast
 // func SetUniform[T any](r *RenderPass, name, val T) {
@@ -342,7 +327,7 @@ func (r *RenderPass) Add(filler *Mesh, mat glMat4, mask RGBA, material Material,
 	}
 
 	r.commands[r.currentLayer].Add(translucent, drawCommand{
-		filler, mat, mask, BufferState{material, r.blendMode},
+		filler, mat, mask, BufferState{material, r.blendMode}, r.shader,
 	})
 }
 

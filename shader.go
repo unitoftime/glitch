@@ -25,6 +25,8 @@ type Shader struct {
 
 	uniformLoc     gl.Uniform
 	setUniformMat4 func()
+
+	pool *BufferPool
 }
 
 type Uniform struct {
@@ -84,6 +86,9 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 	for i, attr := range shader.attrFmt {
 		shader.tmpBuffers[i] = attr.GetBuffer()
 	}
+
+	defaultBatchSize := 1024 * 8 // 10000 // TODO: arbitrary. make configurable
+	shader.pool = NewBufferPool(shader, defaultBatchSize)
 
 	return shader, nil
 }

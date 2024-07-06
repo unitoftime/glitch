@@ -97,3 +97,20 @@ func DefaultMaterial() SpriteMaterial {
 		texture: WhiteTexture(),
 	}
 }
+
+
+//--------------------------------------------------------------------------------
+// type global struct {
+// 	pass *RenderPass
+// }
+// func init() {
+// 	ggg = global{
+// 		pass: NewRenderPass(),
+// 	}
+// }
+// var ggg global
+
+
+// func (s *Sprite) Draw2(target *Window) {
+	
+// }

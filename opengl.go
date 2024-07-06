@@ -404,8 +404,7 @@ func (b *BufferPool) Reserve(state BufferState, indices []uint32, numVerts int, 
 	success := newBuff.Reserve(state, indices, numVerts, dests)
 	if !success {
 		panic(fmt.Sprintf("Failed to reserve on freshly created buffer:\nReserve: %v, %v, %v\nOn: %v",
-			len(indices), numVerts, len(dests),
-			b.triangleBatchSize, b.triangleBatchSize,
+			len(indices), numVerts, len(dests), b.triangleBatchSize,
 		))
 	}
 	b.buffers = append(b.buffers, newBuff)

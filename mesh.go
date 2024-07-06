@@ -581,11 +581,11 @@ func (m *Mesh) Indices() []uint32 {
 	return m.indices
 }
 
-func (m *Mesh) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
+func (m *Mesh) Fill(bufferPool *BufferPool, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
 	numVerts := m.NumVerts()
 	indices := m.Indices()
-	vertexBuffer := pass.buffer.Reserve(state, indices, numVerts, pass.shader.tmpBuffers)
-	batchToBuffers(pass.shader, m, mat, mask)
+	vertexBuffer := bufferPool.Reserve(state, indices, numVerts, bufferPool.shader.tmpBuffers)
+	batchToBuffers(bufferPool.shader, m, mat, mask)
 
 	return vertexBuffer
 }

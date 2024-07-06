@@ -469,3 +469,4 @@ func (w *Window) AddMouseButtonCallback(cb glfw.MouseButtonCallback) {
 	w.mouseButtonCallbacks = append(w.mouseButtonCallbacks, cb)
 	// fmt.Println("Adding new mouse button callback. Currently: ", len(w.mouseButtonCallbacks))
 }
+

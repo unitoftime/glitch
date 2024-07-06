@@ -113,3 +113,69 @@ func (b *DrawBatch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA
 func (b *DrawBatch) Bounds() Box {
 	return b.bounds
 }
+
+type Batcher struct {
+	shader *Shader
+	lastBuffer *VertexBuffer
+}
+
+func NewBatcher() *Batcher {
+	return &Batcher{} // TODO: Default case for shader?
+}
+
+func (b *Batcher) SetShader(shader *Shader) {
+	b.shader = shader
+}
+
+func (b *Batcher) Clear() {
+
+}
+
+func (b *Batcher) Add(filler *Mesh, mat glMat4, mask RGBA, material Material, translucent bool) {
+	if filler == nil { return } // Skip nil meshes
+
+	buffer := filler.GetBuffer()
+	if buffer != nil {
+		b.drawCall(buffer, mat)
+		return
+	}
+
+	// Note: Captured in shader.pool
+	// 1. If you switch materials, then draw the last one
+	// 2. If you fill up then draw the last one
+	state := BufferState{material, BlendModeNormal} // TODO: blendmode and track full state some better way
+	vertexBuffer := filler.Fill(b.shader.pool, mat, mask, state)
+
+	// If vertexBuffer has changed then we want to draw the last one
+	if b.lastBuffer != nil && vertexBuffer != b.lastBuffer {
+		b.drawCall(b.lastBuffer, glMat4Ident)
+	}
+
+	b.lastBuffer = vertexBuffer
+}
+
+// TODO: Rename Finish if you want to completely finish the batcher?
+func (b *Batcher) Flush() {
+	b.drawCall(b.lastBuffer, glMat4Ident)
+	b.lastBuffer = nil
+}
+
+// Executes a drawcall with ...
+func (b *Batcher) drawCall(buffer *VertexBuffer, mat glMat4) {
+	b.shader.Bind() // TODO: global State cache
+
+	// TODO: Set all uniforms
+	// 1. camera
+	// 2. materials
+
+	// TODO: rewrite how buffer state works for immediate mode case
+	buffer.state.Bind()
+
+	// TOOD: Maybe pass this into VertexBuffer.Draw() func
+	ok := b.shader.SetUniformMat4("model", mat)
+	if !ok {
+		panic("Error setting model uniform - all shaders must have 'model' uniform")
+	}
+
+	buffer.Draw()
+}
