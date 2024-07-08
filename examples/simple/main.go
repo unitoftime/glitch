@@ -33,14 +33,12 @@ func run() {
 	texture := glitch.NewTexture(img, false)
 	sprite := glitch.NewSprite(texture, texture.Bounds())
 
+	frame := glitch.NewFrame(win.Bounds(), true)
+
 	screenScale := 1.0 // This is just a weird scaling number
 
 	// A screenspace camera
 	camera := glitch.NewCameraOrtho()
-	camera.SetOrtho2D(win.Bounds())
-	camera.SetView2D(0, 0, screenScale, screenScale)
-
-	batcher := glitch.NewBatcher()
 
 	for !win.Closed() {
 		if win.Pressed(glitch.KeyEscape) {
@@ -50,8 +48,6 @@ func run() {
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, screenScale, screenScale)
 
-		glitch.Clear(win, glitch.Greyscale(0.5))
-
 		// you were working on migrating the batcher to be internal to each individual frame buffer thing. so then you just draw directly to one of those and it gets rendered
 		// General Plan
 		// 1. complex mode: draws -> sorter -> batcher -> opengl
@@ -60,14 +56,20 @@ func run() {
 		// 4. bufferpools are managed by each shader
 		// 5. user perspective is that everything is immediate mode, but they can sort their draw commands by wrapping the immediate API with a sorter
 
-		win.Bind()
-		shader.SetUniform("projection", camera.Projection)
-		shader.SetUniform("view", camera.View)
+		glitch.Clear(frame, glitch.White)
+		frame.SetShader(shader)
+		frame.SetUniform("projection", camera.Projection)
+		frame.SetUniform("view", camera.View)
+		sprite.Draw(frame, glitch.Mat4Ident)
 
-		batcher.SetShader(shader)
-		sprite.Draw(batcher, glitch.Mat4Ident)
+		glitch.Clear(win, glitch.Greyscale(0.5))
+		win.SetShader(shader)
+		win.SetUniform("projection", camera.Projection)
+		win.SetUniform("view", camera.View)
 
-		batcher.Flush()
+		mat := glitch.Mat4Ident
+		frame.Draw(win, *mat.Translate(100, 100, 0))
+		sprite.Draw(win, glitch.Mat4Ident)
 
 		win.Update()
 	}

@@ -117,6 +117,7 @@ func (b *DrawBatch) Bounds() Box {
 type Batcher struct {
 	shader *Shader
 	lastBuffer *VertexBuffer
+	target Target
 }
 
 func NewBatcher() *Batcher {
@@ -125,6 +126,13 @@ func NewBatcher() *Batcher {
 
 func (b *Batcher) SetShader(shader *Shader) {
 	b.shader = shader
+}
+
+func (b *Batcher) SetUniform(name string, val any) {
+	b.shader.SetUniform(name, val)
+
+	// TODO: You technically only need to do this if it changes
+	b.Flush()
 }
 
 func (b *Batcher) Clear() {
@@ -156,12 +164,18 @@ func (b *Batcher) Add(filler *Mesh, mat glMat4, mask RGBA, material Material, tr
 
 // TODO: Rename Finish if you want to completely finish the batcher?
 func (b *Batcher) Flush() {
+	if b.lastBuffer == nil { return }
+
 	b.drawCall(b.lastBuffer, glMat4Ident)
 	b.lastBuffer = nil
 }
 
 // Executes a drawcall with ...
 func (b *Batcher) drawCall(buffer *VertexBuffer, mat glMat4) {
+	if b.target != nil {
+		b.target.Bind()
+	}
+
 	b.shader.Bind() // TODO: global State cache
 
 	// TODO: Set all uniforms

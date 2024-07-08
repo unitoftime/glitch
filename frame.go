@@ -10,6 +10,7 @@ import (
 
 type Frame struct {
 	fbo gl.Framebuffer
+	*Batcher
 	tex *Texture
 	depth gl.Texture
 	mesh *Mesh
@@ -19,8 +20,11 @@ type Frame struct {
 
 // Type? Color, depth, stencil?
 func NewFrame(bounds Rect, smooth bool) *Frame {
-	var frame Frame
-	frame.bounds = bounds
+	var frame = &Frame{
+		bounds: bounds,
+		Batcher: NewBatcher(),
+	}
+	frame.Batcher.target = frame
 
 	// Create texture
 	// TODO - Note: I'm passing actual data to the texture object, rather than null. That might be suboptimal. This fills the GPU memory, whereas if I pass null I can just allocate it.
@@ -49,8 +53,8 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, frame.depth, 0)
 	})
 
-	runtime.SetFinalizer(&frame, (*Frame).delete)
-	return &frame
+	runtime.SetFinalizer(frame, (*Frame).delete)
+	return frame
 }
 
 func (f *Frame) Bounds() Rect {

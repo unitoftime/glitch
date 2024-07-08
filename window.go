@@ -20,6 +20,8 @@ type WindowConfig struct {
 
 type Window struct {
 	window *glfw.Window
+	*Batcher
+
 	closed bool
 
 	width, height int
@@ -52,10 +54,12 @@ type Window struct {
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
 	win := &Window{
+		Batcher: NewBatcher(),
 		scrollCallbacks: make([]glfw.ScrollCallback, 0),
 		keyCallbacks: make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
 	}
+	win.Batcher.target = win
 
 	err := mainthread.CallErr(func() error {
 		err := glfw.Init(gl.ContextWatcher)
@@ -226,6 +230,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 }
 
 func (w *Window) Update() {
+	w.Flush()
+
 	mainthread.Call(w.mainthreadUpdate)
 
 	w.input = w.tmpInput
