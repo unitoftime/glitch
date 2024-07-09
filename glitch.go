@@ -8,109 +8,240 @@ func Run(function func()) {
 	mainthread.Run(function)
 }
 
-// const batchSizeTris int = 1000
-// const batchSizeVerts int = 1000
-
-// type renderContext struct {
-// 	target *Window
-// 	shader *Shader
-// 	textureUnit []*Texture
-// 	bufferPool map[*Shader]*VertexBuffer
-// 	vertexBuffer *VertexBuffer
+// type Material interface {
+// 	Bind(*Shader)
 // }
 
-// var context renderContext
+// type SpriteMaterial struct {
+// 	texture *Texture
+// }
 
-// func init() {
-// 	// context = renderContext{
-// 	// 	target: nil,
-// 	// 	shader: nil,
-// 	// 	textureUnit: make([]*Texture, 16), // TODO - can I get this from opengl?
-// 	// 	bufferPool: make(map[*Shader]*VertexBuffer),
-// 	// 	vertexBuffer: nil,
-// 	// }
-
-// 	targetClearer.Func = func() {
-// 		targetClearer.Run()
+// func NewSpriteMaterial(texture *Texture) SpriteMaterial {
+// 	return SpriteMaterial{
+// 		texture: texture,
 // 	}
 // }
 
-// Sets the current target
-// func SetTarget(win *Window) {
-// 	context.target = win
-// 	// TODO - set framebuffer or w/e
+// func (m SpriteMaterial) Bind(shader *Shader) {
+// 	m.texture.Bind(0) // Direct opengl? Or should I call through shader?
+// 	// pass.SetTexture(0, m.texture) // TODO - hardcoded slot?
 // }
 
-// Clears the current target
-// TODO - depthbuffer and stuff?
-// func Clear(rgba RGBA) {
-// context.target.Clear(rgba)
+// func DefaultMaterial() SpriteMaterial {
+// 	return SpriteMaterial{
+// 		texture: WhiteTexture(),
+// 	}
 // }
 
-// type targetClear struct {
-// 	color RGBA
-// 	Func  func()
-// }
+type Uniforms struct {
+	set map[string]any
+}
+func (u *Uniforms) Bind(shader *Shader) {
 
-// var targetClearer targetClear
-
-// func (t *targetClear) Run() {
-// 	color := t.color
-// 	gl.ClearColor(float32(color.R), float32(color.G), float32(color.B), float32(color.A))
-// 	// gl.Clear(gl.COLOR_BUFFER_BIT) // Make configurable?
-// 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-// }
-
-// func Clear(target Target, color RGBA) {
-// 	target.Bind() // TODO: Push into state tracker?
-
-// 	targetClearer.color = color
-// 	mainthread.Call(targetClearer.Func)
-// }
-
-func Clear(target Target, color RGBA) {
-	target.Bind() // TODO: Push into state tracker?
-	state.clearTarget(color)
 }
 
-type Material interface {
-	Bind()
+func (u *Uniforms) SetUniform(name string, val any) {
+	if u.set == nil {
+		u.set = make(map[string]any)
+	}
+	u.set[name] = val
 }
 
-type SpriteMaterial struct {
+func (u *Uniforms) Copy() *Uniforms {
+	u2 := &Uniforms{}
+	for k,v := range u.set {
+		u2.SetUniform(k, v)
+	}
+	return u2
+}
+
+type Material struct {
+	shader *Shader
 	texture *Texture
+	blend BlendMode
+	uniforms *Uniforms
 }
 
-func NewSpriteMaterial(texture *Texture) SpriteMaterial {
-	return SpriteMaterial{
-		texture: texture,
+func NewMaterial(shader *Shader) Material {
+	return Material{
+		shader: shader,
+		blend: BlendModeNormal,
+		uniforms: &Uniforms{},
 	}
 }
 
-func (m SpriteMaterial) Bind() {
-	m.texture.Bind(0) // Direct opengl? Or should I call through shader?
-	// pass.SetTexture(0, m.texture) // TODO - hardcoded slot?
+func (m Material) Copy() Material {
+	m2 := NewMaterial(m.shader)
+	// m2.SetTexture(m.texture)
+	// TODO: SetBlendMode()
+	m2.uniforms = m.uniforms.Copy()
+	return m2
 }
 
-func DefaultMaterial() SpriteMaterial {
-	return SpriteMaterial{
-		texture: WhiteTexture(),
-	}
+func (m *Material) SetShader(shader *Shader) *Material {
+	m.shader = shader
+	return m
 }
+
+func (m *Material) SetUniform(name string, val any) *Material {
+	m.uniforms.SetUniform(name, val)
+	return m
+}
+
+func (m *Material) SetTexture(/* slot int, */ texture *Texture) {
+	m.texture = texture
+}
+
+func (m Material) Bind() {
+	m.shader.Use()
+
+	if m.texture != nil {
+		texSlot := 0
+		m.texture.Bind(texSlot)
+	}
+
+	// TODO: Blendmode
+
+	m.uniforms.Bind(m.shader)
+}
+
+// type materialGroup struct {
+// 	globalMaterial Material
+// 	localMaterial Material
+// }
+// func (m materialGroup) Bind(shader *Shader) {
+// 	if m.globalMaterial != nil {
+// 		m.globalMaterial.Bind(shader)
+// 	}
+// 	if m.localMaterial != nil {
+// 		m.localMaterial.Bind(shader)
+// 	}
+// }
 
 
 //--------------------------------------------------------------------------------
-// type global struct {
-// 	pass *RenderPass
+
+var global = &globalBatcher{
+	shaderCache: make(map[*Shader]struct{}), // TODO: Does this cause shaders to not cleanup?
+} // TODO: Default case for shader?
+
+type globalBatcher struct {
+	shader *Shader
+	lastBuffer *VertexBuffer
+	target Target
+	texture *Texture
+	blend BlendMode
+
+	material Material
+
+	shaderCache map[*Shader]struct{}
+}
+
+func Clear(target Target, color RGBA) {
+	setTarget(target)
+	state.clearTarget(color)
+}
+
+// func setBlendMode(blend BlendMode) {
+// 	global.flush() // TODO: You technically only need to do this if it will change the uniform
+// 	global.blend = blend
+
+// 	state.setBlendFunc(blend.src, blend.dst)
 // }
-// func init() {
-// 	ggg = global{
-// 		pass: NewRenderPass(),
+
+// func setTexture(texture *Texture) {
+// 	global.flush() // TODO: You technically only need to do this if it will change the uniform
+// 	global.texture = texture
+// 	texSlot := 0 // TODO: Implement Texture slots
+// 	texture.Bind(texSlot)
+// }
+
+func setTarget(target Target) {
+	global.flush() // TODO: You technically only need to do this if it will change the uniform
+	global.target = target
+	target.Bind()
+}
+
+func setShader(shader *Shader) {
+	global.flush() // TODO: You technically only need to do this if it will change the uniform
+	global.shader = shader
+	shader.Bind()
+
+	global.shaderCache[shader] = struct{}{}
+}
+
+func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+	if filler == nil { return } // Skip nil meshes
+
+	// 1. If you switch materials, then draw the last one
+	if material != g.material {
+		// Note: This is kindof different from a global material. it's more like a local material
+		g.flush()
+		g.material = material
+		g.material.Bind()
+	}
+
+	buffer := filler.GetBuffer()
+	if buffer != nil {
+		global.drawCall(buffer, mat)
+		return
+	}
+
+	// Note: Captured in shader.pool
+	// 1. If you fill up then draw the last one
+	vertexBuffer := filler.Fill(global.shader.pool, mat, mask)
+
+	// If vertexBuffer has changed then we want to draw the last one
+	if global.lastBuffer != nil && vertexBuffer != global.lastBuffer {
+		global.drawCall(global.lastBuffer, glMat4Ident)
+	}
+
+	global.lastBuffer = vertexBuffer
+}
+
+func (g *globalBatcher) finish() {
+	g.flush()
+	for shader := range g.shaderCache {
+		shader.pool.Clear()
+	}
+	clear(g.shaderCache)
+}
+
+// Draws the current buffer and progress the shader pool to the next available
+func (g *globalBatcher) flush() {
+	if g.lastBuffer == nil { return }
+
+	g.drawCall(g.lastBuffer, glMat4Ident)
+	g.lastBuffer = nil
+	g.shader.pool.gotoNextClean()
+}
+
+// Executes a drawcall with ...
+func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
+	// // TODO: rewrite how buffer state works for immediate mode case
+	// buffer.state.Bind(g.shader)
+
+	// TOOD: Maybe pass this into VertexBuffer.Draw() func
+	ok := g.shader.SetUniform("model", mat)
+	if !ok {
+		panic("Error setting model uniform - all shaders must have 'model' uniform")
+	}
+
+	buffer.Draw()
+}
+
+// //--------------------------------------------------------------------------------
+// // Holds the invariant state of the buffer (ie the configurations required for batching other draws into this buffer)
+// // Note: Everything you put in here must be comparable, and if there is any mismatch of data, it will force a new buffer
+// type BufferState struct{
+// 	material Material
+// 	blend BlendMode
+// }
+// func (b BufferState) Bind(shader *Shader) {
+// 	// TODO: combine these into the same mainthread call?
+// 	if b.material != nil {
+// 		b.material.Bind(shader)
 // 	}
-// }
-// var ggg global
 
-
-// func (s *Sprite) Draw2(target *Window) {
-	
+// 	state.setBlendFunc(b.blend.src, b.blend.dst)
 // }

@@ -16,13 +16,13 @@ var geomQuadIndices = []uint32{
 	0, 1, 3,
 	1, 2, 3,
 }
-func (s Rect) Fill(pass *RenderPass, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
+func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	numVerts := 4
-	vertexBuffer := pass.buffer.Reserve(state, geomQuadIndices, numVerts, pass.shader.tmpBuffers)
+	vertexBuffer := pool.Reserve(geomQuadIndices, numVerts, pool.shader.tmpBuffers)
 	bounds := s
 
-	destBuffs := pass.shader.tmpBuffers
-	for bufIdx, attr := range pass.shader.attrFmt {
+	destBuffs := pool.shader.tmpBuffers
+	for bufIdx, attr := range pool.shader.attrFmt {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
 		case PositionXYZ:

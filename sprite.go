@@ -18,6 +18,9 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		bounds.Max.Y / float64(texture.height),
 	)
 
+	material := DefaultMaterial()
+	material.texture = texture
+
 	mesh := NewSpriteMesh(bounds.W(), bounds.H(), uvBounds)
 	return &Sprite{
 		mesh: mesh,
@@ -26,9 +29,17 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		bounds: bounds.Moved(bounds.Center().Scaled(-1)),
 		// bounds: mesh.Bounds().Rect(),
 		texture: texture,
-		material: NewSpriteMaterial(texture),
+		// material: NewSpriteMaterial(texture),
+		material: material,
 		uvBounds: uvBounds,
 	}
+}
+
+// func (s *Sprite) SetMaterial(material Material) {
+// 	s.material = material
+// }
+func (s *Sprite) Material() *Material {
+	return &s.material
 }
 
 // Changes the origin point of the sprite by translating all the geometry to the new origin. This shouldn't be called frequently. The default origin is around the center of the sprite

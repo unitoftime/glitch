@@ -20,7 +20,7 @@ type WindowConfig struct {
 
 type Window struct {
 	window *glfw.Window
-	*Batcher
+	// *Batcher
 
 	closed bool
 
@@ -54,12 +54,12 @@ type Window struct {
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
 	win := &Window{
-		Batcher: NewBatcher(),
+		// Batcher: NewBatcher(),
 		scrollCallbacks: make([]glfw.ScrollCallback, 0),
 		keyCallbacks: make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
 	}
-	win.Batcher.target = win
+	// win.Batcher.target = win
 
 	err := mainthread.CallErr(func() error {
 		err := glfw.Init(gl.ContextWatcher)
@@ -230,7 +230,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 }
 
 func (w *Window) Update() {
-	w.Flush()
+	global.finish()
 
 	mainthread.Call(w.mainthreadUpdate)
 
@@ -438,6 +438,10 @@ func (w *Window) EmbeddedIframe() bool {
 	return w.window.EmbeddedIframe()
 }
 
+func (w *Window) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+	setTarget(w)
+	global.Add(filler, mat, mask, material, translucent)
+}
 
 // --- Dear Imgui required ---
 func (w *Window) GetMouse() (x, y float64) {

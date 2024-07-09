@@ -34,8 +34,8 @@ func (g *Graph) SetBounds(bounds glitch.Rect) {
 	g.bounds = bounds
 }
 
-func (g *Graph) DrawColorMask(pass *glitch.RenderPass, matrix glitch.Mat4, mask glitch.RGBA) {
-	g.mesh.DrawColorMask(pass, matrix, mask)
+func (g *Graph) DrawColorMask(target glitch.BatchTarget, matrix glitch.Mat4, mask glitch.RGBA) {
+	g.mesh.DrawColorMask(target, matrix, mask)
 	// pass.Add(g.mesh, matrix, mask, glitch.DefaultMaterial(), false)
 }
 

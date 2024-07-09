@@ -35,10 +35,30 @@ func run() {
 
 	frame := glitch.NewFrame(win.Bounds(), true)
 
+	msdfShader, err := glitch.NewShader(shaders.MSDFShader)
+	check(err)
+ 	atlasImg, err := assets.LoadImage("atlas-msdf.png")
+	check(err)
+	atlasJson := glitch.SdfAtlas{}
+	err = assets.LoadJson("atlas-msdf.json", &atlasJson)
+	check(err)
+	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg)
+	check(err)
+	text := atlas.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
+
+	defaultAtlas, err := glitch.DefaultAtlas()
+	check(err)
+	defaultText := defaultAtlas.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
+
 	screenScale := 1.0 // This is just a weird scaling number
 
 	// A screenspace camera
 	camera := glitch.NewCameraOrtho()
+
+	sorter := glitch.NewSorter()
+	// material1 := glitch.NewMaterial(shader)
+	// material2 := glitch.NewMaterial(msdfShader)
+	// material2.SetUniform("u_threshold", 0.6)
 
 	for !win.Closed() {
 		if win.Pressed(glitch.KeyEscape) {
@@ -56,18 +76,50 @@ func run() {
 		// 4. bufferpools are managed by each shader
 		// 5. user perspective is that everything is immediate mode, but they can sort their draw commands by wrapping the immediate API with a sorter
 
-		glitch.Clear(frame, glitch.White)
-		frame.SetShader(shader)
-		frame.SetUniform("projection", camera.Projection)
-		frame.SetUniform("view", camera.View)
+		mat := glitch.Mat4Ident
+
+		// sorter.SetShader(shader)
+		// sorter.SetMaterial(material1)
+		sprite.Material().SetShader(shader)
+		sprite.Draw(sorter, *mat.Translate(100, 100, 0))
+
+		// sorter.SetShader(msdfShader)
+		// sorter.SetMaterial(material2)
+		// text.SetMaterial(material2)
+		text.Material().SetShader(msdfShader).SetUniform("u_threshold", 0.6)
+		text.Draw(sorter, *mat.Translate(100, 100, 0))
+
+		glitch.Clear(frame, glitch.Alpha(0.5))
+		shader.Use()
+		shader.SetUniform("projection", camera.Projection)
+		shader.SetUniform("view", camera.View)
 		sprite.Draw(frame, glitch.Mat4Ident)
 
-		glitch.Clear(win, glitch.Greyscale(0.5))
-		win.SetShader(shader)
-		win.SetUniform("projection", camera.Projection)
-		win.SetUniform("view", camera.View)
+		sorter.Draw(frame)
 
-		mat := glitch.Mat4Ident
+		glitch.Clear(win, glitch.Greyscale(0.5))
+		shader.Use()
+		shader.SetUniform("projection", camera.Projection)
+		shader.SetUniform("view", camera.View)
+
+		mat = glitch.Mat4Ident
+		mat.Translate(win.Bounds().Center().X, win.Bounds().Center().Y - 100, 0)
+		defaultText.Draw(win, mat)
+
+		msdfShader.Use()
+		msdfShader.SetUniform("projection", camera.Projection)
+		msdfShader.SetUniform("view", camera.View)
+		msdfShader.SetUniform("u_threshold", float32(0.5))
+
+		mat = glitch.Mat4Ident
+		mat.Translate(win.Bounds().Center().X, win.Bounds().Center().Y, 0)
+		text.Draw(win, mat)
+
+		shader.Use()
+		shader.SetUniform("projection", camera.Projection)
+		shader.SetUniform("view", camera.View)
+
+		mat = glitch.Mat4Ident
 		frame.Draw(win, *mat.Translate(100, 100, 0))
 		sprite.Draw(win, glitch.Mat4Ident)
 

@@ -12,20 +12,6 @@ import (
 
 const sof int = 4 // SizeOf(Float)
 
-// Holds the invariant state of the buffer (ie the configurations required for batching other draws into this buffer)
-// Note: Everything you put in here must be comparable, and if there is any mismatch of data, it will force a new buffer
-type BufferState struct{
-	material Material
-	blend BlendMode
-}
-func (b BufferState) Bind() {
-	// TODO: combine these into the same mainthread call?
-	if b.material != nil {
-		b.material.Bind()
-	}
-	state.setBlendFunc(b.blend.src, b.blend.dst)
-}
-
 // TODO - rename
 type ISubBuffer interface {
 	Clear()
@@ -118,8 +104,8 @@ func (b *SubBuffer[T]) Reserve(count int) []T {
 type VertexBuffer struct {
 	vao, vbo, ebo gl.Buffer
 
-	materialSet bool
-	state BufferState
+	// materialSet bool
+	// state BufferState
 	format VertexFormat
 	stride int
 
@@ -263,16 +249,16 @@ func (v *VertexBuffer) Clear() {
 	v.indices = v.indices[:0]
 	v.numIndicesToDraw = 0
 	v.numVerts = 0
-	v.materialSet = false
+	// v.materialSet = false
 	v.bufferedToGPU = false
 }
 
-func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int, dests []interface{}) bool {
-	// If material is set and it doesn't match the reserved material
-	if v.materialSet && v.state != state {
-		// fmt.Println("VertexBuffer.Reserve - Material Doesn't match")
-		return false
-	}
+func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
+	// // If material is set and it doesn't match the reserved material
+	// if v.materialSet && v.state != state {
+	// 	// fmt.Println("VertexBuffer.Reserve - Material Doesn't match")
+	// 	return false
+	// }
 	if len(v.indices) + len(indices) > cap(v.indices) {
 		// fmt.Println("VertexBuffer.Reserve - Not enough index capacity")
 		return false
@@ -284,8 +270,8 @@ func (v *VertexBuffer) Reserve(state BufferState, indices []uint32, numVerts int
 
 	v.bufferedToGPU = false
 
-	v.materialSet = true
-	v.state = state
+	// v.materialSet = true
+	// v.state = state
 
 	// currentElement := v.buffers[0].VertexCount()
 	currentElement := v.numVerts
@@ -388,9 +374,9 @@ func (b *BufferPool) gotoNextClean() {
 }
 
 // Returns the vertexbuffer that we reserved to
-func (b *BufferPool) Reserve(state BufferState, indices []uint32, numVerts int, dests []interface{}) *VertexBuffer {
+func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}) *VertexBuffer {
 	for i := b.currentIndex; i < len(b.buffers); i++ {
-		success := b.buffers[i].Reserve(state, indices, numVerts, dests)
+		success := b.buffers[i].Reserve(indices, numVerts, dests)
 		if success {
 			b.triangleCount += len(indices) / 3
 			b.currentIndex = i
@@ -401,7 +387,7 @@ func (b *BufferPool) Reserve(state BufferState, indices []uint32, numVerts int, 
 
 	// fmt.Printf("NEW BATCH: %d - index: %d\n", b.triangleCount, b.currentIndex)
 	newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
-	success := newBuff.Reserve(state, indices, numVerts, dests)
+	success := newBuff.Reserve(indices, numVerts, dests)
 	if !success {
 		panic(fmt.Sprintf("Failed to reserve on freshly created buffer:\nReserve: %v, %v, %v\nOn: %v",
 			len(indices), numVerts, len(dests), b.triangleBatchSize,

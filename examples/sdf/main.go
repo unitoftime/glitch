@@ -96,7 +96,7 @@ func runGame() {
 			scale += 0.1
 		}
 
-		pass.SetUniform("u_threshold", float32(0.5));
+		pass.SetUniform("u_threshold", float32(0.5))
 		pass.SetCamera2D(camera)
 		pass.Draw(win)
 

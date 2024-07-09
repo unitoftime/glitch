@@ -2,235 +2,235 @@ package glitch
 
 import "fmt"
 
-// For batching multiple sprites into one
-type Batch struct {
-	mesh        *Mesh
-	material    Material
-	Translucent bool
-}
+// // For batching multiple sprites into one
+// type Batch struct {
+// 	mesh        *Mesh
+// 	material    Material
+// 	Translucent bool
+// }
 
-func NewBatch() *Batch {
-	return &Batch{
-		mesh:     NewMesh(),
-		material: nil,
-	}
-}
+// func NewBatch() *Batch {
+// 	return &Batch{
+// 		mesh:     NewMesh(),
+// 		material: nil,
+// 	}
+// }
 
-func (b *Batch) Buffer(pass *RenderPass) *Batch {
-	return &Batch{
-		mesh:        b.mesh.Buffer(pass, b.material, b.Translucent),
-		material:    b.material,
-		Translucent: b.Translucent,
-	}
-}
+// func (b *Batch) Buffer(shader *Shader) *Batch {
+// 	return &Batch{
+// 		mesh:        b.mesh.Buffer(shader, b.material, b.Translucent),
+// 		material:    b.material,
+// 		Translucent: b.Translucent,
+// 	}
+// }
 
-// TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
-// TODO: should I maintain a translucent and non-translucent batch mesh?
-func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, translucent bool) {
-	if b.material == nil {
-		b.material = material
-	} else {
-		if b.material != material {
-			panic("Materials must match inside a batch!")
-		}
-	}
+// // TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
+// // TODO: should I maintain a translucent and non-translucent batch mesh?
+// func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, translucent bool) {
+// 	if b.material == nil {
+// 		b.material = material
+// 	} else {
+// 		if b.material != material {
+// 			panic("Materials must match inside a batch!")
+// 		}
+// 	}
 
-	// If anything translucent is added to the batch, then we will consider the entire thing translucent
-	b.Translucent = b.Translucent || translucent
+// 	// If anything translucent is added to the batch, then we will consider the entire thing translucent
+// 	b.Translucent = b.Translucent || translucent
 
-	// mat := matrix.gl()
+// 	// mat := matrix.gl()
 
-	// Append each index
-	currentElement := uint32(len(b.mesh.positions))
-	for i := range mesh.indices {
-		b.mesh.indices = append(b.mesh.indices, currentElement+mesh.indices[i])
-	}
+// 	// Append each index
+// 	currentElement := uint32(len(b.mesh.positions))
+// 	for i := range mesh.indices {
+// 		b.mesh.indices = append(b.mesh.indices, currentElement+mesh.indices[i])
+// 	}
 
-	// Append each position
-	for i := range mesh.positions {
-		b.mesh.positions = append(b.mesh.positions, matrix.Apply(mesh.positions[i]))
-	}
+// 	// Append each position
+// 	for i := range mesh.positions {
+// 		b.mesh.positions = append(b.mesh.positions, matrix.Apply(mesh.positions[i]))
+// 	}
 
-	// Calculate the bounding box of the mesh we just merged in
-	// Because we already figured out the first index of the new mesh (ie `currentElement`) we can just slice off the end of the new mesh
-	posBuf := b.mesh.positions[int(currentElement):]
-	min := posBuf[0]
-	max := posBuf[0]
-	for i := range posBuf {
-		// X
-		if posBuf[i][0] < min[0] {
-			min[0] = posBuf[i][0]
-		}
-		if posBuf[i][0] > max[0] {
-			max[0] = posBuf[i][0]
-		}
+// 	// Calculate the bounding box of the mesh we just merged in
+// 	// Because we already figured out the first index of the new mesh (ie `currentElement`) we can just slice off the end of the new mesh
+// 	posBuf := b.mesh.positions[int(currentElement):]
+// 	min := posBuf[0]
+// 	max := posBuf[0]
+// 	for i := range posBuf {
+// 		// X
+// 		if posBuf[i][0] < min[0] {
+// 			min[0] = posBuf[i][0]
+// 		}
+// 		if posBuf[i][0] > max[0] {
+// 			max[0] = posBuf[i][0]
+// 		}
 
-		// Y
-		if posBuf[i][1] < min[1] {
-			min[1] = posBuf[i][1]
-		}
-		if posBuf[i][1] > max[1] {
-			max[1] = posBuf[i][1]
-		}
+// 		// Y
+// 		if posBuf[i][1] < min[1] {
+// 			min[1] = posBuf[i][1]
+// 		}
+// 		if posBuf[i][1] > max[1] {
+// 			max[1] = posBuf[i][1]
+// 		}
 
-		// Z
-		if posBuf[i][2] < min[2] {
-			min[2] = posBuf[i][2]
-		}
-		if posBuf[i][2] > max[2] {
-			max[2] = posBuf[i][2]
-		}
-	}
+// 		// Z
+// 		if posBuf[i][2] < min[2] {
+// 			min[2] = posBuf[i][2]
+// 		}
+// 		if posBuf[i][2] > max[2] {
+// 			max[2] = posBuf[i][2]
+// 		}
+// 	}
 
-	newBounds := Box{
-		Min: Vec3{float64(min[0]), float64(min[1]), float64(min[2])},
-		Max: Vec3{float64(max[0]), float64(max[1]), float64(max[2])},
-	}
-	b.mesh.bounds = b.mesh.bounds.Union(newBounds)
+// 	newBounds := Box{
+// 		Min: Vec3{float64(min[0]), float64(min[1]), float64(min[2])},
+// 		Max: Vec3{float64(max[0]), float64(max[1]), float64(max[2])},
+// 	}
+// 	b.mesh.bounds = b.mesh.bounds.Union(newBounds)
 
-	if len(mesh.normals) > 0 {
-		renormalizeMat := matrix.Inv().Transpose()
-		for i := range mesh.normals {
-			b.mesh.normals = append(b.mesh.normals, renormalizeMat.Apply(mesh.normals[i]))
-		}
-	}
+// 	if len(mesh.normals) > 0 {
+// 		renormalizeMat := matrix.Inv().Transpose()
+// 		for i := range mesh.normals {
+// 			b.mesh.normals = append(b.mesh.normals, renormalizeMat.Apply(mesh.normals[i]))
+// 		}
+// 	}
 
-	for i := range mesh.colors {
-		// TODO - vec4 mult function
-		b.mesh.colors = append(b.mesh.colors, glVec4{
-			mesh.colors[i][0] * float32(mask.R),
-			mesh.colors[i][1] * float32(mask.G),
-			mesh.colors[i][2] * float32(mask.B),
-			mesh.colors[i][3] * float32(mask.A),
-		})
-	}
+// 	for i := range mesh.colors {
+// 		// TODO - vec4 mult function
+// 		b.mesh.colors = append(b.mesh.colors, glVec4{
+// 			mesh.colors[i][0] * float32(mask.R),
+// 			mesh.colors[i][1] * float32(mask.G),
+// 			mesh.colors[i][2] * float32(mask.B),
+// 			mesh.colors[i][3] * float32(mask.A),
+// 		})
+// 	}
 
-	// TODO - is a copy faster?
-	for i := range mesh.texCoords {
-		b.mesh.texCoords = append(b.mesh.texCoords, mesh.texCoords[i])
-	}
+// 	// TODO - is a copy faster?
+// 	for i := range mesh.texCoords {
+// 		b.mesh.texCoords = append(b.mesh.texCoords, mesh.texCoords[i])
+// 	}
 
-	// if b.material == nil {
-	// 	b.material = material
-	// } else {
-	// 	if b.material != material {
-	// 		panic("Materials must match inside a batch!")
-	// 	}
-	// }
+// 	// if b.material == nil {
+// 	// 	b.material = material
+// 	// } else {
+// 	// 	if b.material != material {
+// 	// 		panic("Materials must match inside a batch!")
+// 	// 	}
+// 	// }
 
-	// mat := matrix.gl()
+// 	// mat := matrix.gl()
 
-	// posBuf := make([]glVec3, len(mesh.positions))
-	// for i := range mesh.positions {
-	// 	posBuf[i] = mat.Apply(mesh.positions[i])
-	// }
+// 	// posBuf := make([]glVec3, len(mesh.positions))
+// 	// for i := range mesh.positions {
+// 	// 	posBuf[i] = mat.Apply(mesh.positions[i])
+// 	// }
 
-	// min := posBuf[0]
-	// max := posBuf[0]
-	// for i := range posBuf {
-	// 	// X
-	// 	if posBuf[i][0] < min[0] {
-	// 		min[0] = posBuf[i][0]
-	// 	}
-	// 	if posBuf[i][0] > max[0] {
-	// 		max[0] = posBuf[i][0]
-	// 	}
+// 	// min := posBuf[0]
+// 	// max := posBuf[0]
+// 	// for i := range posBuf {
+// 	// 	// X
+// 	// 	if posBuf[i][0] < min[0] {
+// 	// 		min[0] = posBuf[i][0]
+// 	// 	}
+// 	// 	if posBuf[i][0] > max[0] {
+// 	// 		max[0] = posBuf[i][0]
+// 	// 	}
 
-	// 	// Y
-	// 	if posBuf[i][1] < min[1] {
-	// 		min[1] = posBuf[i][1]
-	// 	}
-	// 	if posBuf[i][1] > max[1] {
-	// 		max[1] = posBuf[i][1]
-	// 	}
+// 	// 	// Y
+// 	// 	if posBuf[i][1] < min[1] {
+// 	// 		min[1] = posBuf[i][1]
+// 	// 	}
+// 	// 	if posBuf[i][1] > max[1] {
+// 	// 		max[1] = posBuf[i][1]
+// 	// 	}
 
-	// 	// Z
-	// 	if posBuf[i][2] < min[2] {
-	// 		min[2] = posBuf[i][2]
-	// 	}
-	// 	if posBuf[i][2] > max[2] {
-	// 		max[2] = posBuf[i][2]
-	// 	}
-	// }
+// 	// 	// Z
+// 	// 	if posBuf[i][2] < min[2] {
+// 	// 		min[2] = posBuf[i][2]
+// 	// 	}
+// 	// 	if posBuf[i][2] > max[2] {
+// 	// 		max[2] = posBuf[i][2]
+// 	// 	}
+// 	// }
 
-	// newBounds := Box{
-	// 	Min: Vec3{float64(min[0]), float64(min[1]), float64(min[2])},
-	// 	Max: Vec3{float64(max[0]), float64(max[1]), float64(max[2])},
-	// }
+// 	// newBounds := Box{
+// 	// 	Min: Vec3{float64(min[0]), float64(min[1]), float64(min[2])},
+// 	// 	Max: Vec3{float64(max[0]), float64(max[1]), float64(max[2])},
+// 	// }
 
-	// renormalizeMat := matrix.Inv().Transpose().gl()
-	// normBuf := make([]glVec3, len(mesh.normals))
-	// for i := range mesh.normals {
-	// 	normBuf[i] = renormalizeMat.Apply(mesh.normals[i])
-	// }
+// 	// renormalizeMat := matrix.Inv().Transpose().gl()
+// 	// normBuf := make([]glVec3, len(mesh.normals))
+// 	// for i := range mesh.normals {
+// 	// 	normBuf[i] = renormalizeMat.Apply(mesh.normals[i])
+// 	// }
 
-	// colBuf := make([]glVec4, len(mesh.colors))
-	// for i := range mesh.colors {
-	// 	// TODO - vec4 mult function
-	// 	colBuf[i] = glVec4{
-	// 		mesh.colors[i][0] * float32(mask.R),
-	// 		mesh.colors[i][1] * float32(mask.G),
-	// 		mesh.colors[i][2] * float32(mask.B),
-	// 		mesh.colors[i][3] * float32(mask.A),
-	// 	}
-	// }
+// 	// colBuf := make([]glVec4, len(mesh.colors))
+// 	// for i := range mesh.colors {
+// 	// 	// TODO - vec4 mult function
+// 	// 	colBuf[i] = glVec4{
+// 	// 		mesh.colors[i][0] * float32(mask.R),
+// 	// 		mesh.colors[i][1] * float32(mask.G),
+// 	// 		mesh.colors[i][2] * float32(mask.B),
+// 	// 		mesh.colors[i][3] * float32(mask.A),
+// 	// 	}
+// 	// }
 
-	// // TODO - is a copy faster?
-	// texBuf := make([]glVec2, len(mesh.texCoords))
-	// for i := range mesh.texCoords {
-	// 	texBuf[i] = mesh.texCoords[i]
-	// }
+// 	// // TODO - is a copy faster?
+// 	// texBuf := make([]glVec2, len(mesh.texCoords))
+// 	// for i := range mesh.texCoords {
+// 	// 	texBuf[i] = mesh.texCoords[i]
+// 	// }
 
-	// indices := make([]uint32, len(mesh.indices))
-	// for i := range mesh.indices {
-	// 	indices[i] = mesh.indices[i]
-	// }
+// 	// indices := make([]uint32, len(mesh.indices))
+// 	// for i := range mesh.indices {
+// 	// 	indices[i] = mesh.indices[i]
+// 	// }
 
-	// m2 := &Mesh{
-	// 	positions: posBuf,
-	// 	normals: normBuf,
-	// 	colors: colBuf,
-	// 	texCoords: texBuf,
-	// 	indices: indices,
-	// 	bounds: newBounds,
-	// }
+// 	// m2 := &Mesh{
+// 	// 	positions: posBuf,
+// 	// 	normals: normBuf,
+// 	// 	colors: colBuf,
+// 	// 	texCoords: texBuf,
+// 	// 	indices: indices,
+// 	// 	bounds: newBounds,
+// 	// }
 
-	// b.mesh.Append(m2)
-}
+// 	// b.mesh.Append(m2)
+// }
 
-func (b *Batch) Clear() {
-	b.mesh.Clear()
-	b.material = nil
-	b.Translucent = false
-}
+// func (b *Batch) Clear() {
+// 	b.mesh.Clear()
+// 	b.material = nil
+// 	b.Translucent = false
+// }
 
-func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
-	target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
-	// b.DrawColorMask(target, matrix, White)
-}
+// func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
+// 	target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
+// 	// b.DrawColorMask(target, matrix, White)
+// }
 
-func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
-	target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
-}
+// func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
+// 	target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
+// }
 
-func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
-	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
-}
+// func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
+// 	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
+// }
 
-// TODO: Generalize this rectdraw logic. Copy paseted from Sprite
-func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
-	// pass.SetTexture(0, s.texture)
-	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
+// // TODO: Generalize this rectdraw logic. Copy paseted from Sprite
+// func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
+// 	// pass.SetTexture(0, s.texture)
+// 	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 
-	batchBounds := b.Bounds().Rect()
-	matrix := Mat4Ident
-	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
-	target.Add(b.mesh, matrix.gl(), mask, b.material, false)
-}
+// 	batchBounds := b.Bounds().Rect()
+// 	matrix := Mat4Ident
+// 	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
+// 	target.Add(b.mesh, matrix.gl(), mask, b.material, false)
+// }
 
-func (b *Batch) Bounds() Box {
-	return b.mesh.Bounds()
-}
+// func (b *Batch) Bounds() Box {
+// 	return b.mesh.Bounds()
+// }
 
 type Mesh struct {
 	positions []glVec3
@@ -256,9 +256,9 @@ func NewMesh() *Mesh {
 	}
 }
 
-func (m *Mesh) Buffer(pass *RenderPass, material Material, translucent bool) *Mesh {
+func (m *Mesh) Buffer(shader *Shader, material Material, translucent bool) *Mesh {
 	return &Mesh{
-		buffer: pass.BufferMesh(m, material, translucent),
+		buffer: shader.BufferMesh(m, material, translucent),
 	}
 }
 
@@ -275,14 +275,14 @@ func (m *Mesh) Clear() {
 	m.buffer = nil // TODO: manually delete?
 }
 
-func (m *Mesh) Draw(pass *RenderPass, matrix Mat4) {
+func (m *Mesh) Draw(target BatchTarget, matrix Mat4) {
 	// pass.Add(m, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, DefaultMaterial(), false)
-	m.DrawColorMask(pass, matrix, White)
+	m.DrawColorMask(target, matrix, White)
 }
 
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
-func (m *Mesh) DrawColorMask(pass *RenderPass, matrix Mat4, mask RGBA) {
-	pass.Add(m, matrix.gl(), mask, DefaultMaterial(), false)
+func (m *Mesh) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
+	target.Add(m, matrix.gl(), mask, DefaultMaterial(), false)
 }
 
 func (m *Mesh) Bounds() Box {
@@ -581,10 +581,10 @@ func (m *Mesh) Indices() []uint32 {
 	return m.indices
 }
 
-func (m *Mesh) Fill(bufferPool *BufferPool, mat glMat4, mask RGBA, state BufferState) *VertexBuffer {
+func (m *Mesh) Fill(bufferPool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	numVerts := m.NumVerts()
 	indices := m.Indices()
-	vertexBuffer := bufferPool.Reserve(state, indices, numVerts, bufferPool.shader.tmpBuffers)
+	vertexBuffer := bufferPool.Reserve(indices, numVerts, bufferPool.shader.tmpBuffers)
 	batchToBuffers(bufferPool.shader, m, mat, mask)
 
 	return vertexBuffer

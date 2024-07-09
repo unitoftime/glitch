@@ -17,7 +17,8 @@ type ShaderConfig struct {
 
 type Shader struct {
 	program         gl.Program
-	uniforms        map[string]Uniform
+	uniformLocs     map[string]Uniform
+	uniforms        map[string]any
 	attrFmt         VertexFormat
 	tmpBuffers      []any
 	tmpFloat32Slice []float32
@@ -26,6 +27,7 @@ type Shader struct {
 	uniformLoc     gl.Uniform
 	setUniformMat4 func()
 
+	// TODO: You may be able to do a memory optimization here. where instead of allocating enough for the entire frame to be rendered through this shader, you can make a ringbuffer of VertexBuffers and cycle through those, drawing as you need to. The downside here is that there may be some performance impact if the ringbuffer is too small causing contention between filling the next VertexBuffer and rendering it on the GPU
 	pool *BufferPool
 }
 
@@ -41,7 +43,8 @@ func NewShader(cfg ShaderConfig) (*Shader, error) {
 
 func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uniformFmt UniformFormat) (*Shader, error) {
 	shader := &Shader{
-		uniforms:        make(map[string]Uniform),
+		uniformLocs:     make(map[string]Uniform),
+		uniforms:        make(map[string]any),
 		attrFmt:         attrFmt,
 		tmpFloat32Slice: make([]float32, 0),
 	}
@@ -54,7 +57,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 
 		for _, uniform := range uniformFmt {
 			loc := gl.GetUniformLocation(shader.program, uniform.Name)
-			shader.uniforms[uniform.Name] = Uniform{uniform.Name, loc}
+			shader.uniformLocs[uniform.Name] = Uniform{uniform.Name, loc}
 			// fmt.Println("Found uniform: ", uniform)
 		}
 
@@ -190,20 +193,21 @@ func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 // 	return ret
 // }
 
-func (s *Shader) SetUniformMat4(uniformName string, value glMat4) bool {
-	uniform, ok := s.uniforms[uniformName]
-	if !ok /* || !uniform.loc.Valid() */ {
-		// TODO - panic or just return false? I feel like its bad if you think you're setting a uniform that doesn't exist.
-		panic(fmt.Sprintf("Uniform not found! Or uniform location was invalid: %s", uniformName))
-	}
+// func (s *Shader) SetUniformMat4(uniformName string, value glMat4) bool {
+// 	uniform, ok := s.uniformLocs[uniformName]
+// 	if !ok /* || !uniform.loc.Valid() */ {
+// 		// TODO - panic or just return false? I feel like its bad if you think you're setting a uniform that doesn't exist.
+// 		panic(fmt.Sprintf("Uniform not found! Or uniform location was invalid: %s", uniformName))
+// 	}
 
-	s.uniformLoc = uniform.loc
-	s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-	s.tmpFloat32Slice = value.writeToFloat32(s.tmpFloat32Slice)
+// 	s.uniformLoc = uniform.loc
+// 	s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
+// 	s.tmpFloat32Slice = value.writeToFloat32(s.tmpFloat32Slice)
 
-	mainthread.Call(s.setUniformMat4)
-	return true
-}
+// 	s.Bind()
+// 	mainthread.Call(s.setUniformMat4)
+// 	return true
+// }
 
 // Note: This was me playing around with a way to reduce the amount of memory allocations
 var tmpUniformSetter uniformSetter
@@ -214,11 +218,59 @@ func init() {
 	}
 }
 
-func (s *Shader) SetUniform(uniformName string, value any) bool {
+// TODO: Should I use a comparable here? and just force uniforms to be comparable?
+func openglEquals(a, b any) bool {
+		// Note: https://go.dev/ref/spec#Comparison_operators - For interface equality. They are equal if the types are the same and the comparable value at that location is the same (bubbles down to pointer compare or struct compare)
+	return a == b
+	// switch aVal := a.(type) {
+	// case float32:
+	// 	bVal, ok := b.(float32)
+	// 	if !ok { return false } // Fail - wrong type
+	// 	return aVal == bVal
+	// case float64:
+	// 	bVal, ok := b.(float64)
+	// 	if !ok { return false } // Fail - wrong type
+	// 	return aVal == bVal
+	// case Vec3:
+	// 	bVal, ok := b.(Vec3)
+	// 	if !ok { return false } // Fail - wrong type
+	// 	return aVal == bVal
+	// case Vec4:
+	// 	bVal, ok := b.(Vec4)
+	// 	if !ok { return false } // Fail - wrong type
+	// 	return aVal == bVal
+	// case Mat3:
+	// 	bVal, ok := b.(Mat3)
+	// 	if !ok { return false } // Fail - wrong type
+	// 	return aVal == bVal
+	// case Mat4:
+	// 	bVal, ok := b.(Mat4)
+	// 	if !ok { return false } // Fail - wrong type
+	// 	return aVal == bVal
+	// }
+	// panic(fmt.Sprintf("unknown uniform type: (%T) or (%T)", a, b))
+}
+
+func (s *Shader) Use() {
+	setShader(s)
+}
+
+// Binds the shader and sets the uniform
+func (s *Shader) SetUniform(name string, value any) bool {
+	currentValue, ok := s.uniforms[name]
+	if ok && openglEquals(currentValue, value) {
+		// TODO: I dont even remember what the return value means here
+		return true // Skip because the shader already has the uniform set to this value
+	}
+	s.uniforms[name] = value
+
 	tmpUniformSetter.shader = s
-	tmpUniformSetter.name = uniformName
+	tmpUniformSetter.name = name
 	tmpUniformSetter.value = value
 
+	setShader(s)
+	// global.flush()
+	// s.Bind()
 	mainthread.Call(tmpUniformSetter.FUNC)
 	return true // TODO - wrong
 }
@@ -235,7 +287,7 @@ func (u *uniformSetter) Func() {
 	uniformName := u.name
 	value := u.value
 
-	uniform, ok := s.uniforms[uniformName]
+	uniform, ok := s.uniformLocs[uniformName]
 	// TODO - detecting if uniform is invalid, because Valid() checks if it is 0, which is a valid location index
 	if !ok /* || !uniform.loc.Valid() */ {
 		// TODO - panic or just return false? I feel like its bad if you think you're setting a uniform that doesn't exist.
@@ -251,6 +303,12 @@ func (u *uniformSetter) Func() {
 		sliced := []float32{val}
 		gl.Uniform1fv(uniform.loc, sliced)
 	// gl.Uniform1fv(uniform.loc, val)
+	case float64:
+		sliced := []float32{float32(val)}
+		gl.Uniform1fv(uniform.loc, sliced)
+
+	case glMat4:
+		gl.UniformMatrix4fv(uniform.loc, []float32(val[:]))
 
 	case Vec3:
 		vec := val.gl()
@@ -270,3 +328,61 @@ func (u *uniformSetter) Func() {
 		panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
 	}
 }
+
+
+//--------------------------------------------------------------------------------
+
+func (shader *Shader) BufferMesh(mesh *Mesh, material Material, translucent bool) *VertexBuffer {
+	// bufferState := BufferState{material, BlendModeNormal} // TODO: Blendmode used to come from renderpass
+
+	if len(mesh.indices) % 3 != 0 {
+		panic("Cmd.Mesh indices must have 3 indices per triangle!")
+	}
+	numVerts := len(mesh.positions)
+	numTris := len(mesh.indices) / 3
+	buffer := NewVertexBuffer(shader, numVerts, numTris)
+	buffer.deallocAfterBuffer = true
+
+	success := buffer.Reserve(mesh.indices, numVerts, shader.tmpBuffers)
+	if !success {
+		panic("Something went wrong")
+	}
+
+	// cmd := drawCommand{
+	// 	mesh, Mat4Ident, White, bufferState,
+	// }
+	// TODO: Translucent?
+	// TODO: Depth sorting?
+	batchToBuffers(shader, mesh, glMat4Ident, White)
+
+	// pass.copyToBuffer(cmd, pass.shader.tmpBuffers)
+
+	// TODO: Could use copy funcs if you want to restrict buffer types
+	// for bufIdx, attr := range pass.shader.attrFmt {
+	// 	switch attr.Swizzle {
+	// 	case PositionXYZ:
+	// 		buffer.buffers[bufIdx].SetData(mesh.positions)
+	// 	case ColorRGBA:
+	// 		buffer.buffers[bufIdx].SetData(mesh.colors)
+	// 	case TexCoordXY:
+	// 		buffer.buffers[bufIdx].SetData(mesh.texCoords)
+	// 	default:
+	// 		panic("unsupported")
+	// 	}
+	// }
+
+	return buffer
+}
+
+// // This is like batchToBuffer but doesn't pre-apply the model matrix of the mesh
+// func (r *RenderPass) copyToBuffer(c drawCommand, destBuffs []interface{}) {
+// 	// // For now I'm just going to modify the drawCommand to use Mat4Ident and then pass to batchToBuffers
+// 	// c.matrix = Mat4Ident
+// 	// batchToBuffers(c, destBuffs)
+
+// 	numVerts := c.filler.NumVerts()
+// 	indices := c.filler.Indices()
+// 	vertexBuffer := pass.buffer.Reserve(state, indices, numVerts, pass.shader.tmpBuffers)
+// 	batchToBuffers(pass.shader, m, mat, mask)
+// }
+

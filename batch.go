@@ -114,82 +114,85 @@ func (b *DrawBatch) Bounds() Box {
 	return b.bounds
 }
 
-type Batcher struct {
-	shader *Shader
-	lastBuffer *VertexBuffer
-	target Target
-}
+// type Batcher struct {
+// 	shader *Shader
+// 	lastBuffer *VertexBuffer
+// 	target Target
+// }
 
-func NewBatcher() *Batcher {
-	return &Batcher{} // TODO: Default case for shader?
-}
+// func NewBatcher() *Batcher {
+// 	return &Batcher{} // TODO: Default case for shader?
+// }
 
-func (b *Batcher) SetShader(shader *Shader) {
-	b.shader = shader
-}
+// func (b *Batcher) SetShader(shader *Shader) {
+// 	b.Flush() // TODO: You technically only need to do this if it will change the uniform
 
-func (b *Batcher) SetUniform(name string, val any) {
-	b.shader.SetUniform(name, val)
+// 	b.shader = shader
+// }
 
-	// TODO: You technically only need to do this if it changes
-	b.Flush()
-}
+// func (b *Batcher) SetUniform(name string, val any) {
+// 	b.Flush() // TODO: You technically only need to do this if it will change the uniform
 
-func (b *Batcher) Clear() {
+// 	b.shader.SetUniform(name, val)
+// }
 
-}
+// func (b *Batcher) Clear() {
 
-func (b *Batcher) Add(filler *Mesh, mat glMat4, mask RGBA, material Material, translucent bool) {
-	if filler == nil { return } // Skip nil meshes
+// }
 
-	buffer := filler.GetBuffer()
-	if buffer != nil {
-		b.drawCall(buffer, mat)
-		return
-	}
+// func (b *Batcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+// 	if filler == nil { return } // Skip nil meshes
 
-	// Note: Captured in shader.pool
-	// 1. If you switch materials, then draw the last one
-	// 2. If you fill up then draw the last one
-	state := BufferState{material, BlendModeNormal} // TODO: blendmode and track full state some better way
-	vertexBuffer := filler.Fill(b.shader.pool, mat, mask, state)
+// 	buffer := filler.GetBuffer()
+// 	if buffer != nil {
+// 		b.drawCall(buffer, mat)
+// 		return
+// 	}
 
-	// If vertexBuffer has changed then we want to draw the last one
-	if b.lastBuffer != nil && vertexBuffer != b.lastBuffer {
-		b.drawCall(b.lastBuffer, glMat4Ident)
-	}
+// 	// Note: Captured in shader.pool
+// 	// 1. If you switch materials, then draw the last one
+// 	// 2. If you fill up then draw the last one
+// 	state := BufferState{material, BlendModeNormal} // TODO: blendmode and track full state some better way
+// 	vertexBuffer := filler.Fill(b.shader.pool, mat, mask, state)
 
-	b.lastBuffer = vertexBuffer
-}
+// 	// If vertexBuffer has changed then we want to draw the last one
+// 	if b.lastBuffer != nil && vertexBuffer != b.lastBuffer {
+// 		b.drawCall(b.lastBuffer, glMat4Ident)
+// 	}
 
-// TODO: Rename Finish if you want to completely finish the batcher?
-func (b *Batcher) Flush() {
-	if b.lastBuffer == nil { return }
+// 	b.lastBuffer = vertexBuffer
+// }
 
-	b.drawCall(b.lastBuffer, glMat4Ident)
-	b.lastBuffer = nil
-}
+// // Draws the current buffer and progress the shader pool to the next available
+// func (b *Batcher) Flush() {
+// 	if b.lastBuffer == nil { return }
 
-// Executes a drawcall with ...
-func (b *Batcher) drawCall(buffer *VertexBuffer, mat glMat4) {
-	if b.target != nil {
-		b.target.Bind()
-	}
+// 	b.drawCall(b.lastBuffer, glMat4Ident)
+// 	b.lastBuffer = nil
+// 	b.shader.pool.gotoNextClean()
+// }
 
-	b.shader.Bind() // TODO: global State cache
+// // Executes a drawcall with ...
+// func (b *Batcher) drawCall(buffer *VertexBuffer, mat glMat4) {
+// 	if b.target != nil {
+// 		b.target.Bind()
+// 	}
 
-	// TODO: Set all uniforms
-	// 1. camera
-	// 2. materials
+// 	// TODO: Set all uniforms
+// 	// 1. camera
+// 	// 2. materials
 
-	// TODO: rewrite how buffer state works for immediate mode case
-	buffer.state.Bind()
+// 	b.shader.Bind() // TODO: global State cache
 
-	// TOOD: Maybe pass this into VertexBuffer.Draw() func
-	ok := b.shader.SetUniformMat4("model", mat)
-	if !ok {
-		panic("Error setting model uniform - all shaders must have 'model' uniform")
-	}
+// 	// TODO: rewrite how buffer state works for immediate mode case
+// 	buffer.state.Bind(b.shader)
 
-	buffer.Draw()
-}
+// 	// TOOD: Maybe pass this into VertexBuffer.Draw() func
+// 	ok := b.shader.SetUniform("model", mat)
+// 	if !ok {
+// 		panic("Error setting model uniform - all shaders must have 'model' uniform")
+// 	}
+
+// 	buffer.Draw()
+// }
+

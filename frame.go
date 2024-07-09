@@ -10,7 +10,7 @@ import (
 
 type Frame struct {
 	fbo gl.Framebuffer
-	*Batcher
+	// *Batcher
 	tex *Texture
 	depth gl.Texture
 	mesh *Mesh
@@ -22,9 +22,9 @@ type Frame struct {
 func NewFrame(bounds Rect, smooth bool) *Frame {
 	var frame = &Frame{
 		bounds: bounds,
-		Batcher: NewBatcher(),
+		// Batcher: NewBatcher(),
 	}
-	frame.Batcher.target = frame
+	// frame.Batcher.target = frame
 
 	// Create texture
 	// TODO - Note: I'm passing actual data to the texture object, rather than null. That might be suboptimal. This fills the GPU memory, whereas if I pass null I can just allocate it.
@@ -35,7 +35,9 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 	// Create mesh (in case we want to draw the fbo to another target)
 	// frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))
 	frame.mesh = NewQuadMesh(bounds, R(0, 1, 1, 0))
-	frame.material = NewSpriteMaterial(frame.tex)
+	// frame.material = NewSpriteMaterial(frame.tex)
+	frame.material = NewMaterial(GetDefaultSpriteShader())
+	frame.material.texture = frame.tex
 
 	// frame.tex.Bind(0)///??????
 	mainthread.Call(func() {
@@ -86,7 +88,6 @@ func (f *Frame) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	f.DrawColorMask(target, matrix, mask)
 }
 
-
 func (f *Frame) delete() {
 	mainthread.CallNonBlock(func() {
 		gl.DeleteFramebuffer(f.fbo)
@@ -95,4 +96,9 @@ func (f *Frame) delete() {
 
 func (f *Frame) Bind() {
 	state.bindFramebuffer(f.fbo, f.bounds)
+}
+
+func (f *Frame) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+	setTarget(f)
+	global.Add(filler, mat, mask, material, translucent)
 }

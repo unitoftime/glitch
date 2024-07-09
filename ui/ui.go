@@ -78,7 +78,7 @@ type Drawer interface {
 
 type Group struct {
 	win *glitch.Window
-	pass *glitch.RenderPass
+	sorter *glitch.Sorter
 	camera *glitch.CameraOrtho
 	atlas *glitch.Atlas
 	unionBoundsSet bool
@@ -111,11 +111,11 @@ type Group struct {
 type eid uint64 // Element Id
 const invalidId eid = 0
 
-func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas, pass *glitch.RenderPass) *Group {
+func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
 	return &Group{
 		win: win,
+		sorter: glitch.NewSorter(),
 		camera: camera,
-		pass: pass,
 		atlas: atlas,
 		unionBoundsSet: false,
 		allBounds: make([]glitch.Rect, 0),
@@ -167,12 +167,12 @@ func (g *Group) getGraph(bounds glitch.Rect) *graph.Graph {
 	return g.graphBuffer[idx]
 }
 
-func (g *Group) SetLayer(layer int8) {
-	g.pass.SetLayer(layer)
-}
-func (g *Group) Layer() int8 {
-	return g.pass.Layer()
-}
+// func (g *Group) SetLayer(layer int8) {
+// 	g.pass.SetLayer(layer)
+// }
+// func (g *Group) Layer() int8 {
+// 	return g.pass.Layer()
+// }
 
 func (g *Group) Bounds() glitch.Rect {
 	bounds := g.camera.Bounds()
@@ -221,6 +221,10 @@ func (g *Group) appendUnionBounds(newBounds glitch.Rect) {
 	} else {
 		g.unionBounds = g.unionBounds.Union(newBounds)
 	}
+}
+
+func (g *Group) Draw(target glitch.BatchTarget) {
+	g.sorter.Draw(target)
 }
 
 func (g *Group) Clear() {
@@ -329,7 +333,7 @@ func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect 
 	}
 
 	// rect = rectSnap(rect)
-	text.RectDrawColorMask(g.pass, rect, t.color)
+	text.RectDrawColorMask(g.sorter, rect, t.color)
 
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
@@ -338,7 +342,7 @@ func (g *Group) drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect 
 
 func (g *Group) drawSprite(rect glitch.Rect, style SpriteStyle) {
 	if style.sprite == nil { return }
-	style.sprite.RectDrawColorMask(g.pass, rect, style.color)
+	style.sprite.RectDrawColorMask(g.sorter, rect, style.color)
 
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)
@@ -356,7 +360,7 @@ func (g *Group) debugRect(rect glitch.Rect) {
 
 	g.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
 	m := g.geomDraw.Rectangle(rect, lineWidth)
-	m.Draw(g.pass, glitch.Mat4Ident)
+	m.Draw(g.sorter, glitch.Mat4Ident)
 }
 //--------------------------------------------------------------------------------
 // func (g *Group) getLabel(id eid) string {
@@ -822,7 +826,7 @@ func (g *Group) LineGraph(rect glitch.Rect, series []glitch.Vec2, style TextStyl
 
 	line.Line(series)
 	line.Axes()
-	line.DrawColorMask(g.pass, glitch.Mat4Ident, style.color)
+	line.DrawColorMask(g.sorter, glitch.Mat4Ident, style.color)
 
 	g.appendUnionBounds(rect)
 	g.debugRect(rect)

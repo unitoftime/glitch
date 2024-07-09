@@ -386,11 +386,14 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 }
 
 func (a *Atlas) Text(str string, scale float64) *Text {
+	material := DefaultMaterial()
+	material.texture = a.texture
 	t := &Text{
 		currentString: "",
 		atlas: a,
 		texture: a.texture,
-		material: NewSpriteMaterial(a.texture),
+		// material: NewSpriteMaterial(a.texture),
+		material: material,
 		scale: scale,
 		// LineHeight: a.UngappedLineHeight(),
 		mesh: NewMesh(),
@@ -423,6 +426,14 @@ type Text struct {
 
 func (t *Text) Bounds() Rect {
 	return t.bounds
+}
+
+// func (t *Text) SetMaterial(material Material) {
+// 	t.material = material
+// }
+
+func (t *Text) Material() *Material {
+	return &t.material
 }
 
 func (t *Text) MeshBounds() Rect {
