@@ -92,6 +92,9 @@ var (
 	fnDepthFunc js.Value
 	fnDisable   js.Value
 
+	fnCullFace  js.Value
+	fnFrontFace js.Value
+
 	fnBindFramebuffer  js.Value
 	fnUniform1fv       js.Value
 	fnUniform3fv       js.Value
@@ -159,6 +162,8 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnEnable = c.Get("enable").Call("bind", c)
 	fnDisable = c.Get("disable").Call("bind", c)
 	fnDepthFunc = c.Get("depthFunc").Call("bind", c)
+	fnCullFace = c.Get("cullFace").Call("bind", c)
+	fnFrontFace = c.Get("frontFace").Call("bind", c)
 	fnUniform1fv = c.Get("uniform1fv").Call("bind", c)
 	fnUniform3fv = c.Get("uniform3fv").Call("bind", c)
 	fnUniform4fv = c.Get("uniform4fv").Call("bind", c)
@@ -631,9 +636,15 @@ func CreateTexture() Texture {
 	// return Texture{Value: c.Call("createTexture")}
 }
 
-// func CullFace(mode Enum) {
-// 	c.Call("cullFace", int(mode))
-// }
+func CullFace(mode Enum) {
+	// c.Call("cullFace", int(mode))
+	fnCullFace.Invoke(int(mode))
+}
+
+func FrontFace(mode Enum) {
+	// c.Call("frontFace", int(mode))
+	fnFrontFace.Invoke(int(mode))
+}
 
 // func DeleteBuffer(v Buffer) {
 // 	c.Call("deleteBuffer", v.Value)
@@ -723,10 +734,6 @@ func FramebufferTexture2D(target, attachment, texTarget Enum, t Texture, level i
 	fnFramebufferTexture2D.Invoke(int(target), int(attachment), int(texTarget), t.Value, level)
 	// c.Call("framebufferTexture2D", int(target), int(attachment), int(texTarget), t.Value, level)
 }
-
-// func FrontFace(mode Enum) {
-// 	c.Call("frontFace", int(mode))
-// }
 
 func GenerateMipmap(target Enum) {
 	fnGenerateMipmap.Invoke(int(target))
