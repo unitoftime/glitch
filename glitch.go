@@ -62,6 +62,8 @@ type Material struct {
 	texture *Texture
 	// camera *CameraOrtho
 	blend BlendMode
+	depth DepthMode
+	cull CullMode
 	uniforms *Uniforms
 }
 
@@ -95,6 +97,17 @@ func (m *Material) SetTexture(/* slot int, */ texture *Texture) {
 	m.texture = texture
 }
 
+func (m *Material) SetCullMode(cullMode CullMode) *Material {
+	m.cull = cullMode
+	return m
+}
+
+func (m *Material) SetDepthMode(depthMode DepthMode) *Material {
+	m.depth = depthMode
+	return m
+}
+
+
 func (m Material) Bind() {
 	setShader(m.shader)
 	// m.shader.Use()
@@ -104,8 +117,23 @@ func (m Material) Bind() {
 		m.texture.Bind(texSlot)
 	}
 
+	// Bind Depthmode
+	if m.depth == DepthModeNone {
+		state.enableDepthTest(false)
+	} else {
+		state.enableDepthTest(true)
+		state.setDepthFunc(m.depth.mode)
+	}
+
+	// Bind CullMode
+	if m.cull == CullModeNone {
+		state.disableCullMode()
+	} else {
+		state.enableCullMode(m.cull)
+	}
+
 	// Bind Blendmode
-	// TODO: Blendmode
+	state.setBlendFunc(m.blend.src, m.blend.dst)
 
 	// // Bind Camera (ie global material)
 	// // TODO: m.camera.Bind(m.shader)
@@ -201,11 +229,7 @@ func Clear(target Target, color RGBA) {
 // 	texture.Bind(texSlot)
 // }
 
-func SetCamera(camera *CameraOrtho) {
-	camMaterial := CameraMaterial{
-		Projection: camera.Projection.gl(),
-		View: camera.View.gl(),
-	}
+func SetCameraMaterial(camMaterial CameraMaterial) {
 	if global.camera == camMaterial {
 		return
 	}
@@ -216,6 +240,14 @@ func SetCamera(camera *CameraOrtho) {
 	global.shader.SetUniform("view", global.camera.View)
 
 	global.metric.setCamera++
+}
+
+func SetCamera(camera *CameraOrtho) {
+	camMaterial := CameraMaterial{
+		Projection: camera.Projection.gl(),
+		View: camera.View.gl(),
+	}
+	SetCameraMaterial(camMaterial)
 }
 
 func setTarget(target Target) {

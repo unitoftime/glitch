@@ -107,7 +107,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// gl.CullFace(gl.BACK)
 		// gl.FrontFace(gl.CCW) // Default
 
-		gl.Enable(gl.BLEND)
+		gl.Enable(gl.BLEND) // TODO: Will this ever need to be disabled?
 		// gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Non premult
 		gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // Premult
 

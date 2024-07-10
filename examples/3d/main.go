@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/unitoftime/glitch"
-	"github.com/unitoftime/glitch/examples/assets"
 	"github.com/unitoftime/glitch/shaders"
 )
 
@@ -60,32 +59,10 @@ func runGame() {
 		panic(err)
 	}
 
-	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil {
-		panic(err)
-	}
-
-	pass := glitch.NewRenderPass(shader)
-
 	diffuseShader, err := glitch.NewShader(shaders.DiffuseShader)
 	if err != nil {
 		panic(err)
 	}
-	diffusePass := glitch.NewRenderPass(diffuseShader)
-	diffusePass.DepthTest = true
-
-	manImage, err := assets.LoadImage("gopher.png")
-	if err != nil {
-		panic(err)
-	}
-	// texture := glitch.NewTexture(160, 200, manImage.Pix)
-	texture := glitch.NewTexture(manImage, false)
-	// texture := glitch.NewTexture(manImage.Bounds().Dx(), manImage.Bounds().Dy(), manImage.Pix)
-
-	// mesh := glitch.NewQuadMesh()
-	x := 0.0
-	y := 0.0
-	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
 
 	// Text
 	atlas, err := glitch.DefaultAtlas()
@@ -95,26 +72,33 @@ func runGame() {
 
 	text := atlas.Text("hello world", 1)
 
-	cube := glitch.NewModel(glitch.NewCubeMesh(50), glitch.DefaultMaterial())
+	diffuseMaterial := glitch.NewMaterial(diffuseShader)
+	diffuseMaterial.SetDepthMode(glitch.DepthModeLess)
+	diffuseMaterial.SetCullMode(glitch.CullModeNormal)
+
+	diffuseMaterial.SetUniform("material.ambient", glitch.Vec3{1, 0.5, 0.31})
+	diffuseMaterial.SetUniform("material.diffuse", glitch.Vec3{1, 0.5, 0.31})
+	diffuseMaterial.SetUniform("material.specular", glitch.Vec3{1, 0.5, 0.31})
+	diffuseMaterial.SetUniform("material.shininess", float32(32.0))
+
+	diffuseMaterial.SetUniform("dirLight.direction", glitch.Vec3{0, 1, 0})
+	diffuseMaterial.SetUniform("dirLight.ambient", glitch.Vec3{0.5, 0.5, 0.5})
+	diffuseMaterial.SetUniform("dirLight.diffuse", glitch.Vec3{0.5, 0.5, 0.5})
+	diffuseMaterial.SetUniform("dirLight.specular", glitch.Vec3{0.5, 0.5, 0.5})
+
+	cube := glitch.NewModel(glitch.NewCubeMesh(50), diffuseMaterial)
 
 	camera := glitch.NewCameraOrtho()
 	pCam := glitch.NewCamera()
 	start := time.Now()
 
-	geom := glitch.NewGeomDraw()
-	quad := geom.FillRect(glitch.R(0, 0, 100, 100))
-	quadModel := glitch.NewModel(quad, glitch.NewSpriteMaterial(texture))
-
 	tt := 0.0
 	var dt time.Duration
 	for !win.Closed() {
-		if win.Pressed(glitch.KeyBackspace) {
+		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
 		}
 		start = time.Now()
-
-		pass.Clear()
-		diffusePass.Clear()
 
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
@@ -127,45 +111,28 @@ func runGame() {
 		pCam.SetPerspective(win)
 		pCam.SetViewLookAt(win)
 
-		mat := glitch.Mat4Ident
-		mat.Scale(0.25, 0.25, 1.0).Translate(100, 100, 0)
-
-		pass.SetLayer(0)
-		manSprite.DrawColorMask(pass, mat, glitch.RGBA{R: 1, G: 1, B: 1, A: 1})
-		quadModel.Draw(pass, glitch.Mat4Ident)
-
-		cubeMat := glitch.Mat4Ident
-		cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float64(tt), glitch.Vec3{0, 0, 1})
-
-		cube.Draw(diffusePass, cubeMat)
-
-		mat = glitch.Mat4Ident
-		mat.Translate(0, 0, 0)
-		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
-		text.DrawColorMask(pass, mat, glitch.RGBA{R: 1.0, G: 1.0, B: 0.0, A: 1.0})
-
 		glitch.Clear(win, glitch.RGBA{R: 0.1, G: 0.2, B: 0.3, A: 1.0})
 
-		pass.SetUniform("projection", camera.Projection)
-		pass.SetUniform("view", camera.View)
-		pass.Draw(win)
+		glitch.SetCameraMaterial(pCam.Material())
+		diffuseShader.SetUniform("viewPos", pCam.Position) // TODO: This needs to be better encapsulated somehow?
+		{
+			mat := glitch.Mat4Ident
+			mat.Scale(0.25, 0.25, 1.0).Translate(100, 100, 0)
 
-		diffusePass.SetUniform("projection", pCam.Projection)
-		diffusePass.SetUniform("view", pCam.View)
-		// diffusePass.SetUniform("model", cubeMat)
+			cubeMat := glitch.Mat4Ident
+			cubeMat = *cubeMat.Translate(0, 0, 0).Rotate(float64(tt), glitch.Vec3{0, 0, 1})
+			cube.Draw(win, cubeMat)
+		}
 
-		diffusePass.SetUniform("viewPos", pCam.Position)
+		glitch.SetCamera(camera)
+		{
+			mat := glitch.Mat4Ident
+			mat.Translate(0, 0, 0)
+			text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
+			text.DrawColorMask(win, mat, glitch.RGBA{R: 1.0, G: 1.0, B: 0.0, A: 1.0})
+		}
 
-		diffusePass.SetUniform("material.ambient", glitch.Vec3{1, 0.5, 0.31})
-		diffusePass.SetUniform("material.diffuse", glitch.Vec3{1, 0.5, 0.31})
-		diffusePass.SetUniform("material.specular", glitch.Vec3{1, 0.5, 0.31})
-		diffusePass.SetUniform("material.shininess", float32(32.0))
 
-		diffusePass.SetUniform("dirLight.direction", glitch.Vec3{0, 1, 0})
-		diffusePass.SetUniform("dirLight.ambient", glitch.Vec3{0.5, 0.5, 0.5})
-		diffusePass.SetUniform("dirLight.diffuse", glitch.Vec3{0.5, 0.5, 0.5})
-		diffusePass.SetUniform("dirLight.specular", glitch.Vec3{0.5, 0.5, 0.5})
-		diffusePass.Draw(win)
 
 		win.Update()
 

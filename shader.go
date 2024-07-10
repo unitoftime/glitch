@@ -343,7 +343,7 @@ func getBuffer(a shaders.Attr) any {
 
 //--------------------------------------------------------------------------------
 
-func (shader *Shader) BufferMesh(mesh *Mesh, material Material, translucent bool) *VertexBuffer {
+func (shader *Shader) BufferMesh(mesh *Mesh, translucent bool) *VertexBuffer {
 	// bufferState := BufferState{material, BlendModeNormal} // TODO: Blendmode used to come from renderpass
 
 	if len(mesh.indices) % 3 != 0 {

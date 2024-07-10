@@ -28,6 +28,11 @@ type stateTracker struct {
 	blendSrc, blendDst gl.Enum
 	blendFuncBinder    func()
 
+	// Cull Mode
+	cullModeEnable bool
+	cullMode CullMode
+	cullModeBinder func()
+
 	// Vert Buffer
 	vertBuf       *VertexBuffer
 	vertBufDrawer func()
@@ -68,6 +73,16 @@ func init() {
 
 	state.blendFuncBinder = func() {
 		gl.BlendFunc(state.blendSrc, state.blendDst)
+	}
+
+	state.cullModeBinder = func() {
+		if state.cullModeEnable {
+			gl.Enable(gl.CULL_FACE)
+			gl.CullFace(state.cullMode.face)
+			gl.FrontFace(state.cullMode.dir)
+		} else {
+			gl.Disable(gl.CULL_FACE)
+		}
 	}
 
 	state.vertBufDrawer = func() {
@@ -128,4 +143,23 @@ func (s *stateTracker) drawVertBuffer(vb *VertexBuffer) {
 func (s *stateTracker) clearTarget(color RGBA) {
 	s.clearColor = color
 	mainthread.Call(s.clearFunc)
+}
+
+func (s *stateTracker) disableCullMode() {
+	if s.cullModeEnable == false {
+		return // Skip if state already matches
+	}
+
+	s.cullModeEnable = false
+	mainthread.Call(s.cullModeBinder)
+}
+
+func (s *stateTracker) enableCullMode(cullMode CullMode) {
+	if s.cullModeEnable == true && s.cullMode == cullMode {
+		return // Skip if state already matches
+	}
+
+	s.cullModeEnable = true
+	s.cullMode = cullMode
+	mainthread.Call(s.cullModeBinder)
 }

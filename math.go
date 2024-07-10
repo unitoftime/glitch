@@ -826,3 +826,10 @@ func (c *Camera) SetViewLookAt(win *Window) {
 		0, 0, 1,
 	))
 }
+
+func (c *Camera) Material() CameraMaterial {
+	return CameraMaterial{
+		Projection: c.Projection.gl(),
+		View: c.View.gl(),
+	}
+}

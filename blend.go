@@ -22,3 +22,21 @@ var BlendModeNormal = BlendMode{
 var BlendModeMultiply = BlendMode{
 	gl.DST_COLOR, gl.ZERO,
 }
+
+type DepthMode struct {
+	mode gl.Enum
+}
+var ( // TODO: Can these be constants? Will that break wasm?
+	DepthModeNone = DepthMode{}
+	DepthModeLess = DepthMode{gl.LESS}
+	DepthModeLequal = DepthMode{gl.LEQUAL}
+)
+
+type CullMode struct {
+	face gl.Enum
+	dir gl.Enum
+}
+var ( // TODO: Can these be constants? Will that break wasm?
+	CullModeNone = CullMode{}
+	CullModeNormal = CullMode{gl.BACK, gl.CCW}
+)
