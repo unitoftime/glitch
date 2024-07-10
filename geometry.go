@@ -2,6 +2,8 @@ package glitch
 
 import (
 	"math"
+
+	"github.com/unitoftime/glitch/shaders"
 )
 
 type RectFill struct {
@@ -25,7 +27,7 @@ func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	for bufIdx, attr := range pool.shader.attrFmt {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
-		case PositionXYZ:
+		case shaders.PositionXYZ:
 			bounds := bounds.Box()
 			min := bounds.Min.gl()
 			max := bounds.Max.gl()
@@ -41,14 +43,14 @@ func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
 			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
 
-		case ColorRGBA:
+		case shaders.ColorRGBA:
 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
 			color := mask.gl()
 			colBuf[0] = color
 			colBuf[1] = color
 			colBuf[2] = color
 			colBuf[3] = color
-		case TexCoordXY:
+		case shaders.TexCoordXY:
 			uvBounds := bounds
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 			texBuf[0] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)}
@@ -75,7 +77,7 @@ func NewGeomDraw() *GeomDraw {
 		color: RGBA{1, 1, 1, 1},
 		Divisions: 100,
 		mesh: NewMesh(),
-		defaultMaterial: DefaultMaterial(),
+		defaultMaterial: DefaultMaterial(nil),
 	}
 }
 

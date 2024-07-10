@@ -18,8 +18,7 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		bounds.Max.Y / float64(texture.height),
 	)
 
-	material := DefaultMaterial()
-	material.texture = texture
+	material := DefaultMaterial(texture)
 
 	mesh := NewSpriteMesh(bounds.W(), bounds.H(), uvBounds)
 	return &Sprite{

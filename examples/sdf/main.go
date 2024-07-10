@@ -1,18 +1,54 @@
 package main
 
 import (
+	"flag"
 	_ "image/png"
 	"log"
+	"os"
+	"runtime"
+	"runtime/pprof"
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
-	"github.com/unitoftime/glitch/shaders"
 )
 
+var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
+var memprofile = flag.String("memprofile", "", "write memory profile to `file`")
+
 func main() {
-	log.Println("Begin")
+	flag.Parse()
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		go func() {
+			if err := pprof.StartCPUProfile(f); err != nil {
+				log.Fatal("could not start CPU profile: ", err)
+			}
+		}()
+		defer pprof.StopCPUProfile()
+	}
+
 	glitch.Run(runGame)
+
+	if *memprofile != "" {
+		f, err := os.Create(*memprofile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		defer f.Close() // error handling omitted for example
+		runtime.GC()    // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+	}
 }
+// func main() {
+// 	log.Println("Begin")
+// 	glitch.Run(runGame)
+// }
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch UI Demo", glitch.WindowConfig{
@@ -22,15 +58,6 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
-
-	shader, err := glitch.NewShader(shaders.MSDFShader)
-	if err != nil {
-		panic(err)
-	}
-	pass := glitch.NewRenderPass(shader)
-	// pass.SoftwareSort = glitch.SoftwareSortY
-	// pass.DepthTest = true
-	// pass.DepthBump = true
 
  	atlasImg, err := assets.LoadImage("atlas-msdf.png")
 	if err != nil {
@@ -42,8 +69,6 @@ func runGame() {
 		panic(err)
 	}
 
-	// fmt.Println(&atlasImg)
-	// fmt.Println(&atlasJson)
 	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg)
 
 	// Text
@@ -70,13 +95,13 @@ func runGame() {
 
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, screenScale, screenScale)
+		glitch.SetCamera(camera)
 
 		// mx, my := win.MousePosition()
 		// log.Println("Mouse: ", mx, my)
 
 		glitch.Clear(win, glitch.Greyscale(0.5))
 
-		pass.Clear()
 
 		// mat := glitch.Mat4Ident
 		// mat.Translate(win.Bounds().Center()[0], win.Bounds().Center()[1], 0)
@@ -90,15 +115,15 @@ func runGame() {
 			mat.
 				Scale(scale, scale, 1).
 				Translate(0, y, 0)
-			text.Draw(pass, mat)
+			text.Draw(win, mat)
 
 			y += lh * scale
 			scale += 0.1
 		}
 
-		pass.SetUniform("u_threshold", float32(0.5))
-		pass.SetCamera2D(camera)
-		pass.Draw(win)
+		// pass.SetUniform("u_threshold", float32(0.5))
+		// pass.SetCamera2D(camera)
+		// pass.Draw(win)
 
 		win.Update()
 	}

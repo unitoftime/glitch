@@ -89,6 +89,8 @@ type Atlas struct {
 	border int // Specifies a border on the font.
 	pixelPerfect bool // if true anti-aliasing will be disabled
 	defaultKerning float64
+
+	defaultMaterial Material
 }
 
 func fixedToFloat(val fixed.Int26_6) float64 {
@@ -318,8 +320,14 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	// outputFile.Close()
 
 	atlas.texture = NewTexture(img, config.Smooth)
+	atlas.defaultMaterial = DefaultMaterial(atlas.texture)
+
 	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
+}
+
+func (a *Atlas) Material() *Material {
+	return &a.defaultMaterial
 }
 
 // func (a *Atlas) GappedLineHeight() float64 {
@@ -386,14 +394,12 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 }
 
 func (a *Atlas) Text(str string, scale float64) *Text {
-	material := DefaultMaterial()
-	material.texture = a.texture
 	t := &Text{
 		currentString: "",
 		atlas: a,
 		texture: a.texture,
 		// material: NewSpriteMaterial(a.texture),
-		material: material,
+		material: a.defaultMaterial,
 		scale: scale,
 		// LineHeight: a.UngappedLineHeight(),
 		mesh: NewMesh(),

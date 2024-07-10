@@ -15,7 +15,6 @@ import (
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
-	"github.com/unitoftime/glitch/shaders"
 )
 
 var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to `file`")
@@ -54,19 +53,19 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch - Gophermark", glitch.WindowConfig{
-		Vsync: false,
+		Vsync: true,
 	})
 	if err != nil {
 		panic(err)
 	}
 
-	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil {
-		panic(err)
-	}
+	// shader, err := glitch.NewShader(shaders.SpriteShader)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	pass := glitch.NewRenderPass(shader)
-	pass.DepthTest = true
+	// pass := glitch.NewRenderPass(shader)
+	// pass.DepthTest = true
 
 	manImage, err := assets.LoadImage("gopher.png")
 	if err != nil {
@@ -75,7 +74,7 @@ func runGame() {
 	texture := glitch.NewTexture(manImage, false)
 	manSprite := glitch.NewSprite(texture, texture.Bounds())
 
-	length := 200000
+	length := 2000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -97,7 +96,7 @@ func runGame() {
 
 	counter := 0
 	camera := glitch.NewCameraOrtho()
-	camera.DepthRange = glitch.Vec2{-127, 127}
+	// camera.DepthRange = glitch.Vec2{-127, 127}
 
 	start := time.Now()
 	var dt time.Duration
@@ -127,12 +126,23 @@ func runGame() {
 			}
 		}
 
-		pass.Clear()
-
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1.0, 1.0)
+		glitch.SetCamera(camera)
 
-		pass.SetLayer(0)
+		glitch.Clear(win, glitch.RGBA{R: 0.1, G: 0.2, B: 0.3, A: 1.0})
+
+		// geom.Clear()
+		for i := range man {
+			mat = glitch.Mat4Ident
+			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position.X, man[i].position.Y, 0)
+			manSprite.DrawColorMask(win, mat, man[i].color)
+			// geom.DrawRect(pass, geomRect, mat, man[i].color)
+			// geomMesh.DrawColorMask(pass, mat, man[i].color)
+			// geom.DrawRect2(geomRect, mat, man[i].color)
+		}
+		// geom.Draw(pass, glitch.Mat4Ident)
+
 		if counter == 0 {
 			text.Clear()
 			text.Set(fmt.Sprintf("%2.2f (%2.2f, %2.2f) ms",
@@ -141,25 +151,11 @@ func runGame() {
 				1000*max.Seconds()))
 			min = 100000000000
 			max = 0
+
+			metrics := glitch.GetMetrics()
+			fmt.Printf("%+v\n", metrics)
 		}
-		text.DrawColorMask(pass, glitch.Mat4Ident, glitch.White)
-
-		pass.SetLayer(1)
-		// geom.Clear()
-		for i := range man {
-			mat = glitch.Mat4Ident
-			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position.X, man[i].position.Y, 0)
-			manSprite.DrawColorMask(pass, mat, man[i].color)
-			// geom.DrawRect(pass, geomRect, mat, man[i].color)
-			// geomMesh.DrawColorMask(pass, mat, man[i].color)
-			// geom.DrawRect2(geomRect, mat, man[i].color)
-		}
-		// geom.Draw(pass, glitch.Mat4Ident)
-
-		glitch.Clear(win, glitch.RGBA{R: 0.1, G: 0.2, B: 0.3, A: 1.0})
-
-		pass.SetCamera2D(camera)
-		pass.Draw(win)
+		text.DrawColorMask(win, glitch.Mat4Ident, glitch.White)
 
 		win.Update()
 

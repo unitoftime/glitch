@@ -1,6 +1,10 @@
 package glitch
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/unitoftime/glitch/shaders"
+)
 
 // // For batching multiple sprites into one
 // type Batch struct {
@@ -282,7 +286,7 @@ func (m *Mesh) Draw(target BatchTarget, matrix Mat4) {
 
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(m, matrix.gl(), mask, DefaultMaterial(), false)
+	target.Add(m, matrix.gl(), mask, DefaultMaterial(nil), false)
 }
 
 func (m *Mesh) Bounds() Box {
@@ -598,7 +602,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
 		// Positions
-		case PositionXY:
+		case shaders.PositionXY:
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
@@ -612,7 +616,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 				}
 			}
 
-		case PositionXYZ:
+		case shaders.PositionXYZ:
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
@@ -634,7 +638,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			// 		normBuf[i] = *(*Vec2)(vec[:2])
 			// 	}
 
-		case NormalXYZ:
+		case shaders.NormalXYZ:
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
@@ -649,12 +653,12 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			}
 
 		// Colors
-		case ColorR:
+		case shaders.ColorR:
 			colBuf := *(destBuffs[bufIdx]).(*[]float32)
 			for i := range mesh.colors {
 				colBuf[i] = mesh.colors[i][0] * float32(mask.R)
 			}
-		case ColorRG:
+		case shaders.ColorRG:
 			colBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 			for i := range mesh.colors {
 				colBuf[i] = glVec2{
@@ -662,7 +666,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 					mesh.colors[i][1] * float32(mask.G),
 				}
 			}
-		case ColorRGB:
+		case shaders.ColorRGB:
 			colBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 			for i := range mesh.colors {
 				colBuf[i] = glVec3{
@@ -671,7 +675,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 					mesh.colors[i][2] * float32(mask.B),
 				}
 			}
-		case ColorRGBA:
+		case shaders.ColorRGBA:
 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
 			for i := range mesh.colors {
 				colBuf[i] = glVec4{
@@ -682,7 +686,7 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 				}
 			}
 
-		case TexCoordXY:
+		case shaders.TexCoordXY:
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 			copy(texBuf, mesh.texCoords)
 		default:

@@ -71,6 +71,7 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg *image.NRGBA) (*Atlas, error) {
 		texture: texture,
 		pixelPerfect: true,
 		defaultKerning: 0,
+		defaultMaterial: DefaultMsdfMaterial(texture),
 	}
 
 	for _, g := range sdf.Glyphs {

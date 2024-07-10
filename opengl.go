@@ -8,6 +8,7 @@ import (
 
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
+	"github.com/unitoftime/glitch/shaders"
 )
 
 const sof int = 4 // SizeOf(Float)
@@ -28,7 +29,7 @@ type SupportedSubBuffers interface {
 }
 
 type SubBuffer[T SupportedSubBuffers] struct {
-	attr Attr
+	attr shaders.Attr
 	maxVerts int
 	offset int
 	vertexCount int
@@ -106,7 +107,7 @@ type VertexBuffer struct {
 
 	// materialSet bool
 	// state BufferState
-	format VertexFormat
+	format shaders.VertexFormat
 	stride int
 
 	buffers []ISubBuffer
@@ -131,7 +132,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	for i := range format {
 		b.stride += (format[i].Size() * sof)
 
-		if format[i].Type == AttrVec4 {
+		if format[i].Type == shaders.AttrVec4 {
 			b.buffers[i] = &SubBuffer[glVec4]{
 				attr: format[i].Attr,
 				maxVerts: numVerts,
@@ -140,7 +141,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				buffer: make([]glVec4, numVerts),
 				sliceScale: format[i].Size() * sof,
 			}
-		} else if format[i].Type == AttrVec3 {
+		} else if format[i].Type == shaders.AttrVec3 {
 			b.buffers[i] = &SubBuffer[glVec3]{
 				attr: format[i].Attr,
 				maxVerts: numVerts,
@@ -149,7 +150,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				buffer: make([]glVec3, numVerts),
 				sliceScale: format[i].Size() * sof,
 			}
-		} else if format[i].Type == AttrVec2 {
+		} else if format[i].Type == shaders.AttrVec2 {
 			b.buffers[i] = &SubBuffer[glVec2]{
 				attr: format[i].Attr,
 				maxVerts: numVerts,
@@ -158,7 +159,7 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 				buffer: make([]glVec2, numVerts),
 				sliceScale: format[i].Size() * sof,
 			}
-		} else if format[i].Type == AttrFloat {
+		} else if format[i].Type == shaders.AttrFloat {
 			b.buffers[i] = &SubBuffer[float32]{
 				attr: format[i].Attr,
 				maxVerts: numVerts,

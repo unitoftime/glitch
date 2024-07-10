@@ -37,7 +37,9 @@ type Uniforms struct {
 	set map[string]any
 }
 func (u *Uniforms) Bind(shader *Shader) {
-
+	for k, v := range u.set {
+		shader.SetUniform(k, v)
+	}
 }
 
 func (u *Uniforms) SetUniform(name string, val any) {
@@ -58,6 +60,7 @@ func (u *Uniforms) Copy() *Uniforms {
 type Material struct {
 	shader *Shader
 	texture *Texture
+	// camera *CameraOrtho
 	blend BlendMode
 	uniforms *Uniforms
 }
@@ -93,15 +96,25 @@ func (m *Material) SetTexture(/* slot int, */ texture *Texture) {
 }
 
 func (m Material) Bind() {
-	m.shader.Use()
+	setShader(m.shader)
+	// m.shader.Use()
 
 	if m.texture != nil {
 		texSlot := 0
 		m.texture.Bind(texSlot)
 	}
 
+	// Bind Blendmode
 	// TODO: Blendmode
 
+	// // Bind Camera (ie global material)
+	// // TODO: m.camera.Bind(m.shader)
+	// if m.camera != nil {
+	// 	m.shader.SetUniform("projection", m.camera.Projection.gl())
+	// 	m.shader.SetUniform("view", m.camera.View.gl())
+	// }
+
+	// Bind uniforms (ie local material)
 	m.uniforms.Bind(m.shader)
 }
 
@@ -118,15 +131,43 @@ func (m Material) Bind() {
 // 	}
 // }
 
+type Metrics struct {
+	setShader int
+	setCamera int
+	clearTarget int
+	setTarget int
+	setMaterial int
+	add int
+	flushAttempt int
+	flush int
+	finish int
+	draw int
+}
 
+func GetMetrics() Metrics {
+	metric := global.metric
+	global.metric = Metrics{}
+
+	return metric
+}
+
+//--------------------------------------------------------------------------------
+type CameraMaterial struct {
+	Projection, View glMat4
+}
 //--------------------------------------------------------------------------------
 
 var global = &globalBatcher{
 	shaderCache: make(map[*Shader]struct{}), // TODO: Does this cause shaders to not cleanup?
+	// camera: NewCameraOrtho(), // Identity camera
+	camera: CameraMaterial{
+		glMat4Ident, glMat4Ident,
+	},
 } // TODO: Default case for shader?
 
 type globalBatcher struct {
 	shader *Shader
+	camera CameraMaterial
 	lastBuffer *VertexBuffer
 	target Target
 	texture *Texture
@@ -135,11 +176,15 @@ type globalBatcher struct {
 	material Material
 
 	shaderCache map[*Shader]struct{}
+
+	metric Metrics
 }
 
 func Clear(target Target, color RGBA) {
 	setTarget(target)
 	state.clearTarget(color)
+
+	global.metric.clearTarget++
 }
 
 // func setBlendMode(blend BlendMode) {
@@ -156,25 +201,67 @@ func Clear(target Target, color RGBA) {
 // 	texture.Bind(texSlot)
 // }
 
+func SetCamera(camera *CameraOrtho) {
+	camMaterial := CameraMaterial{
+		Projection: camera.Projection.gl(),
+		View: camera.View.gl(),
+	}
+	if global.camera == camMaterial {
+		return
+	}
+
+	global.flush() // TODO: You technically only need to do this if it will change the uniform
+	global.camera = camMaterial
+	global.shader.SetUniform("projection", global.camera.Projection)
+	global.shader.SetUniform("view", global.camera.View)
+
+	global.metric.setCamera++
+}
+
 func setTarget(target Target) {
+	if global.target == target {
+		return
+	}
+
 	global.flush() // TODO: You technically only need to do this if it will change the uniform
 	global.target = target
 	target.Bind()
+
+	global.metric.setTarget++
 }
 
 func setShader(shader *Shader) {
-	global.flush() // TODO: You technically only need to do this if it will change the uniform
+	if global.shader == shader {
+		return
+	}
+
+	global.flush()
 	global.shader = shader
 	shader.Bind()
 
+	// Ensure the shader has the correct camera uniform values
+	// if global.camera != nil {
+	// 	global.shader.SetUniform("projection", global.camera.Projection.gl())
+	// 	global.shader.SetUniform("view", global.camera.View.gl())
+	// }
+
+	global.shader.SetUniform("projection", global.camera.Projection)
+	global.shader.SetUniform("view", global.camera.View)
+
 	global.shaderCache[shader] = struct{}{}
+	global.metric.setShader++
 }
 
 func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
 	if filler == nil { return } // Skip nil meshes
 
+	global.metric.add++
+
 	// 1. If you switch materials, then draw the last one
 	if material != g.material {
+		// fmt.Printf("setmaterial (old -> new):\n%+v\n%+v\n", g.material, material)
+
+		global.metric.setMaterial++
 		// Note: This is kindof different from a global material. it's more like a local material
 		g.flush()
 		g.material = material
@@ -204,16 +291,20 @@ func (g *globalBatcher) finish() {
 	for shader := range g.shaderCache {
 		shader.pool.Clear()
 	}
-	clear(g.shaderCache)
+	// clear(g.shaderCache) // TODO: the shaderCache leaks right now, but only grows to as many shaders as the user loads which isn't that much. You cant clear here because in single shader scenarios itll never get set back again
+	g.metric.finish++
 }
 
 // Draws the current buffer and progress the shader pool to the next available
 func (g *globalBatcher) flush() {
+	g.metric.flushAttempt++
 	if g.lastBuffer == nil { return }
 
 	g.drawCall(g.lastBuffer, glMat4Ident)
 	g.lastBuffer = nil
 	g.shader.pool.gotoNextClean()
+
+	g.metric.flush++
 }
 
 // Executes a drawcall with ...
@@ -228,6 +319,7 @@ func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
 	}
 
 	buffer.Draw()
+	g.metric.draw++
 }
 
 // //--------------------------------------------------------------------------------

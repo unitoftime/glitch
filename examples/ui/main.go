@@ -27,6 +27,7 @@ func runGame() {
 
 	shader, err := glitch.NewShader(shaders.PixelArtShader)
 	check(err)
+	glitch.SetDefaultSpriteShader(shader)
 
 	buttonImage, err := assets.LoadImage("button.png")
 	check(err)
@@ -62,19 +63,27 @@ func runGame() {
 	panelInnerSprite.Scale = scale
 
 	// Text
-	atlas, err := glitch.BasicFontAtlas()
+	// atlas, err := glitch.BasicFontAtlas()
+	// check(err)
+ 	atlasImg, err := assets.LoadImage("atlas-msdf.png")
 	check(err)
+	atlasJson := glitch.SdfAtlas{}
+	err = assets.LoadJson("atlas-msdf.json", &atlasJson)
+	check(err)
+	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg)
+	check(err)
+	atlas.Material().SetUniform("u_threshold", 0.6) // Overwrite the default
 
-	screenScale := 1.5 // This is just a weird scaling number
+	screenScale := 1.0 // This is just a weird scaling number
 
 	// A screenspace camera
 	camera := glitch.NewCameraOrtho()
 	camera.SetOrtho2D(win.Bounds())
 	camera.SetView2D(0, 0, screenScale, screenScale)
 	group := ui.NewGroup(win, camera, atlas)
-	group.Debug = true
+	group.Debug = false
 
-	textStyle := ui.NewTextStyle().Scale(4)
+	textStyle := ui.NewTextStyle().Scale(4).Autofit(true)
 	buttonStyle := ui.Style{
 		Normal:  ui.NewSpriteStyle(buttonSprite, glitch.White),
 		Hovered: ui.NewSpriteStyle(buttonHoverSprite, glitch.White),
@@ -89,6 +98,7 @@ func runGame() {
 
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, screenScale, screenScale)
+		glitch.SetCamera(camera)
 
 		// mx, my := win.MousePosition()
 		// log.Println("Mouse: ", mx, my)
@@ -143,9 +153,9 @@ func runGame() {
 
 		glitch.Clear(win, glitch.Greyscale(0.5))
 
-		shader.Use()
-		shader.SetUniform("projection", camera.Projection)
-		shader.SetUniform("view", camera.View)
+		// shader.Use()
+		// shader.SetUniform("projection", camera.Projection)
+		// shader.SetUniform("view", camera.View)
 
 		// tpp := float32(1.0/screenScale)
 		// tpp := float32(512.0 / 1920.0) // Texels per screen pixel

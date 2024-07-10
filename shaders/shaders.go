@@ -2,13 +2,88 @@ package shaders
 
 import (
 	_ "embed"
-
-	"github.com/unitoftime/glitch"
+	"fmt"
 )
 
-func VertexAttribute(name string, Type glitch.AttrType, swizzle glitch.SwizzleType) glitch.VertexAttr {
-	return glitch.VertexAttr{
-		Attr: glitch.Attr{
+type ShaderConfig struct {
+	VertexShader, FragmentShader string
+	VertexFormat                 VertexFormat
+	UniformFormat                UniformFormat
+}
+
+// TODO - right now we only support floats (for simplicity)
+type VertexFormat []VertexAttr
+type UniformFormat []Attr
+
+type VertexAttr struct {
+	Attr // The underlying Attribute
+	Swizzle SwizzleType // This defines how the shader wants to map a generic object (like a mesh, to the shader buffers)
+}
+
+type Attr struct {
+	Name string
+	Type AttrType
+}
+
+// Returns the size of the attribute type
+func (a Attr) Size() int {
+	switch a.Type {
+	case AttrInt: return 1
+	case AttrFloat: return 1
+	case AttrVec2: return 2
+	case AttrVec3: return 3
+	case AttrVec4: return 4
+	case AttrMat2: return 2 * 2
+	case AttrMat23: return 2 * 3
+	case AttrMat24: return 2 * 4
+	case AttrMat3: return 3 * 3
+	case AttrMat32: return 3 * 2
+	case AttrMat34: return 3 * 4
+	case AttrMat4: return 4 * 4
+	case AttrMat42: return 4 * 2
+	case AttrMat43: return 4 * 3
+	default: panic(fmt.Sprintf("Invalid Attribute: %v", a))
+	}
+}
+
+// This type is used to define the underlying data type of a vertex attribute or uniform attribute
+type AttrType uint8
+const (
+	// TODO - others
+	AttrInt AttrType = iota
+	AttrFloat
+	AttrVec2
+	AttrVec3
+	AttrVec4
+	AttrMat2
+	AttrMat23
+	AttrMat24
+	AttrMat3
+	AttrMat32
+	AttrMat34
+	AttrMat4
+	AttrMat42
+	AttrMat43
+)
+
+// This type is used to define how generic meshes map into specific shader buffers
+type SwizzleType uint8
+const (
+	PositionXY SwizzleType = iota
+	PositionXYZ
+	NormalXY
+	NormalXYZ
+	ColorR
+	ColorRG
+	ColorRGB
+	ColorRGBA
+	TexCoordXY
+	// TexCoordXYZ // Is this a thing?
+)
+
+func VertexAttribute(name string, Type AttrType, swizzle SwizzleType) VertexAttr {
+	return VertexAttr{
+		Attr: Attr{
 			Name: name,
 			Type: Type,
 		},
@@ -23,17 +98,17 @@ func VertexAttribute(name string, Type glitch.AttrType, swizzle glitch.SwizzleTy
 // //go:embed sprite_100.fs
 // var SpriteFragmentShaderWebGL1 string;
 
-// var SpriteShader = glitch.ShaderConfig{
+// var SpriteShader = ShaderConfig{
 // 	VertexShader: SpriteVertexShaderWebGL1,
 // 	FragmentShader: SpriteFragmentShaderWebGL1,
-// 	VertexFormat: glitch.VertexFormat{
-// 		VertexAttribute("positionIn", glitch.AttrVec2, glitch.PositionXY),
-// 		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-// 		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+// 	VertexFormat: VertexFormat{
+// 		VertexAttribute("positionIn", AttrVec2, PositionXY),
+// 		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+// 		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 // 	},
-// 	UniformFormat: glitch.UniformFormat{
-// 		glitch.Attr{"projection", glitch.AttrMat4},
-// 		glitch.Attr{"view", glitch.AttrMat4},
+// 	UniformFormat: UniformFormat{
+// 		Attr{"projection", AttrMat4},
+// 		Attr{"view", AttrMat4},
 // 	},
 // }
 
@@ -43,93 +118,93 @@ var SpriteVertexShader string;
 //go:embed sprite.fs
 var SpriteFragmentShader string;
 
-var SpriteShader = glitch.ShaderConfig{
+var SpriteShader = ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SpriteFragmentShader,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
 	},
 }
 
 //go:embed msdf.fs
 var MSDFFragmentShader string;
 
-var MSDFShader = glitch.ShaderConfig{
+var MSDFShader = ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: MSDFFragmentShader,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
-		glitch.Attr{"u_threshold", glitch.AttrFloat},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
+		Attr{"u_threshold", AttrFloat},
 	},
 }
 
 //go:embed sdf.fs
 var SDFFragmentShader string;
 
-var SDFShader = glitch.ShaderConfig{
+var SDFShader = ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: SDFFragmentShader,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
 	},
 }
 
 //go:embed minimap.fs
 var MinimapFragmentShader string;
 
-var MinimapShader = glitch.ShaderConfig{
+var MinimapShader = ShaderConfig{
 	VertexShader: SpriteVertexShader,
 	FragmentShader: MinimapFragmentShader,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
 	},
 }
 
 //go:embed subPixel.fs
 var SubPixelAntiAliased string;
 
-var PixelArtShader = glitch.ShaderConfig{
+var PixelArtShader = ShaderConfig{
 	VertexShader: PixelArtVert,
 	FragmentShader: SubPixelAntiAliased,
 	// FragmentShader: SubPixelAntiAliased,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
-		glitch.Attr{"texelsPerPixel", glitch.AttrFloat},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
+		Attr{"texelsPerPixel", AttrFloat},
 	},
 }
 
@@ -138,18 +213,18 @@ var PixelArtVert string;
 //go:embed pixel.fs
 var PixelArtFrag string;
 
-var PixelArtShader2 = glitch.ShaderConfig{
+var PixelArtShader2 = ShaderConfig{
 	VertexShader: PixelArtVert,
 	FragmentShader: PixelArtFrag,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
 	},
 }
 
@@ -159,30 +234,30 @@ var DiffuseVertexShader string;
 //go:embed flat.fs
 var DiffuseFragmentShader string;
 
-var DiffuseShader = glitch.ShaderConfig{
+var DiffuseShader = ShaderConfig{
 	VertexShader: DiffuseVertexShader,
 	FragmentShader: DiffuseFragmentShader,
-	VertexFormat: glitch.VertexFormat{
-		VertexAttribute("positionIn", glitch.AttrVec3, glitch.PositionXYZ),
-		VertexAttribute("normalIn", glitch.AttrVec3, glitch.NormalXYZ),
-		// VertexAttribute("colorIn", glitch.AttrVec4, glitch.ColorRGBA),
-		VertexAttribute("texCoordIn", glitch.AttrVec2, glitch.TexCoordXY),
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("normalIn", AttrVec3, NormalXYZ),
+		// VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
 	},
-	UniformFormat: glitch.UniformFormat{
-		glitch.Attr{"model", glitch.AttrMat4},
-		glitch.Attr{"view", glitch.AttrMat4},
-		glitch.Attr{"projection", glitch.AttrMat4},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"view", AttrMat4},
+		Attr{"projection", AttrMat4},
 
-		glitch.Attr{"viewPos", glitch.AttrVec3},
+		Attr{"viewPos", AttrVec3},
 
-		glitch.Attr{"material.ambient", glitch.AttrVec3},
-		glitch.Attr{"material.diffuse", glitch.AttrVec3},
-		glitch.Attr{"material.specular", glitch.AttrVec3},
-		glitch.Attr{"material.shininess", glitch.AttrFloat},
+		Attr{"material.ambient", AttrVec3},
+		Attr{"material.diffuse", AttrVec3},
+		Attr{"material.specular", AttrVec3},
+		Attr{"material.shininess", AttrFloat},
 
-		glitch.Attr{"dirLight.direction", glitch.AttrVec3},
-		glitch.Attr{"dirLight.ambient", glitch.AttrVec3},
-		glitch.Attr{"dirLight.diffuse", glitch.AttrVec3},
-		glitch.Attr{"dirLight.specular", glitch.AttrVec3},
+		Attr{"dirLight.direction", AttrVec3},
+		Attr{"dirLight.ambient", AttrVec3},
+		Attr{"dirLight.diffuse", AttrVec3},
+		Attr{"dirLight.specular", AttrVec3},
 	},
 }

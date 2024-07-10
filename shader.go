@@ -5,21 +5,16 @@ import (
 
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
+	"github.com/unitoftime/glitch/shaders"
 )
 
 // Notes: Uniforms are specific to a program: https://stackoverflow.com/questions/10857602/do-uniform-values-remain-in-glsl-shader-if-unbound
-
-type ShaderConfig struct {
-	VertexShader, FragmentShader string
-	VertexFormat                 VertexFormat
-	UniformFormat                UniformFormat
-}
 
 type Shader struct {
 	program         gl.Program
 	uniformLocs     map[string]Uniform
 	uniforms        map[string]any
-	attrFmt         VertexFormat
+	attrFmt         shaders.VertexFormat
 	tmpBuffers      []any
 	tmpFloat32Slice []float32
 	mainthreadBind  func()
@@ -37,11 +32,11 @@ type Uniform struct {
 	loc gl.Uniform
 }
 
-func NewShader(cfg ShaderConfig) (*Shader, error) {
+func NewShader(cfg shaders.ShaderConfig) (*Shader, error) {
 	return NewShaderExt(cfg.VertexShader, cfg.FragmentShader, cfg.VertexFormat, cfg.UniformFormat)
 }
 
-func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uniformFmt UniformFormat) (*Shader, error) {
+func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFormat, uniformFmt shaders.UniformFormat) (*Shader, error) {
 	shader := &Shader{
 		uniformLocs:     make(map[string]Uniform),
 		uniforms:        make(map[string]any),
@@ -79,7 +74,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 	shader.Bind()
 	for _, uniform := range uniformFmt {
 		// TODO handle other matrices
-		if uniform.Type == AttrMat4 {
+		if uniform.Type == shaders.AttrMat4 {
 			// Setting uniform
 			shader.SetUniform(uniform.Name, Mat4Ident)
 		}
@@ -87,7 +82,8 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt VertexFormat, uni
 
 	shader.tmpBuffers = make([]any, len(shader.attrFmt))
 	for i, attr := range shader.attrFmt {
-		shader.tmpBuffers[i] = attr.GetBuffer()
+		// shader.tmpBuffers[i] = attr.GetBuffer()
+		shader.tmpBuffers[i] = getBuffer(attr.Attr)
 	}
 
 	defaultBatchSize := 1024 * 8 // 10000 // TODO: arbitrary. make configurable
@@ -251,9 +247,9 @@ func openglEquals(a, b any) bool {
 	// panic(fmt.Sprintf("unknown uniform type: (%T) or (%T)", a, b))
 }
 
-func (s *Shader) Use() {
-	setShader(s)
-}
+// func (s *Shader) Use() {
+// 	setShader(s)
+// }
 
 // Binds the shader and sets the uniform
 func (s *Shader) SetUniform(name string, value any) bool {
@@ -329,6 +325,21 @@ func (u *uniformSetter) Func() {
 	}
 }
 
+
+func getBuffer(a shaders.Attr) any {
+	switch a.Type {
+	case shaders.AttrFloat:
+		return &[]float32{}
+	case shaders.AttrVec2:
+		return &[]glVec2{}
+	case shaders.AttrVec3:
+		return &[]glVec3{}
+	case shaders.AttrVec4:
+		return &[]glVec4{}
+	default:
+		panic(fmt.Sprintf("Attr not valid for GetBuffer: %v", a))
+	}
+}
 
 //--------------------------------------------------------------------------------
 

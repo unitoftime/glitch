@@ -19,6 +19,8 @@ type Sorter struct {
 	// shader *Shader
 	// material Material
 
+	// camera *CameraOrtho
+
 	commands []cmdList
 }
 
@@ -44,6 +46,10 @@ func (s *Sorter) Clear() {
 
 // func (s *Sorter) SetMaterial(material Material) {
 // 	s.material = material
+// }
+
+// func (s *Sorter) SetCamera(camera *CameraOrtho) {
+// 	s.camera = camera
 // }
 
 func (s *Sorter) Draw(target BatchTarget) {
@@ -81,8 +87,6 @@ func (s *Sorter) Draw(target BatchTarget) {
 }
 
 func (s *Sorter) applyDrawCommand(target BatchTarget, c drawCommand) {
-	setShader(c.material.shader)
-
 	target.Add(c.filler, c.matrix, c.mask, c.material, false)
 }
 
@@ -114,6 +118,9 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 
 	// state := BufferState{materialGroup{s.material, material}, s.blendMode}
 
+	// if s.camera != nil {
+	// 	material.camera = s.camera
+	// }
 	s.commands[s.currentLayer].Add(translucent, drawCommand{
 		filler, mat, mask, material,
 	})
