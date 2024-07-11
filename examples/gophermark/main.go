@@ -74,7 +74,7 @@ func runGame() {
 	texture := glitch.NewTexture(manImage, false)
 	manSprite := glitch.NewSprite(texture, texture.Bounds())
 
-	length := 2000
+	length := 200_000
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -104,6 +104,9 @@ func runGame() {
 	// geom := glitch.NewGeomDraw()
 	// geomRect := glitch.R(-16, -16, 16, 16)
 	// geomMesh := glitch.NewQuadMesh(geomRect, geomRect)
+
+	sorter := glitch.NewSorter()
+	sorter.DepthTest = true
 
 	mat := glitch.Mat4Ident
 	for !win.Closed() {
@@ -136,7 +139,7 @@ func runGame() {
 		for i := range man {
 			mat = glitch.Mat4Ident
 			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position.X, man[i].position.Y, 0)
-			manSprite.DrawColorMask(win, mat, man[i].color)
+			manSprite.DrawColorMask(sorter, mat, man[i].color)
 			// geom.DrawRect(pass, geomRect, mat, man[i].color)
 			// geomMesh.DrawColorMask(pass, mat, man[i].color)
 			// geom.DrawRect2(geomRect, mat, man[i].color)
@@ -152,9 +155,11 @@ func runGame() {
 			min = 100000000000
 			max = 0
 
-			metrics := glitch.GetMetrics()
-			fmt.Printf("%+v\n", metrics)
+			// metrics := glitch.GetMetrics()
+			// fmt.Printf("%+v\n", metrics)
 		}
+
+		sorter.Draw(win)
 		text.DrawColorMask(win, glitch.Mat4Ident, glitch.White)
 
 		win.Update()

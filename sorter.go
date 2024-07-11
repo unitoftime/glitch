@@ -173,13 +173,13 @@ type cmdList struct{
 
 }
 
-func (c *cmdList) Add(translucent bool, cmd drawCommand) *drawCommand {
+func (c *cmdList) Add(translucent bool, cmd drawCommand) {
 	if translucent {
 		c.Translucent = append(c.Translucent, cmd)
-		return &c.Translucent[len(c.Translucent)-1]
+		// return &c.Translucent[len(c.Translucent)-1]
 	} else {
 		c.Opaque = append(c.Opaque, cmd)
-		return &c.Opaque[len(c.Opaque)-1]
+		// return &c.Opaque[len(c.Opaque)-1]
 	}
 }
 

@@ -372,6 +372,8 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
 		// Positions
+
+		// TODO: This is a pretty untested swizzle
 		case shaders.PositionXY:
 			posBuf := *(destBuffs[bufIdx]).(*[]glVec2)
 			if mat32 == glMat4Ident {
@@ -381,8 +383,10 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 				}
 			} else {
 				for i := range mesh.positions {
-					vec := mat32.Apply(mesh.positions[i])
-					posBuf[i] = *(*glVec2)(vec[:2])
+					// vec := mat32.Apply(mesh.positions[i])
+					// posBuf[i] = *(*glVec2)(vec[:2])
+					vec := mat32.ApplyVec2(glVec2{mesh.positions[i][0], mesh.positions[i][1]})
+					posBuf[i] = vec
 				}
 			}
 
@@ -391,7 +395,6 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
 				copy(posBuf, mesh.positions)
-
 			} else {
 				for i := range mesh.positions {
 					vec := mat32.Apply(mesh.positions[i])
