@@ -26,10 +26,11 @@ uniform sampler2D texture1;
 uniform float u_threshold;
 /* uniform float u_out_bias; */
 /* uniform float u_outline_width_absolute; */
-/* uniform float u_outline_width_relative; */
-/* uniform float u_outline_blur; */
+uniform float u_outline_width_relative;
+uniform float u_outline_blur;
 /* uniform float u_gradient; */
 /* uniform float u_gamma; */
+uniform vec4 u_outline_color;
 
 /* sample code from https://github.com/Chlumsky/msdfgen */
 float median(float r, float g, float b) {
@@ -50,13 +51,15 @@ void main() {
   /* float u_threshold = 0.5; */
   float u_out_bias = 0.25;
   float u_outline_width_absolute = 0.3;
-  float u_outline_width_relative = 0.05;
-  float u_outline_blur = 0.0;
+  /* float u_outline_width_relative = 0.05; */
+  /* float u_outline_blur = 0.0; */
   float u_gradient = 0.0;
   float u_gamma = 1.0;
 
-  vec4 inner_color = vec4(1, 1, 1, 1);
-  vec4 outer_color = vec4(0, 0, 0, 1);
+  /* vec4 inner_color = vec4(1, 1, 1, 1); */
+  /* vec4 outer_color = vec4(0, 0, 0, 1); */
+  vec4 inner_color = ourColor;
+  vec4 outer_color = u_outline_color;
 
   // distances are stored with 1.0 meaning "inside" and 0.0 meaning "outside"
   vec4 distances = texture2D(texture1, TexCoord);
@@ -105,6 +108,11 @@ void main() {
   inner_opacity = pow(inner_opacity, 1.0 / u_gamma);
 
   vec4 color = (inner_color * inner_opacity) + (outer_color * (outer_opacity - inner_opacity));
+
+  if (color.a == 0.0) {
+    discard;
+  }
+
   FragColor = color;
 }
 

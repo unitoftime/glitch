@@ -586,7 +586,6 @@ func (r Rect) Snap() Rect {
 	return r
 }
 
-
 // Adds padding to a rectangle consistently
 func (r Rect) PadAll(padding float64) Rect {
 	return r.Pad(R(padding, padding, padding, padding))
@@ -625,6 +624,13 @@ func (r Rect) FullAnchor(r2 Rect, anchor, pivot Vec2) Rect {
 	a := Vec2{anchorPoint.X - pivotPoint.X, anchorPoint.Y - pivotPoint.Y}
 	return R(a.X, a.Y, a.X + r2.W(), a.Y + r2.H()).Norm()
 }
+
+// Move the min point of the rect to a certain position
+func (r Rect) MoveMin(pos Vec2) Rect {
+	dv := r.Min.Sub(pos)
+	return r.Moved(dv)
+}
+
 
 func lerp(a, b float64, t float64) float64 {
 	m := b - a // Slope = Rise over run | Note: Run = (1 - 0)

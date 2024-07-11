@@ -84,7 +84,7 @@ func runGame() {
 	group := ui.NewGroup(win, camera, atlas, sorter)
 	group.Debug = true
 
-	textStyle := ui.NewTextStyle().Scale(4).Autofit(true)
+	textStyle := ui.NewTextStyle().Scale(4)// .Autofit(true)
 	buttonStyle := ui.Style{
 		Normal:  ui.NewSpriteStyle(buttonSprite, glitch.White),
 		Hovered: ui.NewSpriteStyle(buttonHoverSprite, glitch.White),

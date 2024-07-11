@@ -71,12 +71,13 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFor
 	}
 
 	// Loop through and set all matrices to identity matrices
-	shader.Bind()
+	// shader.Bind()
+	setShader(shader)
 	for _, uniform := range uniformFmt {
 		// TODO handle other matrices
 		if uniform.Type == shaders.AttrMat4 {
 			// Setting uniform
-			shader.SetUniform(uniform.Name, Mat4Ident)
+			shader.setUniform(uniform.Name, Mat4Ident)
 		}
 	}
 
@@ -253,6 +254,11 @@ func openglEquals(a, b any) bool {
 
 // Binds the shader and sets the uniform
 func (s *Shader) SetUniform(name string, value any) bool {
+	setShader(s)
+	return s.setUniform(name, value)
+}
+
+func (s *Shader) setUniform(name string, value any) bool {
 	currentValue, ok := s.uniforms[name]
 	if ok && openglEquals(currentValue, value) {
 		// TODO: I dont even remember what the return value means here
@@ -264,7 +270,6 @@ func (s *Shader) SetUniform(name string, value any) bool {
 	tmpUniformSetter.name = name
 	tmpUniformSetter.value = value
 
-	setShader(s)
 	// global.flush()
 	// s.Bind()
 	mainthread.Call(tmpUniformSetter.FUNC)
@@ -310,6 +315,9 @@ func (u *uniformSetter) Func() {
 		vec := val.gl()
 		gl.Uniform3fv(uniform.loc, vec[:])
 	case Vec4:
+		vec := val.gl()
+		gl.Uniform4fv(uniform.loc, vec[:])
+	case RGBA: // Same as vec4
 		vec := val.gl()
 		gl.Uniform4fv(uniform.loc, vec[:])
 	case Mat4:

@@ -34,7 +34,7 @@ func DefaultAtlas() (*Atlas, error) {
 		return nil, err
 	}
 	fontFace := truetype.NewFace(font, &truetype.Options{
-		Size: 64,
+		Size: 32,
 		// GlyphCacheEntries: 1,
 	})
 	cfg := AtlasConfig{
@@ -80,11 +80,11 @@ type Glyph struct {
 
 // TODO - instead of creating a single atlas ahead of time. I should just load the font and then dynamically create the atlas as needed. This should probably change once you add automatic texture batching.
 type Atlas struct {
-	face font.Face
+	// face font.Face
 	mapping map[rune]Glyph
-	ascent fixed.Int26_6 // Distance from top of line to baseline
-	descent fixed.Int26_6 // Distance from bottom of line to baseline
-	height fixed.Int26_6 // The recommended gap between two lines
+	ascent float64 // Distance from top of line to baseline
+	descent float64 // Distance from bottom of line to baseline
+	height float64 // The recommended gap between two lines
 	texture *Texture
 	border int // Specifies a border on the font.
 	pixelPerfect bool // if true anti-aliasing will be disabled
@@ -120,11 +120,11 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	metrics := face.Metrics()
 	// fmt.Println("Metrics: ", fixedToFloat(metrics.Height), fixedToFloat(metrics.Ascent), fixedToFloat(metrics.Descent))
 	atlas := &Atlas{
-		face: face,
+		// face: face,
 		mapping: make(map[rune]Glyph),
-		ascent: metrics.Ascent,
-		descent: metrics.Descent,
-		height: metrics.Height,
+		ascent: fixedToFloat(metrics.Ascent),
+		descent: fixedToFloat(metrics.Descent),
+		height: fixedToFloat(metrics.Height),
 		border: int(config.Border),
 		pixelPerfect: !config.Smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
 		defaultKerning: config.Kerning,
@@ -145,22 +145,13 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
 	padding := fixed.I(basePadding + (2 * atlas.border)) // Padding for runes drawn to atlas
-	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
+	startDot := fixed.P(padding.Floor(), (metrics.Ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
 		// https://developer.apple.com/library/archive/documentation/TextFonts/Conceptual/CocoaTextArchitecture/Art/glyphterms_2x.png
 		bounds, mask, maskp, adv, ok := face.Glyph(dot, r)
 		if !ok { panic("Missing rune!") }
 		bearingRect, _, _ := face.GlyphBounds(r)
-
-		// if r == 'R' {
-		// 	fmt.Printf("%T\n", mask)
-		// 	// fmt.Println(mask)
-		// 	outputFile, err := os.Create("testR.png")
-		// 	if err != nil { panic(err) }
-		// 	png.Encode(outputFile, mask)
-		// 	outputFile.Close()
-		// }
 
 		// Instead of flooring we convert from fixed int to float manually (mult by 10^6 then floor, cast and divide by 10^6). I think this is slightly more accurate but it's hard to tell so I'll leave old code below
 		//		log.Println("Rune: ", string(r), " - BearingRect: ", bearingRect)
@@ -226,7 +217,8 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 			Bearing: Vec2{bearingX, bearingY},
 			BoundsUV: R(
 				float64(bounds.Min.X - atlas.border)/fSize, float64(bounds.Min.Y - atlas.border)/fSize,
-				float64(bounds.Max.X + atlas.border)/fSize, float64(bounds.Max.Y + atlas.border)/fSize),
+				float64(bounds.Max.X + atlas.border)/fSize, float64(bounds.Max.Y + atlas.border)/fSize,
+			).Norm(),
 		}
 
 		// Usual next dot location
@@ -242,7 +234,7 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 		if nextDotX + nextAdv >= fixedSize {
 			// log.Println("Ascending!")
 			nextDotX = startDot.X
-			nextDotY = dot.Y + atlas.ascent + padding
+			nextDotY = dot.Y + metrics.Ascent + padding
 		}
 		// log.Println(nextDotX, nextDotY)
 		dot = fixed.Point26_6{nextDotX, nextDotY}
@@ -336,14 +328,12 @@ func (a *Atlas) Material() *Material {
 // }
 
 func (a *Atlas) LineHeight() float64 {
-	return fixedToFloat(a.height)
+	return a.height
 }
 
 func (a *Atlas) UngappedLineHeight() float64 {
 	// TODO - scale?
-	// // return (-fixedToFloat(a.ascent) + fixedToFloat(a.descent)) + float64(2 * a.border)
-	return (fixedToFloat(a.ascent) + fixedToFloat(a.descent)) // + float64(2 * a.border)
-	// return fixedToFloat(a.height) + float64(2 * a.border)
+	return (a.ascent + a.descent)
 }
 
 func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
@@ -377,7 +367,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	x2 := x1 + (scaleX * (u2 - u1))
 
 	// Note: Commented out the downard shift here, and I'm doing it in the above func
-	y1 := dot.Y + (scaleY * glyph.Bearing.Y) + fixedToFloat(a.descent)
+	y1 := dot.Y + (scaleY * glyph.Bearing.Y) + a.descent
 	y2 := y1 + (scaleY * (v2 - v1))
 
 	destRect := R(x1, y1, x2, y2)
@@ -566,9 +556,13 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// Note: The RuneVerts function corners the glyph into the bounds by applying the descent. So I dont need to track ascent/descent here
 	// top := initialDot.Y + (fixedToFloat(t.atlas.ascent) * t.scale)
 	// bot := top - (numLines * lineHeight)
+
+
 	top := initialDot.Y + lineHeight
+	// top := initialDot.Y + t.atlas.descent
+
 	bot := top - (numLines * lineHeight)
-	return R(meshBounds.Min.X, top, meshBounds.Max.X, bot).Norm()
+	return R(meshBounds.Min.X, top, meshBounds.Max.X, bot).Norm()// .MoveMin(Vec2{})
 
 	// // return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
 
@@ -617,3 +611,217 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// // 	dot[0], // TODO - this is wrong if because this is the length of the last line, we need the length of the longest line
 	// // 	dot[1] + fixedToFloat(a.ascent)/1024)
 }
+
+// //--------------------------------------------------------------------------------
+// //--------------------------------------------------------------------------------
+// //--------------------------------------------------------------------------------
+// //--------------------------------------------------------------------------------
+// func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
+// 	metrics := face.Metrics()
+// 	// fmt.Println("Metrics: ", fixedToFloat(metrics.Height), fixedToFloat(metrics.Ascent), fixedToFloat(metrics.Descent))
+// 	atlas := &Atlas{
+// 		// face: face,
+// 		mapping: make(map[rune]Glyph),
+// 		ascent: fixedToFloat(metrics.Ascent),
+// 		descent: fixedToFloat(metrics.Descent),
+// 		height: fixedToFloat(metrics.Height),
+// 		border: int(config.Border),
+// 		pixelPerfect: !config.Smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
+// 		defaultKerning: config.Kerning,
+// 	}
+
+// 	border := int(config.Border)
+// 	basePadding := config.Padding
+// 	size := config.TextureSize
+// 	fixedSize := fixed.I(size)
+// 	fSize := float64(size)
+
+// 	blackImg := image.NewRGBA(image.Rect(0, 0, size, size))
+// 	draw.Draw(blackImg, blackImg.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
+
+// 	img := image.NewRGBA(image.Rect(0, 0, size, size))
+// 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Alpha{0}), image.ZP, draw.Src)
+// 	// Note: In case you want to see the boundary of each rune, uncomment this
+// 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
+
+// 	padding := fixed.I(basePadding + (2 * atlas.border)) // Padding for runes drawn to atlas
+// 	startDot := fixed.P(padding.Floor(), (atlas.ascent + padding).Floor()) // Starting point of the dot
+// 	dot := startDot
+// 	for i, r := range runes {
+// 		// https://developer.apple.com/library/archive/documentation/TextFonts/Conceptual/CocoaTextArchitecture/Art/glyphterms_2x.png
+// 		bounds, mask, maskp, adv, ok := face.Glyph(dot, r)
+// 		if !ok { panic("Missing rune!") }
+// 		bearingRect, _, _ := face.GlyphBounds(r)
+
+// 		// if r == 'R' {
+// 		// 	fmt.Printf("%T\n", mask)
+// 		// 	// fmt.Println(mask)
+// 		// 	outputFile, err := os.Create("testR.png")
+// 		// 	if err != nil { panic(err) }
+// 		// 	png.Encode(outputFile, mask)
+// 		// 	outputFile.Close()
+// 		// }
+
+// 		// Instead of flooring we convert from fixed int to float manually (mult by 10^6 then floor, cast and divide by 10^6). I think this is slightly more accurate but it's hard to tell so I'll leave old code below
+// 		//		log.Println("Rune: ", string(r), " - BearingRect: ", bearingRect)
+// 		bearingX := float64((bearingRect.Min.X * 1000000).Floor()) / (1000000 * fSize)
+// 		bearingY := float64((-bearingRect.Max.Y * 1000000).Floor()) / (1000000 * fSize)
+
+// 		//		advance := float32((adv * 1000000).Floor())/(1000000 * fSize) // TODO - why doesn't this work?
+// 		// log.Println("Rune: ", string(r), " - BearingX: ", float32(bearingRect.Min.X.Floor())/fSize)
+// 		// log.Println("Rune: ", string(r), " - BearingX: ", bearingX)
+// 		// log.Println("Rune: ", string(r), " - BearingY: ", float32(-bearingRect.Max.Y.Floor())/fSize)
+// 		// log.Println("Rune: ", string(r), " - BearingY: ", bearingY)
+
+// 		// Before: Single draw which wouldn't have a border
+// 		// draw.Draw(img, bounds, mask, maskp, draw.Src)
+
+// 		// After: 9 offset draws in every direction, then a normal draw
+// 		// Draw nine slots around
+// 		// // x = dist * cos(pi/2)
+// 		// diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
+// 		// draw.DrawMask(img, bounds.Add(image.Point{border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		// draw.DrawMask(img, bounds.Add(image.Point{diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		// draw.DrawMask(img, bounds.Add(image.Point{diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+// 		// draw.DrawMask(img, bounds.Add(image.Point{-border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		// draw.DrawMask(img, bounds.Add(image.Point{-diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		// draw.DrawMask(img, bounds.Add(image.Point{-diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+// 		// draw.DrawMask(img, bounds.Add(image.Point{0, border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		// draw.DrawMask(img, bounds.Add(image.Point{0, -border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+// 		// // Draw shadow
+// 		// shadow := 1
+// 		// draw.DrawMask(img, bounds.Add(image.Point{border + shadow, border + shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		// // draw.DrawMask(img, bounds.Add(image.Point{0, -border-shadow}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+// 		if border > 0 && config.Smooth {
+// 			// Draw nine slots around
+// 			// x = dist * cos(pi/2)
+// 			diagDist := int(float64(border) * 1.0 / math.Sqrt(2))
+// 			// diagDist := int(float64(border)/2)
+// 			draw.DrawMask(img, bounds.Add(image.Point{border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 			draw.DrawMask(img, bounds.Add(image.Point{diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 			draw.DrawMask(img, bounds.Add(image.Point{diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+// 			draw.DrawMask(img, bounds.Add(image.Point{-border, 0}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 			draw.DrawMask(img, bounds.Add(image.Point{-diagDist, diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 			draw.DrawMask(img, bounds.Add(image.Point{-diagDist, -diagDist}), blackImg, image.Point{}, mask, maskp, draw.Over)
+
+// 			draw.DrawMask(img, bounds.Add(image.Point{0, border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 			draw.DrawMask(img, bounds.Add(image.Point{0, -border}), blackImg, image.Point{}, mask, maskp, draw.Over)
+// 		}
+
+// 		draw.Draw(img, bounds, mask, maskp, draw.Over)
+// 		// draw.DrawMask(img, bounds, blackImg, image.Point{}, mask, maskp, draw.Src)
+
+
+
+// 		atlas.mapping[r] = Glyph{
+// 			// Advance: float64(adv.Floor() + (2*border))/fSize,
+// 			Advance: float64(adv.Floor())/fSize,
+// 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
+// 			//Advance: advance,
+// 			Bearing: Vec2{bearingX, bearingY},
+// 			BoundsUV: R(
+// 				float64(bounds.Min.X - atlas.border)/fSize, float64(bounds.Min.Y - atlas.border)/fSize,
+// 				float64(bounds.Max.X + atlas.border)/fSize, float64(bounds.Max.Y + atlas.border)/fSize),
+// 		}
+
+// 		// Usual next dot location
+// 		nextDotX := dot.X + adv + padding
+// 		nextDotY := dot.Y
+
+// 		// Exit if we are at the end
+// 		if (i+1) >= len(runes) { break }
+
+// 		// If the rune after this one pushes us too far then loop around
+// 		nextAdv, ok := face.GlyphAdvance(runes[i+1])
+// 		if !ok { panic("Missing rune!") }
+// 		if nextDotX + nextAdv >= fixedSize {
+// 			// log.Println("Ascending!")
+// 			nextDotX = startDot.X
+// 			nextDotY = dot.Y + atlas.ascent + padding
+// 		}
+// 		// log.Println(nextDotX, nextDotY)
+// 		dot = fixed.Point26_6{nextDotX, nextDotY}
+// 	}
+
+// 	// This just disables anti-aliasing by snapping pixels to either white or transparent
+// 	// if atlas.pixelPerfect {
+// 	// 	imgBounds := img.Bounds()
+// 	// 	for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+// 	// 		for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+// 	// 			rgba := img.RGBAAt(x, y)
+// 	// 			if rgba.A > 0 {
+// 	// 				rgba.A = 255
+// 	// 				img.Set(x, y, color.White)
+// 	// 			}
+// 	// 		}
+// 	// 	}
+// 	// }
+
+// 	// This runs a box filter based on the border side
+// 	if atlas.border != 0 && !config.Smooth {
+// 		// Only border this way for pixel fonts
+// 		// Finds white pixels and draws borders around the edges
+// 		imgBounds := img.Bounds()
+// 		for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+// 			for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+// 				rgba := img.RGBAAt(x, y)
+// 				if (rgba != color.RGBA{255, 255, 255, 255}) {
+// 					continue // If the pixel is not white, then it doesnt trigger a border
+// 				}
+
+// 				box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+// 				for xx := box.Min.X; xx <= box.Max.X; xx++ {
+// 					for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+// 						rgba := img.RGBAAt(xx, yy)
+// 						if rgba.A == 0 {
+// 							// Only add a border to transparent pixels
+// 							img.Set(xx, yy, color.Black)
+// 						}
+// 					}
+// 				}
+// 			}
+// 		}
+
+// 		// Finds transparent pixels and draws borders inward on non-transparent pixels
+// 		// imgBounds := img.Bounds()
+// 		// for x := imgBounds.Min.X; x < imgBounds.Max.X; x++ {
+// 		// 	for y := imgBounds.Min.Y; y < imgBounds.Max.Y; y++ {
+// 		// 		rgba := img.RGBAAt(x, y)
+// 		// 		if rgba.A != 0 {
+// 		// 			continue // Skip if pixel is not fully transparent
+// 		// 		}
+
+// 		// 		box := image.Rect(x-atlas.border, y-atlas.border, x+atlas.border, y+atlas.border)
+// 		// 		for xx := box.Min.X; xx <= box.Max.X; xx++ {
+// 		// 			for yy := box.Min.Y; yy <= box.Max.Y; yy++ {
+// 		// 				rgba := img.RGBAAt(xx, yy)
+// 		// 				if rgba.A != 0 {
+// 		// 					// Only add a border to transparent pixels
+// 		// 					rgba.R = 0
+// 		// 					rgba.G = 0
+// 		// 					rgba.B = 0
+// 		// 					img.Set(xx, yy, rgba)
+// 		// 				}
+// 		// 			}
+// 		// 		}
+// 		// 	}
+// 		// }
+// 	}
+
+// 	// // outputFile is a File type which satisfies Writer interface
+// 	// outputFile, err := os.Create("test.png")
+// 	// if err != nil { panic(err) }
+// 	// png.Encode(outputFile, img)
+// 	// outputFile.Close()
+
+// 	atlas.texture = NewTexture(img, config.Smooth)
+// 	atlas.defaultMaterial = DefaultMaterial(atlas.texture)
+
+// 	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
+// 	return atlas
+// }

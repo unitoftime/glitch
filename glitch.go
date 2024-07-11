@@ -39,7 +39,7 @@ type Uniforms struct {
 func (u *Uniforms) Bind(shader *Shader) {
 	if u == nil { return }
 	for k, v := range u.set {
-		shader.SetUniform(k, v)
+		shader.setUniform(k, v)
 	}
 }
 
@@ -247,8 +247,8 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 
 	global.flush() // TODO: You technically only need to do this if it will change the uniform
 	global.camera = camMaterial
-	global.shader.SetUniform("projection", global.camera.Projection)
-	global.shader.SetUniform("view", global.camera.View)
+	global.shader.setUniform("projection", global.camera.Projection)
+	global.shader.setUniform("view", global.camera.View)
 
 	global.metric.setCamera++
 }
@@ -282,14 +282,8 @@ func setShader(shader *Shader) {
 	global.shader = shader
 	shader.Bind()
 
-	// Ensure the shader has the correct camera uniform values
-	// if global.camera != nil {
-	// 	global.shader.SetUniform("projection", global.camera.Projection.gl())
-	// 	global.shader.SetUniform("view", global.camera.View.gl())
-	// }
-
-	global.shader.SetUniform("projection", global.camera.Projection)
-	global.shader.SetUniform("view", global.camera.View)
+	global.shader.setUniform("projection", global.camera.Projection)
+	global.shader.setUniform("view", global.camera.View)
 
 	global.shaderCache[shader] = struct{}{}
 	global.metric.setShader++
@@ -356,7 +350,7 @@ func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
 	// buffer.state.Bind(g.shader)
 
 	// TOOD: Maybe pass this into VertexBuffer.Draw() func
-	ok := g.shader.SetUniform("model", mat)
+	ok := g.shader.setUniform("model", mat)
 	if !ok {
 		panic("Error setting model uniform - all shaders must have 'model' uniform")
 	}

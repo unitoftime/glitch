@@ -149,6 +149,9 @@ var MSDFShader = ShaderConfig{
 		Attr{"projection", AttrMat4},
 		Attr{"view", AttrMat4},
 		Attr{"u_threshold", AttrFloat},
+		Attr{"u_outline_width_relative", AttrFloat},
+		Attr{"u_outline_blur", AttrFloat},
+		Attr{"u_outline_color", AttrVec4},
 	},
 }
 

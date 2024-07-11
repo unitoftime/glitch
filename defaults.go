@@ -71,13 +71,21 @@ func GetDefaultMsdfShader() *Shader {
 	}
 
 	// Note: We snuff the error here. If the user wants they can pre-supply a defaultmsdfshader so this one never loads
-	defaultMsdfShader, _ = NewShader(shaders.MSDFShader)
+	var err error
+	defaultMsdfShader, err = NewShader(shaders.MSDFShader)
+	if err != nil {
+		panic(err)
+	}
 	return defaultMsdfShader
 }
 
 func DefaultMsdfMaterial(texture *Texture) Material {
 	material := NewMaterial(GetDefaultMsdfShader())
 	material.texture = texture
-	material.SetUniform("u_threshold", 0.5)
+	material.
+		SetUniform("u_threshold", 0.5).
+		SetUniform("u_outline_width_relative", 0.1).
+		SetUniform("u_outline_blur", 0.0).
+		SetUniform("u_outline_color", RGBA{0, 0, 0, 1})
 	return material
 }

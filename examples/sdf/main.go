@@ -68,8 +68,9 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
-
 	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg)
+
+	atlas2, err := glitch.DefaultAtlas()
 
 	// Text
 	// atlas, err := glitch.BasicFontAtlas()
@@ -79,7 +80,8 @@ func runGame() {
 
 	// text := atlas.Text("Hello World", 1.0)
 	text := atlas.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
-	//"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	text2 := atlas2.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
+
 
 	screenScale := 1.0 // This is just a weird scaling number
 
@@ -88,10 +90,35 @@ func runGame() {
 	camera.SetOrtho2D(win.Bounds())
 	camera.SetView2D(0, 0, screenScale, screenScale)
 
+	geom := glitch.NewGeomDraw()
+	mesh := glitch.NewMesh()
+
+	drawText1 := true
+	drawText2 := false
+
+	scale := 1.0
 	for !win.Closed() {
 		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
 		}
+
+		if win.JustPressed(glitch.KeyS) {
+			drawText1 = !drawText1
+		}
+		if win.JustPressed(glitch.KeyD) {
+			drawText2 = !drawText2
+		}
+		if win.JustPressed(glitch.Key1) {
+			scale = 1.0
+		}
+		if win.JustPressed(glitch.Key2) {
+			scale = 2.0
+		}
+		if win.JustPressed(glitch.Key3) {
+			scale = 3.0
+		}
+
+		mesh.Clear()
 
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, screenScale, screenScale)
@@ -102,28 +129,45 @@ func runGame() {
 
 		glitch.Clear(win, glitch.Greyscale(0.5))
 
-
 		// mat := glitch.Mat4Ident
 		// mat.Translate(win.Bounds().Center()[0], win.Bounds().Center()[1], 0)
 		// text.Draw(pass, mat)
 
 		lh := atlas.LineHeight()
 		y := 0.0
-		scale := 0.1
-		for i := 0; i < 25; i++ {
+		for i := 0; i < 5; i++ {
 			mat := glitch.Mat4Ident
 			mat.
 				Scale(scale, scale, 1).
-				Translate(0, y, 0)
-			text.Draw(win, mat)
+				Translate(10, y + 10, 0)
+
+			if drawText1 {
+				text.Draw(win, mat)
+				{
+					geom.SetColor(glitch.RGBA{0, 0, 1, 1})
+					r := text.Bounds()
+					r.Min = mat.Apply(r.Min.Vec3()).Vec2()
+					r.Max = mat.Apply(r.Max.Vec3()).Vec2()
+					geom.Rectangle2(mesh, r, 1)
+				}
+			}
+
+			if drawText2 {
+				text2.DrawColorMask(win, mat, glitch.RGBA{1, 0, 0, 1})
+				{
+					geom.SetColor(glitch.RGBA{0, 1, 0, 1})
+					r := text2.Bounds()
+					r.Min = mat.Apply(r.Min.Vec3()).Vec2()
+					r.Max = mat.Apply(r.Max.Vec3()).Vec2()
+					geom.Rectangle2(mesh, r, 1)
+				}
+			}
 
 			y += lh * scale
-			scale += 0.1
+			// scale += 0.1
 		}
 
-		// pass.SetUniform("u_threshold", float32(0.5))
-		// pass.SetCamera2D(camera)
-		// pass.Draw(win)
+		mesh.Draw(win, glitch.Mat4Ident)
 
 		win.Update()
 	}

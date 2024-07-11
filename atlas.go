@@ -58,19 +58,28 @@ func sdfUnitToFloat(sdfUnit float64, fontSize, texSize int) float64 {
 func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image) (*Atlas, error) {
 	texture := NewTexture(sdfImg, true) // TODO: Smoothing for sdf?
 
-	// height := sdfUnitToFloat(sdf.Metrics.LineHeight, sdf.Atlas.Size, sdf.Atlas.Width);
+	// height := sdfUnitToFloat(sdf.Metrics.LineHeight, sdf.Atlas.Size, sdf.Atlas.Width)
 	height := sdf.Metrics.LineHeight * float64(sdf.Atlas.Size)
-
 	ascent := sdf.Metrics.Ascender * float64(sdf.Atlas.Size)
 	descent := sdf.Metrics.Descender * float64(sdf.Atlas.Size)
+	// height := sdfUnitToFloat(sdf.Metrics.LineHeight, sdf.Atlas.Size, sdf.Atlas.Width)
+	// ascent := sdfUnitToFloat(-sdf.Metrics.Ascender, sdf.Atlas.Size, sdf.Atlas.Width)
+	// descent := sdfUnitToFloat(sdf.Metrics.Descender, sdf.Atlas.Size, sdf.Atlas.Width)
+
 	atlas := &Atlas{
 		mapping: make(map[rune]Glyph),
-		ascent: floatToFixed(ascent),//floatToFixed(sdf.Metrics.Ascender),
-		descent: floatToFixed(descent), //floatToFixed(sdf.Metrics.Descender),
-		height: floatToFixed(height),
+		// ascent: floatToFixed(ascent),//floatToFixed(sdf.Metrics.Ascender),
+		// descent: floatToFixed(descent), //floatToFixed(sdf.Metrics.Descender),
+		// height: floatToFixed(height),
+		ascent: -ascent,//floatToFixed(sdf.Metrics.Ascender),
+		descent: descent, //floatToFixed(sdf.Metrics.Descender),
+		height: height,
+		// ascent: descent,
+		// descent: ascent,
+		// height: height,
 		texture: texture,
 		// pixelPerfect: true,
-		defaultKerning: 0,
+		defaultKerning: 2,
 		defaultMaterial: DefaultMsdfMaterial(texture),
 	}
 
@@ -93,7 +102,10 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image) (*Atlas, error) {
 		// bearingX := float64((bearingRect.Min.X * 1000000).Floor()) / (1000000 * fSize)
 		// bearingY := float64((-bearingRect.Max.Y * 1000000).Floor()) / (1000000 * fSize)
 		bearingX := sdfUnitToFloat(g.PlaneBounds.Left, sdf.Atlas.Size, sdf.Atlas.Width)
-		bearingY := sdfUnitToFloat(-g.PlaneBounds.Top, sdf.Atlas.Size, sdf.Atlas.Height)
+		bearingY := sdfUnitToFloat(-g.PlaneBounds.Bottom, sdf.Atlas.Size, sdf.Atlas.Height)
+
+		// h := -g.PlaneBounds.Top + g.PlaneBounds.Bottom
+		// bearingY := sdfUnitToFloat(h - g.PlaneBounds.Bottom, sdf.Atlas.Size, sdf.Atlas.Height)
 
 		glyph := Glyph{
 			// Advance: (g.Advance * float64(sdf.Atlas.Size)) / float64(sdf.Atlas.Width),
@@ -101,10 +113,10 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image) (*Atlas, error) {
 			Bearing: Vec2{bearingX, bearingY},
 			BoundsUV: R(
 				g.AtlasBounds.Left / float64(sdf.Atlas.Width),
-				g.AtlasBounds.Bottom / float64(sdf.Atlas.Height),
-				g.AtlasBounds.Right / float64(sdf.Atlas.Width),
 				g.AtlasBounds.Top / float64(sdf.Atlas.Height),
-			),
+				g.AtlasBounds.Right / float64(sdf.Atlas.Width),
+				g.AtlasBounds.Bottom / float64(sdf.Atlas.Height),
+			).Norm(),
 		}
 		atlas.mapping[rune(g.Unicode)] = glyph
 	}
