@@ -58,14 +58,18 @@ func (u *Uniforms) Copy() *Uniforms {
 	return u2
 }
 
+// TODO: You could pack this down even more
+// Shader:  shader slot lut ID 256 maximum
+// Texture: texture slot lut ID 256 maximum
+// Uniform: uniform slot lut ID 256 maximum
 type Material struct {
 	shader *Shader
 	texture *Texture
-	// camera *CameraOrtho
+	uniforms *Uniforms // TODO: Generic binder (eg old Material interface)?
+
 	blend BlendMode
 	depth DepthMode
 	cull CullMode
-	uniforms *Uniforms // TODO: Generic binder (eg old Material interface)?
 }
 
 func NewMaterial(shader *Shader) Material {
@@ -128,30 +132,35 @@ func (m Material) Bind() {
 		state.bindTexture(m.texture)
 	}
 
-	// Bind Depthmode
-	if m.depth == DepthModeNone {
-		state.enableDepthTest(false)
-	} else {
-		state.enableDepthTest(true)
-		state.setDepthFunc(m.depth.mode)
-	}
+	state.setBlendMode(m.blend)
+	state.setDepthMode(m.depth)
+	state.setCullMode(m.cull)
 
-	// Bind CullMode
-	if m.cull == CullModeNone {
-		state.disableCullMode()
-	} else {
-		state.enableCullMode(m.cull)
-	}
 
-	// Bind Blendmode
-	state.setBlendFunc(m.blend.src, m.blend.dst)
-
-	// // Bind Camera (ie global material)
-	// // TODO: m.camera.Bind(m.shader)
-	// if m.camera != nil {
-	// 	m.shader.SetUniform("projection", m.camera.Projection.gl())
-	// 	m.shader.SetUniform("view", m.camera.View.gl())
+	// // Bind Depthmode
+	// if m.depth == DepthModeNone {
+	// 	state.enableDepthTest(false)
+	// } else {
+	// 	state.enableDepthTest(true)
+	// 	state.setDepthFunc(m.depth.mode)
 	// }
+
+	// // Bind CullMode
+	// if m.cull == CullModeNone {
+	// 	state.disableCullMode()
+	// } else {
+	// 	state.enableCullMode(m.cull)
+	// }
+
+	// // Bind Blendmode
+	// state.setBlendFunc(m.blend.src, m.blend.dst)
+
+	// // // Bind Camera (ie global material)
+	// // // TODO: m.camera.Bind(m.shader)
+	// // if m.camera != nil {
+	// // 	m.shader.SetUniform("projection", m.camera.Projection.gl())
+	// // 	m.shader.SetUniform("view", m.camera.View.gl())
+	// // }
 
 	// Bind uniforms (ie local material)
 	m.uniforms.Bind(m.shader)

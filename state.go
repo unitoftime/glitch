@@ -15,21 +15,24 @@ type stateTracker struct {
 	fboBinder func()
 
 	// Depth Test
-	depthTest       bool
-	enableDepthFunc func()
-	depthFunc       gl.Enum
-	depthFuncBinder func()
+	// depthTest       bool
+	// enableDepthFunc func()
+	// depthFunc       gl.Enum
+	// depthFuncBinder func()
+	depthMode DepthMode
+	depthModeBinder func()
 
 	// Texture
 	texture       *Texture
 	textureBinder func()
 
 	// BlendFunc
-	blendSrc, blendDst gl.Enum
-	blendFuncBinder    func()
+	// blendSrc, blendDst gl.Enum
+	blendMode BlendMode
+	blendModeBinder    func()
 
 	// Cull Mode
-	cullModeEnable bool
+	// cullModeEnable bool
 	cullMode CullMode
 	cullModeBinder func()
 
@@ -47,17 +50,44 @@ var state *stateTracker
 func init() {
 	state = &stateTracker{}
 
-	state.enableDepthFunc = func() {
-		if state.depthTest {
-			gl.Enable(gl.DEPTH_TEST)
-		} else {
+	state.depthModeBinder = func() {
+		if state.depthMode == DepthModeNone {
 			gl.Disable(gl.DEPTH_TEST)
+		} else {
+			gl.Enable(gl.DEPTH_TEST)
+			data := depthModeLut[state.depthMode]
+			gl.DepthFunc(data.mode)
 		}
 	}
 
-	state.depthFuncBinder = func() {
-		gl.DepthFunc(state.depthFunc)
+	state.blendModeBinder = func() {
+		data := blendModeLut[state.blendMode]
+		gl.BlendFunc(data.src, data.dst)
 	}
+
+	state.cullModeBinder = func() {
+		if state.cullMode == CullModeNone {
+			gl.Disable(gl.CULL_FACE)
+		} else {
+			gl.Enable(gl.CULL_FACE)
+			data := cullModeLut[state.cullMode]
+			gl.CullFace(data.face)
+			gl.FrontFace(data.dir)
+		}
+	}
+
+
+	// state.enableDepthFunc = func() {
+	// 	if state.depthTest {
+	// 		gl.Enable(gl.DEPTH_TEST)
+	// 	} else {
+	// 		gl.Disable(gl.DEPTH_TEST)
+	// 	}
+	// }
+
+	// state.depthFuncBinder = func() {
+	// 	gl.DepthFunc(state.depthFunc)
+	// }
 
 	state.fboBinder = func() {
 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
@@ -71,19 +101,19 @@ func init() {
 		gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
 	}
 
-	state.blendFuncBinder = func() {
-		gl.BlendFunc(state.blendSrc, state.blendDst)
-	}
+	// state.blendFuncBinder = func() {
+	// 	gl.BlendFunc(state.blendSrc, state.blendDst)
+	// }
 
-	state.cullModeBinder = func() {
-		if state.cullModeEnable {
-			gl.Enable(gl.CULL_FACE)
-			gl.CullFace(state.cullMode.face)
-			gl.FrontFace(state.cullMode.dir)
-		} else {
-			gl.Disable(gl.CULL_FACE)
-		}
-	}
+	// state.cullModeBinder = func() {
+	// 	if state.cullModeEnable {
+	// 		gl.Enable(gl.CULL_FACE)
+	// 		gl.CullFace(state.cullMode.face)
+	// 		gl.FrontFace(state.cullMode.dir)
+	// 	} else {
+	// 		gl.Disable(gl.CULL_FACE)
+	// 	}
+	// }
 
 	state.vertBufDrawer = func() {
 		state.vertBuf.mainthreadDraw()
@@ -113,28 +143,55 @@ func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
 	mainthread.Call(s.fboBinder)
 }
 
-func (s *stateTracker) enableDepthTest(enable bool) {
-	if s.depthTest == enable {
-		return // Skip if state already matches
+func (s *stateTracker) setDepthMode(depth DepthMode) {
+	if s.depthMode == depth {
+		return // Skip: State already matches
 	}
-	s.depthTest = enable
-	mainthread.Call(s.enableDepthFunc)
+	s.depthMode = depth
+
+	mainthread.Call(s.depthModeBinder)
 }
 
-func (s *stateTracker) setDepthFunc(depthFunc gl.Enum) {
-	if s.depthFunc == depthFunc {
-		return // Skip if already enabled and depth functions match
+func (s *stateTracker) setBlendMode(blend BlendMode) {
+	if s.blendMode == blend {
+		return // Skip: State already matches
 	}
+	s.blendMode = blend
 
-	s.depthFunc = depthFunc
-	mainthread.Call(s.depthFuncBinder)
+	mainthread.Call(s.blendModeBinder)
 }
 
-func (s *stateTracker) setBlendFunc(src, dst gl.Enum) {
-	s.blendSrc = src
-	s.blendDst = dst
-	mainthread.Call(s.blendFuncBinder)
+func (s *stateTracker) setCullMode(cull CullMode) {
+	if s.cullMode == cull {
+		return // Skip: State already matches
+	}
+	s.cullMode = cull
+
+	mainthread.Call(s.cullModeBinder)
 }
+
+// func (s *stateTracker) enableDepthTest(enable bool) {
+// 	if s.depthTest == enable {
+// 		return // Skip if state already matches
+// 	}
+// 	s.depthTest = enable
+// 	mainthread.Call(s.enableDepthFunc)
+// }
+
+// func (s *stateTracker) setDepthFunc(depthFunc gl.Enum) {
+// 	if s.depthFunc == depthFunc {
+// 		return // Skip if already enabled and depth functions match
+// 	}
+
+// 	s.depthFunc = depthFunc
+// 	mainthread.Call(s.depthFuncBinder)
+// }
+
+// func (s *stateTracker) setBlendFunc(src, dst gl.Enum) {
+// 	s.blendSrc = src
+// 	s.blendDst = dst
+// 	mainthread.Call(s.blendFuncBinder)
+// }
 
 func (s *stateTracker) drawVertBuffer(vb *VertexBuffer) {
 	s.vertBuf = vb
@@ -146,21 +203,21 @@ func (s *stateTracker) clearTarget(color RGBA) {
 	mainthread.Call(s.clearFunc)
 }
 
-func (s *stateTracker) disableCullMode() {
-	if s.cullModeEnable == false {
-		return // Skip if state already matches
-	}
+// func (s *stateTracker) disableCullMode() {
+// 	if s.cullModeEnable == false {
+// 		return // Skip if state already matches
+// 	}
 
-	s.cullModeEnable = false
-	mainthread.Call(s.cullModeBinder)
-}
+// 	s.cullModeEnable = false
+// 	mainthread.Call(s.cullModeBinder)
+// }
 
-func (s *stateTracker) enableCullMode(cullMode CullMode) {
-	if s.cullModeEnable == true && s.cullMode == cullMode {
-		return // Skip if state already matches
-	}
+// func (s *stateTracker) enableCullMode(cullMode CullMode) {
+// 	if s.cullModeEnable == true && s.cullMode == cullMode {
+// 		return // Skip if state already matches
+// 	}
 
-	s.cullModeEnable = true
-	s.cullMode = cullMode
-	mainthread.Call(s.cullModeBinder)
-}
+// 	s.cullModeEnable = true
+// 	s.cullMode = cullMode
+// 	mainthread.Call(s.cullModeBinder)
+// }
