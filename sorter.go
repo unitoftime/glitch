@@ -75,7 +75,7 @@ func (s *Sorter) Draw(target BatchTarget) {
 		// Translucent goes from back to front (255 to 0)
 		for l := len(s.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for i := range s.commands[l].Translucent {
-			// for i := len(s.commands[l].Translucent)-1; i >= 0; i-- {
+				// for i := len(s.commands[l].Translucent)-1; i >= 0; i-- {
 				// fmt.Println("- Transl: (layer, x, z)", l, s.commands[l].Translucent[i].matrix[i4_3_1], s.commands[l].Translucent[i].matrix[i4_3_2])
 				s.applyDrawCommand(target, s.commands[l].Translucent[i])
 			}
@@ -105,11 +105,6 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 		translucent = true
 	}
 
-	// TODO: If depthtest if false, I want to ensure that the drawCalls are sorted as if they are translucent
-	if !s.DepthTest {
-		translucent = true
-	}
-
 	if s.DepthTest {
 		// If we are doing depth testing, then use the s.CurrentLayer field to determine the depth (normalizing from (0 to 1). Notably the standard ortho cam is (-1, 1) which this range fits into but is easier to normalize to // TODO - make that depth range tweakable?
 		// TODO - hardcoded because layer is a uint8. You probably want to make layer an int and then just set depth based on that
@@ -127,16 +122,22 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 		}
 		mat[i4_3_2] -= float32(s.currentLayer) + s.depthBump
 		// fmt.Println("Depth: ", mat[i4_3_2])
+
+		// TODO: Hardcoded depthmode sort type
+		material.depth = DepthModeLess
+	} else {
+		// TODO: If depthtest if false, I want to ensure that the drawCalls are sorted as if they are translucent
+		translucent = true
 	}
 
 	// state := BufferState{materialGroup{s.material, material}, s.blendMode}
 
-	// if s.camera != nil {
-	// 	material.camera = s.camera
+	// // if s.camera != nil {
+	// // 	material.camera = s.camera
+	// // }
+	// if s.DepthTest {
+	// 	material.depth = DepthModeLess
 	// }
-	if s.DepthTest {
-		material.depth = DepthModeLess
-	}
 
 	s.commands[s.currentLayer].Add(translucent, drawCommand{
 		filler, mat, mask, material,
@@ -158,11 +159,9 @@ func (s *Sorter) sort() {
 		return
 	}
 
+	// Sort both buffers
 	for l := range s.commands {
 		s.commands[l].SortTranslucent(s.SoftwareSort)
-	}
-
-	for l := range s.commands {
 		s.commands[l].SortOpaque(s.SoftwareSort)
 	}
 }
@@ -203,6 +202,7 @@ const (
 	SoftwareSortX // Sort based on the X position
 	SoftwareSortY // Sort based on the Y position
 	SoftwareSortZ // Sort based on the Z position
+	SoftwareSortZNegative // Opposite order to SoftwareSortZ
 	SoftwareSortCommand // Sort by the computed drawCommand.command
 )
 
@@ -227,6 +227,10 @@ func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
 	} else if sortMode == SoftwareSortZ {
 		slices.SortStableFunc(buf, func(a, b drawCommand) int {
 			return cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
+		})
+	} else if sortMode == SoftwareSortZNegative {
+		slices.SortStableFunc(buf, func(a, b drawCommand) int {
+			return -cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
 		})
 	}//  else if sortMode == SoftwareSortCommand {
 	// 	slices.SortStableFunc(buf, func(a, b drawCommand) int {
