@@ -1,7 +1,9 @@
 package glitch
 
+import "fmt"
+
 type meshDraw struct {
-	mesh *Mesh
+	filler GeometryFiller
 	matrix glMat4
 	mask RGBA
 	material Material
@@ -30,16 +32,16 @@ func NewDrawBatch() *DrawBatch {
 // 	}
 // }
 
-func (b *DrawBatch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, translucent bool) {
+func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
 	b.draws = append(b.draws, meshDraw{
-		mesh: mesh,
+		filler: filler,
 		matrix: matrix,
 		mask: mask,
 		material: material,
 		translucent: translucent,
 	})
 
-	newBounds := mesh.Bounds().Apply(matrix)
+	newBounds := filler.Bounds().Apply(matrix)
 	// TODO: Does this improve performance?
 	// if matrix != glMat4Ident {
 	// 	newBounds = newBounds.Apply(matrix)
@@ -62,7 +64,7 @@ func (b *DrawBatch) Draw(target BatchTarget, matrix Mat4) {
 	for i := range b.draws {
 		mat := matrix.gl()
 		mat.Mul(&b.draws[i].matrix)
-		target.Add(b.draws[i].mesh, mat, b.draws[i].mask, b.draws[i].material, b.draws[i].translucent)
+		target.Add(b.draws[i].filler, mat, b.draws[i].mask, b.draws[i].material, b.draws[i].translucent)
 	}
 	// target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
@@ -74,7 +76,7 @@ func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 		mat.Mul(&b.draws[i].matrix)
 
 		mask := b.draws[i].mask.Mult(color)
-		target.Add(b.draws[i].mesh, mat, mask, b.draws[i].material, b.draws[i].translucent)
+		target.Add(b.draws[i].filler, mat, mask, b.draws[i].material, b.draws[i].translucent)
 	}
 
 	// target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
@@ -211,7 +213,12 @@ func NewBatch() *Batch {
 	}
 }
 
-func (b *Batch) Buffer(shader *Shader) *Batch {
+func (b *Batch) Buffer() *Batch {
+	if b.material == nil {
+		return NewBatch() // Nothing was ever set, just return a new blank batch
+	}
+
+	shader := b.material.shader
 	return &Batch{
 		mesh:        b.mesh.Buffer(shader, b.Translucent),
 		material:    b.material,
@@ -221,11 +228,15 @@ func (b *Batch) Buffer(shader *Shader) *Batch {
 
 // TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
 // TODO: should I maintain a translucent and non-translucent batch mesh?
-func (b *Batch) Add(mesh *Mesh, matrix glMat4, mask RGBA, material Material, translucent bool) {
+// TODO: Fix the interface here to only allow meshes to be drawn to batches
+func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
+	mesh := filler.(*Mesh) // TODO: Hack
+
 	if b.material == nil {
 		b.material = &material
 	} else {
 		if *b.material != material {
+			fmt.Printf("setmaterial (old -> new):\n%+v\n%+v\n", b.material, material)
 			panic("Materials must match inside a batch!")
 		}
 	}
@@ -400,20 +411,24 @@ func (b *Batch) Clear() {
 }
 
 func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
+	if b.material == nil { return }
 	target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, *b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
 }
 
 func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
+	if b.material == nil { return }
 	target.Add(b.mesh, matrix.gl(), color, *b.material, b.Translucent)
 }
 
 func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
+	if b.material == nil { return }
 	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
 }
 
 // TODO: Generalize this rectdraw logic. Copy paseted from Sprite
 func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
+	if b.material == nil { return }
 	// pass.SetTexture(0, s.texture)
 	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 

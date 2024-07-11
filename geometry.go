@@ -69,7 +69,7 @@ type GeomDraw struct {
 	color RGBA
 	Divisions int
 	mesh *Mesh
-	defaultMaterial Material
+	// defaultMaterial Material
 }
 
 func NewGeomDraw() *GeomDraw {
@@ -77,7 +77,7 @@ func NewGeomDraw() *GeomDraw {
 		color: RGBA{1, 1, 1, 1},
 		Divisions: 100,
 		mesh: NewMesh(),
-		defaultMaterial: DefaultMaterial(nil),
+		// defaultMaterial: DefaultMaterial(WhiteTexture()),
 	}
 }
 

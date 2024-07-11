@@ -55,7 +55,7 @@ func sdfUnitToFloat(sdfUnit float64, fontSize, texSize int) float64 {
 	return (sdfUnit * float64(fontSize)) / float64(texSize)
 }
 
-func AtlasFromSdf(sdf SdfAtlas, sdfImg *image.NRGBA) (*Atlas, error) {
+func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image) (*Atlas, error) {
 	texture := NewTexture(sdfImg, true) // TODO: Smoothing for sdf?
 
 	// height := sdfUnitToFloat(sdf.Metrics.LineHeight, sdf.Atlas.Size, sdf.Atlas.Width);
@@ -69,7 +69,7 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg *image.NRGBA) (*Atlas, error) {
 		descent: floatToFixed(descent), //floatToFixed(sdf.Metrics.Descender),
 		height: floatToFixed(height),
 		texture: texture,
-		pixelPerfect: true,
+		// pixelPerfect: true,
 		defaultKerning: 0,
 		defaultMaterial: DefaultMsdfMaterial(texture),
 	}

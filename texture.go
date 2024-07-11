@@ -12,7 +12,7 @@ import (
 
 // TODO - Should I use this as default? Or is there a way to do null textures for textureless things?
 var whiteTexture *Texture
-func WhiteTexture() *Texture {
+func  WhiteTexture() *Texture {
 	if whiteTexture != nil { return whiteTexture }
 	max := 128 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
 
@@ -153,7 +153,11 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 	if len(pixels) != w*h*4 {
 		panic("set pixels: wrong number of pixels")
 	}
-	t.Bind(0)
+
+	// TODO: This is a little inefficient. But I can't messup the global bound texture state
+	lastTexture := state.texture
+	defer state.bindTexture(lastTexture)
+	state.bindTexture(t)
 
 	mainthread.Call(func() {
 		gl.TexSubImage2D(
@@ -174,10 +178,10 @@ func (t *Texture) Bounds() Rect {
 	return R(0, 0, float64(t.width), float64(t.height))
 }
 
-func (t *Texture) Bind(position int) {
-	// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
-	state.bindTexture(t)
-}
+// func (t *Texture) bind(position int) {
+// 	// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
+// 	state.bindTexture(t)
+// }
 
 func (t *Texture) delete() {
 	mainthread.CallNonBlock(func() {

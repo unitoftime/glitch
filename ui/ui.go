@@ -111,10 +111,11 @@ type Group struct {
 type eid uint64 // Element Id
 const invalidId eid = 0
 
-func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas) *Group {
+func NewGroup(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.Atlas, sorter *glitch.Sorter) *Group {
 	return &Group{
 		win: win,
-		sorter: glitch.NewSorter(),
+		// sorter: glitch.NewSorter(),
+		sorter: sorter,
 		camera: camera,
 		atlas: atlas,
 		unionBoundsSet: false,
@@ -167,12 +168,14 @@ func (g *Group) getGraph(bounds glitch.Rect) *graph.Graph {
 	return g.graphBuffer[idx]
 }
 
-// func (g *Group) SetLayer(layer int8) {
-// 	g.pass.SetLayer(layer)
-// }
-// func (g *Group) Layer() int8 {
-// 	return g.pass.Layer()
-// }
+func (g *Group) SetLayer(layer int8) {
+	// g.pass.SetLayer(layer)
+	g.sorter.SetLayer(layer)
+}
+func (g *Group) Layer() int8 {
+	return g.sorter.Layer()
+	// return g.pass.Layer()
+}
 
 func (g *Group) Bounds() glitch.Rect {
 	bounds := g.camera.Bounds()

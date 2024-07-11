@@ -37,6 +37,7 @@ type Uniforms struct {
 	set map[string]any
 }
 func (u *Uniforms) Bind(shader *Shader) {
+	if u == nil { return }
 	for k, v := range u.set {
 		shader.SetUniform(k, v)
 	}
@@ -64,24 +65,25 @@ type Material struct {
 	blend BlendMode
 	depth DepthMode
 	cull CullMode
-	uniforms *Uniforms
+	uniforms *Uniforms // TODO: Generic binder (eg old Material interface)?
 }
 
 func NewMaterial(shader *Shader) Material {
 	return Material{
 		shader: shader,
 		blend: BlendModeNormal,
-		uniforms: &Uniforms{},
+		uniforms: nil,
 	}
 }
 
-func (m Material) Copy() Material {
-	m2 := NewMaterial(m.shader)
-	// m2.SetTexture(m.texture)
-	// TODO: SetBlendMode()
-	m2.uniforms = m.uniforms.Copy()
-	return m2
-}
+// TODO: Implement
+// func (m Material) Copy() Material {
+// 	m2 := NewMaterial(m.shader)
+// 	// m2.SetTexture(m.texture)
+// 	// TODO: SetBlendMode()
+// 	m2.uniforms = m.uniforms.Copy()
+// 	return m2
+// }
 
 func (m *Material) SetShader(shader *Shader) *Material {
 	m.shader = shader
@@ -89,6 +91,9 @@ func (m *Material) SetShader(shader *Shader) *Material {
 }
 
 func (m *Material) SetUniform(name string, val any) *Material {
+	if m.uniforms == nil {
+		m.uniforms = &Uniforms{}
+	}
 	m.uniforms.SetUniform(name, val)
 	return m
 }
@@ -107,14 +112,20 @@ func (m *Material) SetDepthMode(depthMode DepthMode) *Material {
 	return m
 }
 
+func (m *Material) SetBlendMode(blendMode BlendMode) *Material {
+	m.blend = blendMode
+	return m
+}
 
 func (m Material) Bind() {
 	setShader(m.shader)
 	// m.shader.Use()
 
 	if m.texture != nil {
-		texSlot := 0
-		m.texture.Bind(texSlot)
+		// texSlot := 0
+		// m.texture.bind(texSlot)
+
+		state.bindTexture(m.texture)
 	}
 
 	// Bind Depthmode

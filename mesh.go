@@ -56,7 +56,7 @@ func (m *Mesh) Draw(target BatchTarget, matrix Mat4) {
 
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(m, matrix.gl(), mask, DefaultMaterial(nil), false)
+	target.Add(m, matrix.gl(), mask, DefaultMaterial(WhiteTexture()), false)
 }
 
 func (m *Mesh) Bounds() Box {

@@ -80,8 +80,9 @@ func runGame() {
 	camera := glitch.NewCameraOrtho()
 	camera.SetOrtho2D(win.Bounds())
 	camera.SetView2D(0, 0, screenScale, screenScale)
-	group := ui.NewGroup(win, camera, atlas)
-	group.Debug = false
+	sorter := glitch.NewSorter()
+	group := ui.NewGroup(win, camera, atlas, sorter)
+	group.Debug = true
 
 	textStyle := ui.NewTextStyle().Scale(4).Autofit(true)
 	buttonStyle := ui.Style{

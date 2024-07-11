@@ -17,6 +17,7 @@ type GeometryFiller interface {
 	// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
 	Fill(*BufferPool, glMat4, RGBA) *VertexBuffer
+	Bounds() Box
 }
 
 type BatchTarget interface {

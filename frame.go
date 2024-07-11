@@ -98,6 +98,10 @@ func (f *Frame) Bind() {
 	state.bindFramebuffer(f.fbo, f.bounds)
 }
 
+func (f *Frame) Material() *Material {
+	return &f.material
+}
+
 func (f *Frame) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
 	setTarget(f)
 	global.Add(filler, mat, mask, material, translucent)

@@ -10,6 +10,7 @@ import (
 // 2. you need to simplify the sorting to its all command based imo
 type Sorter struct {
 	DepthTest bool
+	SoftwareSort SoftwareSortMode
 	DepthBump bool
 	depthBump float32
 	currentLayer int8
@@ -27,8 +28,15 @@ type Sorter struct {
 func NewSorter() *Sorter {
 	return &Sorter{
 		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
-		// blendMode: BlendModeNormal,
 	}
+}
+
+func (s *Sorter) SetLayer(layer int8) {
+	s.currentLayer = layer
+}
+
+func (s *Sorter) Layer() int8 {
+	return s.currentLayer
 }
 
 func (s *Sorter) Clear() {
@@ -53,7 +61,7 @@ func (s *Sorter) Clear() {
 // }
 
 func (s *Sorter) Draw(target BatchTarget) {
-	// TODO: Sort
+	s.sort()
 
 	if s.DepthTest {
 		// Opaque goes front to back (0 to 255)
@@ -97,6 +105,11 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 		translucent = true
 	}
 
+	// TODO: If depthtest if false, I want to ensure that the drawCalls are sorted as if they are translucent
+	if !s.DepthTest {
+		translucent = true
+	}
+
 	if s.DepthTest {
 		// If we are doing depth testing, then use the s.CurrentLayer field to determine the depth (normalizing from (0 to 1). Notably the standard ortho cam is (-1, 1) which this range fits into but is easier to normalize to // TODO - make that depth range tweakable?
 		// TODO - hardcoded because layer is a uint8. You probably want to make layer an int and then just set depth based on that
@@ -121,15 +134,44 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	// if s.camera != nil {
 	// 	material.camera = s.camera
 	// }
+	if s.DepthTest {
+		material.depth = DepthModeLess
+	}
+
 	s.commands[s.currentLayer].Add(translucent, drawCommand{
 		filler, mat, mask, material,
 	})
 }
 
+func (s *Sorter) sort() {
+	if s.DepthTest {
+		// TODO - do special sort function for depth test code:
+		// 1. Fully Opaque or fully transparent groups of meshes: Don't sort inside that group
+		// 2. Partially transparent groups of meshes: sort inside that group
+		// 3. Take into account blendMode
+
+		// Sort translucent buffer
+		for l := range s.commands {
+			s.commands[l].SortTranslucent(s.SoftwareSort)
+		}
+
+		return
+	}
+
+	for l := range s.commands {
+		s.commands[l].SortTranslucent(s.SoftwareSort)
+	}
+
+	for l := range s.commands {
+		s.commands[l].SortOpaque(s.SoftwareSort)
+	}
+}
+
 //--------------------------------------------------------------------------------
 type cmdList struct{
-	Opaque []drawCommand
-	Translucent []drawCommand
+	Opaque []drawCommand // TODO: This is kindof more like the unsorted list
+	Translucent []drawCommand // TODO: This is kindof more like the sorted list
+
 }
 
 func (c *cmdList) Add(translucent bool, cmd drawCommand) *drawCommand {
@@ -165,13 +207,10 @@ const (
 )
 
 type drawCommand struct {
-	// mesh *Mesh
 	filler GeometryFiller
 	matrix glMat4
 	mask RGBA
 	material Material
-	// state BufferState
-	// shader *Shader
 }
 
 func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {

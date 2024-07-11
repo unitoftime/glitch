@@ -96,6 +96,7 @@ func init() {
 	}
 }
 
+// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
 func (s *stateTracker) bindTexture(texture *Texture) {
 	// TODO: Check if changed
 	s.texture = texture
