@@ -59,7 +59,7 @@ void main() {
   /* vec4 inner_color = vec4(1, 1, 1, 1); */
   /* vec4 outer_color = vec4(0, 0, 0, 1); */
   vec4 inner_color = ourColor;
-  vec4 outer_color = u_outline_color;
+  vec4 outer_color = u_outline_color * ourColor;
 
   // distances are stored with 1.0 meaning "inside" and 0.0 meaning "outside"
   vec4 distances = texture2D(texture1, TexCoord);
