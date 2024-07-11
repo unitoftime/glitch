@@ -37,7 +37,6 @@ func run() {
 
 	frame := glitch.NewFrame(win.Bounds(), true)
 
-
  	atlasImg, err := assets.LoadImage("atlas-msdf.png")
 	check(err)
 	atlasJson := glitch.SdfAtlas{}

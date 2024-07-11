@@ -62,7 +62,7 @@ void main() {
   vec4 outer_color = u_outline_color * ourColor;
 
   // distances are stored with 1.0 meaning "inside" and 0.0 meaning "outside"
-  vec4 distances = texture2D(texture1, TexCoord);
+  vec4 distances = texture(texture1, TexCoord);
   float d_msdf = median(distances.r, distances.g, distances.b);
   float d_sdf = distances.a; // mtsdf format only
   d_msdf = min(d_msdf, d_sdf + 0.1);  // HACK: to fix glitch in msdf near edges
