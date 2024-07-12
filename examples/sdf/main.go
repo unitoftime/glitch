@@ -68,7 +68,7 @@ func runGame() {
 	if err != nil {
 		panic(err)
 	}
-	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg)
+	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg, 3)
 
 	atlas2, err := glitch.DefaultAtlas()
 
@@ -96,7 +96,7 @@ func runGame() {
 	drawText1 := true
 	drawText2 := false
 
-	scale := 1.0
+	// scale := 1.0
 	for !win.Closed() {
 		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
@@ -108,15 +108,15 @@ func runGame() {
 		if win.JustPressed(glitch.KeyD) {
 			drawText2 = !drawText2
 		}
-		if win.JustPressed(glitch.Key1) {
-			scale = 1.0
-		}
-		if win.JustPressed(glitch.Key2) {
-			scale = 2.0
-		}
-		if win.JustPressed(glitch.Key3) {
-			scale = 3.0
-		}
+		// if win.JustPressed(glitch.Key1) {
+		// 	scale = 1.0
+		// }
+		// if win.JustPressed(glitch.Key2) {
+		// 	scale = 2.0
+		// }
+		// if win.JustPressed(glitch.Key3) {
+		// 	scale = 3.0
+		// }
 
 		mesh.Clear()
 
@@ -133,9 +133,10 @@ func runGame() {
 		// mat.Translate(win.Bounds().Center()[0], win.Bounds().Center()[1], 0)
 		// text.Draw(pass, mat)
 
+		scale := 0.1
 		lh := atlas.LineHeight()
 		y := 0.0
-		for i := 0; i < 5; i++ {
+		for i := 0; i < 25; i++ {
 			mat := glitch.Mat4Ident
 			mat.
 				Scale(scale, scale, 1).
@@ -164,7 +165,7 @@ func runGame() {
 			}
 
 			y += lh * scale
-			// scale += 0.1
+			scale += 0.5
 		}
 
 		mesh.Draw(win, glitch.Mat4Ident)
