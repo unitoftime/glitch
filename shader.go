@@ -93,9 +93,9 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFor
 	return shader, nil
 }
 
-func (s *Shader) Bind() {
-	mainthread.Call(s.mainthreadBind)
-}
+// func (s *Shader) Bind() {
+// 	mainthread.Call(s.mainthreadBind)
+// }
 
 // func (s *Shader) Bind() {
 // 	mainthreadCall(func() {

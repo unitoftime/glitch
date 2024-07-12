@@ -289,7 +289,7 @@ func setShader(shader *Shader) {
 
 	global.flush()
 	global.shader = shader
-	shader.Bind()
+	mainthread.Call(shader.mainthreadBind)
 
 	global.shader.setUniform("projection", global.camera.Projection)
 	global.shader.setUniform("view", global.camera.View)
