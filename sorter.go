@@ -95,7 +95,7 @@ func (s *Sorter) Draw(target BatchTarget) {
 }
 
 func (s *Sorter) applyDrawCommand(target BatchTarget, c drawCommand) {
-	target.Add(c.filler, c.matrix, c.mask, c.material, false)
+	target.Add(c.filler, c.matrix, c.mask, c.material, true)
 }
 
 func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
@@ -128,6 +128,7 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	} else {
 		// TODO: If depthtest if false, I want to ensure that the drawCalls are sorted as if they are translucent
 		translucent = true
+		mat[i4_3_2] -= float32(s.currentLayer)
 	}
 
 	// state := BufferState{materialGroup{s.material, material}, s.blendMode}

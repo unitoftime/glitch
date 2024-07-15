@@ -53,7 +53,7 @@ func main() {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch - Gophermark", glitch.WindowConfig{
-		Vsync: true,
+		// Vsync: true,
 	})
 	if err != nil {
 		panic(err)
@@ -74,7 +74,8 @@ func runGame() {
 	texture := glitch.NewTexture(manImage, false)
 	manSprite := glitch.NewSprite(texture, texture.Bounds())
 
-	length := 200_000
+	// length := 25_000 // With no sort
+	length := 6_250 // With SoftwareSort
 	man := make([]Man, length)
 	for i := range man {
 		man[i] = NewMan()
@@ -106,7 +107,8 @@ func runGame() {
 	// geomMesh := glitch.NewQuadMesh(geomRect, geomRect)
 
 	sorter := glitch.NewSorter()
-	sorter.DepthTest = true
+	sorter.SoftwareSort = glitch.SoftwareSortY
+	// sorter.DepthTest = true
 
 	mat := glitch.Mat4Ident
 	for !win.Closed() {
