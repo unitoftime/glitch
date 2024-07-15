@@ -190,6 +190,13 @@ type Metrics struct {
 	flush int
 	finish int
 	draw int
+
+	vertsTotal int // The total number of vertices drawn
+	vertsAvg int // The average number of vertices drawn per drawCall
+
+	// Note: Disabled because this didn't really give me any insight
+	// vertsMin int
+	// vertsMax int
 }
 
 func GetMetrics() Metrics {
@@ -366,6 +373,15 @@ func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
 
 	buffer.Draw()
 	g.metric.draw++
+
+	vertCount := int(buffer.numVerts)
+	g.metric.vertsTotal += vertCount
+	g.metric.vertsAvg = g.metric.vertsTotal / g.metric.draw
+	// g.metric.vertsMax = max(vertCount, g.metric.vertsMax)
+	// g.metric.vertsMin = min(vertCount, g.metric.vertsMin)
+	// if g.metric.vertsMin == 0 {
+	// 	g.metric.vertsMin = vertCount
+	// }
 }
 
 // //--------------------------------------------------------------------------------
