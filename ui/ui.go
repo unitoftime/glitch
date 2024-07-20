@@ -106,6 +106,14 @@ type Group struct {
 	dedup map[uint64]uint32
 
 	// TODO: Element Stylesheet map?
+
+	// Layout information
+	DragItemLayer int8
+
+	// LayoutMode: Horizontal, Vertical, Grid
+	// Art: Button, Panel, Sliders, Scrollbars
+	// DrawButton()
+	// DrawPanel(panelInfo)
 }
 
 type eid uint64 // Element Id
@@ -771,7 +779,11 @@ func (g *Group) DragAndDropItem(label string, style Style, rect glitch.Rect) (bo
 	if g.activeId == id {
 		global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
 		drawRect = rect.WithCenter(g.mousePos)
+		lastLayer := g.sorter.Layer()
+		g.sorter.SetLayer(g.DragItemLayer)
 		g.drawSprite(drawRect, style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5}))
+		g.sorter.SetLayer(lastLayer)
+
 	} else if g.downId == id {
 		g.drawSprite(drawRect, style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5})) //TODO Push outward
 	} else if g.hotId == id {
