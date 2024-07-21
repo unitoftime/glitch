@@ -87,7 +87,8 @@ func resolveIframeEmbedding() bool {
 func getDevicePixelRatio() float64 {
 	// // TODO: This is obviously not right, but I'd like to consolidate the contentscale with this and glfw at the same time. Right now the game just scales based on resolution which seems good enough
 	// return 1.0
-	return js.Global().Get("devicePixelRatio").Float()
+	dpr := js.Global().Get("devicePixelRatio").Float()
+	return max(dpr, 1.0) // Ensure we don't go below 1.0
 
 	// devicePixelRatio := js.Global().Get("devicePixelRatio").Float()
 	// // if devicePixelRatio <= 0 {
