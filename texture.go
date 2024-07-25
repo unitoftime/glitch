@@ -12,7 +12,7 @@ import (
 
 // TODO - Should I use this as default? Or is there a way to do null textures for textureless things?
 var whiteTexture *Texture
-func  WhiteTexture() *Texture {
+func WhiteTexture() *Texture {
 	if whiteTexture != nil { return whiteTexture }
 	max := 128 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
 

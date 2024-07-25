@@ -6,6 +6,7 @@ import (
 	"image/color"
 	"image/draw"
 	"math"
+	"strings"
 
 	"golang.org/x/image/font"
 
@@ -375,10 +376,12 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 		destRect = R(math.Round(x1), math.Round(y1), math.Round(x2), math.Round(y2))
 	}
 
-	mesh.AppendQuadMesh(destRect, R(u1, v1, u2, v2), color)
-	// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
+	if mesh != nil {
+		mesh.AppendQuadMesh(destRect, R(u1, v1, u2, v2), color)
+		// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
+	}
 
-	dot.X += (scaleX * glyph.Advance) + a.defaultKerning // TOO: Kerning should come from text, not atlas
+	dot.X += (scaleX * glyph.Advance) + a.defaultKerning // TODO: Kerning should come from text, not atlas
 
 	return dot, y2
 }
@@ -403,6 +406,16 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 	return t
 }
 
+// TODO: This could be improved by just calling specialized measurement functions
+func (a *Atlas) Measure(str string, scale float64) Rect {
+	fakeText := Text{
+		currentString: str,
+		atlas: a,
+		scale: scale,
+	}
+	return fakeText.AppendStringVerts(str)
+}
+
 type Text struct {
 	currentString string
 	mesh *Mesh
@@ -413,6 +426,8 @@ type Text struct {
 	material Material
 	scale float64
 	shadow Vec2
+	wordWrap bool
+	wrapRect Rect
 	// LineHeight float64
 
 	Orig Vec2 // The baseline starting point from which to draw the text
@@ -445,6 +460,16 @@ func (t *Text) SetColor(col RGBA) {
 
 func (t *Text) SetShadow(shadow Vec2) {
 	t.shadow = shadow
+}
+
+func (t *Text) SetWordWrap(wrap bool, wrapRect Rect) {
+	t.wordWrap = wrap
+	t.wrapRect = wrapRect
+
+	// if t.wordWrap {
+	// 	// lineHeight := t.atlas.UngappedLineHeight() * t.scale
+	// 	t.Orig = Vec2{wrapRect.Min.X, wrapRect.Max.Y} // + lineHeight}
+	// }
 }
 
 func (t *Text) Clear() {
@@ -523,15 +548,31 @@ func (t *Text) AppendStringVerts(text string) Rect {
 
 	lineHeight := t.atlas.UngappedLineHeight() * t.scale
 	initialDot := t.Dot
+	maxDotX := t.Dot.X
 
 	numLines := 1.0
-	for _, r := range text {
+	for i, r := range text {
 		// If the rune is a newline, then we need to reset the dot for the next line
-		if r == '\n' {
+		newline := r == '\n'
+		// If we wordwraping and are on a space, check to see if we should go to the next line
+		if t.wordWrap && r == ' ' {
+			nextSpaceIdx := strings.Index(text[i+1:], " ")
+			if nextSpaceIdx < 0 {
+				// There is no next space, so we can't wrap.
+			} else {
+				nextWord := t.atlas.Measure(text[i:i+nextSpaceIdx], t.scale)
+
+				if (t.Dot.X - initialDot.X) + nextWord.W() > t.wrapRect.W() {
+					newline = true
+				}
+			}
+		}
+		if newline {
 			// t.Dot.Y -= t.atlas.LineHeight()
 			t.Dot.Y -= lineHeight
 			t.Dot.X = t.Orig.X
 			numLines++
+
 			continue
 		}
 
@@ -542,27 +583,39 @@ func (t *Text) AppendStringVerts(text string) Rect {
 			_, _ = t.atlas.RuneVerts(t.mesh, r, t.Dot.Add(t.shadow), t.scale, Black)
 		}
 
+		maxDotX = max(maxDotX, newDot.X)
+
 		t.Dot = newDot
 
 		// if maxAscent < ascent {
 		// 	maxAscent = dot.Y + ascent
 		// }
 	}
-	// return R(meshBounds.Min.X, initialDot.Y, meshBounds.Max.X, initialDot.Y - (numLines * lineHeight)).Norm()
+	// // return R(meshBounds.Min.X, initialDot.Y, meshBounds.Max.X, initialDot.Y - (numLines * lineHeight)).Norm()
 
-	// Attempt 4 - use mesh bounds for X and line height for Y
-	meshBounds := t.mesh.Bounds().Rect()
+	// // Attempt 4 - use mesh bounds for X and line height for Y
+	// meshBounds := t.mesh.Bounds().Rect()
 
-	// Note: The RuneVerts function corners the glyph into the bounds by applying the descent. So I dont need to track ascent/descent here
-	// top := initialDot.Y + (fixedToFloat(t.atlas.ascent) * t.scale)
+	// // Note: The RuneVerts function corners the glyph into the bounds by applying the descent. So I dont need to track ascent/descent here
+	// // top := initialDot.Y + (fixedToFloat(t.atlas.ascent) * t.scale)
+	// // bot := top - (numLines * lineHeight)
+
+
+	// top := initialDot.Y + lineHeight
+	// // top := initialDot.Y + t.atlas.descent
+
 	// bot := top - (numLines * lineHeight)
+	// return R(meshBounds.Min.X, top, meshBounds.Max.X, bot).Norm()// .MoveMin(Vec2{})
 
-
+	// Attempt 5 - use dot for X and line height for Y
 	top := initialDot.Y + lineHeight
 	// top := initialDot.Y + t.atlas.descent
 
 	bot := top - (numLines * lineHeight)
-	return R(meshBounds.Min.X, top, meshBounds.Max.X, bot).Norm()// .MoveMin(Vec2{})
+	return R(initialDot.X, top, maxDotX, bot).Norm()// .MoveMin(Vec2{})
+
+
+	//--------------------------------------------------------------------------------
 
 	// // return mesh, R(initialDot[0], initialDot[1], dot[0], dot[1] + maxAscent)
 

@@ -39,6 +39,15 @@ func (g *Graph) DrawColorMask(target glitch.BatchTarget, matrix glitch.Mat4, mas
 	// pass.Add(g.mesh, matrix, mask, glitch.DefaultMaterial(), false)
 }
 
+func (g *Graph) RectDrawColorMask(target glitch.BatchTarget, rect glitch.Rect, mask glitch.RGBA) {
+	matrix := g.bounds.RectDraw(rect)
+	g.mesh.DrawColorMask(target, matrix, mask)
+}
+
+func (g *Graph) RectDraw(target glitch.BatchTarget, rect glitch.Rect) {
+	g.RectDrawColorMask(target, rect, glitch.White)
+}
+
 // TODO - Assumes sorted?
 func (g *Graph) Line(series []glitch.Vec2) {
 	minDomain := math.MaxFloat64

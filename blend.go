@@ -14,6 +14,8 @@ type blendModeData struct {
 var blendModeLut []blendModeData = []blendModeData{
 	// Note: This is what I used before premult: gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA
 	BlendModeNormal: {gl.ONE, gl.ONE_MINUS_SRC_ALPHA},
+	// BlendModeNormal: {gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA},
+	// BlendModeNormal: {gl.SRC_ALPHA, gl.ONE},
 	BlendModeMultiply: {gl.DST_COLOR, gl.ZERO},
 }
 
