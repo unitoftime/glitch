@@ -243,6 +243,7 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 			// if global.win.JustReleased(glitch.MouseButtonLeft) {
 			if !global.win.Pressed(glitch.MouseButtonLeft) {
 				if global.activeId != invalidId {
+					global.stopDragging = true
 					resp.droppedId = global.activeId
 					global.activeId = invalidId
 				}
@@ -471,12 +472,14 @@ func SmoothDragButton(label string, rect *glitch.Rect, bounds glitch.Rect, step 
 func Hovered(rect glitch.Rect) bool {
 	// return mouseCheck(rect, global.mousePos)
 
-	label := "##hovered"
+	label := "##__h"
 	id := getId(label)
+
 	resp := WidgetResp{}
 	resp.hoverOnly(id, rect)
 
 	isHovering := global.hoverOnlyId == id
+
 	return isHovering
 }
 
@@ -554,8 +557,8 @@ func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	// 	Pressed: NewSpriteStyle(sprite, color),
 	// }
 	// PanelExt("##_panelsprite", rect, style)
-
 	drawSprite(rect, SpriteStyle{sprite, color})
+	Hovered(rect)
 }
 
 // returns (Clicked, hovered, isdragging, dropSlot)
@@ -569,7 +572,7 @@ func DragItem(label string, rect glitch.Rect, style Style) (bool, bool, bool, bo
 	resp := doWidget(id, text, mask, style, rect)
 
 	clicked := resp.Released
-	hovered := (global.hotId == id)
+	hovered := global.hoverOnlyId == id
 	dragging := resp.Dragging
 	dropping := (resp.droppedId != invalidId)
 	return clicked, hovered, dragging, dropping

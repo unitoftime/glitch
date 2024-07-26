@@ -163,7 +163,6 @@ type uiGlobals struct {
 	hoverOnlyId eid // The element that you are currently hovering
 	lastHoverOnlyId eid // HoverId from the last frame
 
-
 	stopDragging bool
 	dragData any
 
@@ -306,6 +305,7 @@ func (g *uiGlobals) trackHoverOnly(id eid, rect glitch.Rect) {
 func (g *uiGlobals) trackHover(id eid, rect glitch.Rect) {
 	if mouseCheck(rect, g.mousePos) {
 		g.lastHotId = id
+		g.lastHoverOnlyId = id // TODO: Is this always right? when would it not be?
 	}
 }
 
