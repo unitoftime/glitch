@@ -2,6 +2,7 @@ package glitch
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/glfw"
@@ -20,7 +21,6 @@ type WindowConfig struct {
 
 type Window struct {
 	window *glfw.Window
-	// *Batcher
 
 	closed bool
 
@@ -50,14 +50,37 @@ type Window struct {
 	keyCallbacks []glfw.KeyCallback
 	mouseButtonCallbacks []glfw.MouseButtonCallback
 	charCallbacks []glfw.CharCallback
+
+	repeatTracker []repeatData
+	mouseRepeatDelay time.Duration // amount of time delay to wait after a mouse hold to consider it repeated
+	mouseRepeatPeriod time.Duration // amount of time in between consecutive repeats after a repeat has started
+
+	lastUpdateTime time.Time
+}
+
+type repeatData struct {
+	key Key
+	dur time.Duration
 }
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
 	win := &Window{
-		// Batcher: NewBatcher(),
 		scrollCallbacks: make([]glfw.ScrollCallback, 0),
 		keyCallbacks: make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
+
+		repeatTracker: []repeatData{
+			{key: MouseButtonLeft},
+			{key: MouseButtonRight},
+			{key: MouseButtonMiddle},
+			// TODO: Make this configurable
+			// TODO: Add all mousebuttons
+			// TODO: Add all gamepad buttons
+		},
+		mouseRepeatDelay: 350 * time.Millisecond, // Note: The total delay for first repeat is delay + period
+		mouseRepeatPeriod: 150 * time.Millisecond,
+
+		lastUpdateTime: time.Now(),
 	}
 	// win.Batcher.target = win
 
@@ -141,6 +164,10 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 				win.tmpInput.justPressed[Key(button)] = true
 			case glfw.Release:
 				win.tmpInput.justReleased[Key(button)] = true
+
+				// Warning: Repeat events aren't returned for mouse callbacks. so we track them with repeatTracker
+				// case glfw.Repeat:
+				// 	win.tmpInput.justReleased[Key(button)] = true
 			}
 		})
 
@@ -230,6 +257,11 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 }
 
 func (w *Window) Update() {
+	// Track frame times
+	nextLastUpdate := time.Now()
+	dt := nextLastUpdate.Sub(w.lastUpdateTime)
+	w.lastUpdateTime = nextLastUpdate
+
 	global.finish()
 
 	mainthread.Call(w.mainthreadUpdate)
@@ -241,6 +273,23 @@ func (w *Window) Update() {
 	w.tmpInput.justPressed = [KeyLast + 1]bool{}
 	w.tmpInput.justReleased = [KeyLast + 1]bool{}
 	w.tmpInput.repeated = [KeyLast + 1]bool{}
+
+	for i := range w.repeatTracker {
+		key := w.repeatTracker[i].key
+
+		if w.Pressed(key) {
+			w.repeatTracker[i].dur += dt
+
+			if w.repeatTracker[i].dur > w.mouseRepeatDelay {
+				if w.repeatTracker[i].dur > w.mouseRepeatPeriod {
+					w.repeatTracker[i].dur -= w.mouseRepeatPeriod
+					w.tmpInput.repeated[key] = true
+				}
+			}
+		} else {
+			w.repeatTracker[i].dur = 0
+		}
+	}
 
 	// Swap the typed buffers
 	{
@@ -334,6 +383,8 @@ func (w *Window) Bind() {
 
 func (w *Window) Pressed(key Key) bool {
 	if key == KeyUnknown { return false }
+	// TODO: You could cache these every frame to avoid calling mainthread call (ie {unset, pressed, unpressed})
+
 	w.pressedKeyCheck = key
 	mainthread.Call(w.mainthreadPressed)
 	return w.pressedKeyReturn

@@ -50,6 +50,7 @@ type WidgetResp struct {
 	mousePos glitch.Vec2
 	// mouseDragDelta glitch.Vec2
 	Pressed bool
+	Repeated bool
 	Held bool
 	Released bool
 	Dragging bool
@@ -67,6 +68,13 @@ func (resp *WidgetResp) clickable(id eid) {
 	} else if global.hotId == id {
 		if global.win.JustPressed(glitch.MouseButtonLeft) {
 			resp.Pressed = true
+			global.activeId = id // TODO: should maybe do tmpActiveId and flip it so that the interaction ordering works?
+		}
+	}
+
+	if global.activeId == id {
+		if global.win.Repeated(glitch.MouseButtonLeft) {
+			resp.Repeated = true
 			global.activeId = id // TODO: should maybe do tmpActiveId and flip it so that the interaction ordering works?
 		}
 	}
@@ -509,11 +517,7 @@ func ButtonFull(label string, rect glitch.Rect, style Style) WidgetResp {
 }
 
 func ButtonExt(label string, rect glitch.Rect, style Style) bool {
-	mask := wmHoverable | wmClickable | wmDrawPanel | wmDrawText
-	id := getId(label)
-	text := removeDedup(label)
-	resp := doWidget(id, text, mask, style, rect)
-
+	resp := ButtonFull(label, rect, style)
 	return resp.Released
 }
 
@@ -623,10 +627,12 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		*val = ratio * float64(max)
 	}
 
-	if ButtonExt("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle) {
+	topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle)
+	if topResp.Released || topResp.Repeated {
 		*val -= step
 	}
-	if ButtonExt("##vscrollbot", buttonBot, gStyle.scrollbarBotStyle) {
+	botResp := ButtonFull("##vscrollbot", buttonBot, gStyle.scrollbarBotStyle)
+	if botResp.Released || botResp.Repeated {
 		*val += step
 	}
 
@@ -661,10 +667,13 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		*val = ratio * float64(max)
 	}
 
-	if ButtonExt("##hscrollup", buttonLeft, gStyle.scrollbarTopStyle) {
+	leftResp := ButtonFull("##hscrollup", buttonLeft, gStyle.scrollbarTopStyle)
+	if leftResp.Released || leftResp.Repeated {
 		*val -= step
 	}
-	if ButtonExt("##hscrolldown", buttonRight, gStyle.scrollbarBotStyle) {
+
+	rightResp := ButtonFull("##hscrolldown", buttonRight, gStyle.scrollbarBotStyle)
+	if rightResp.Released || rightResp.Repeated {
 		*val += step
 	}
 
