@@ -368,7 +368,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	x2 := x1 + (scaleX * (u2 - u1))
 
 	// Note: Commented out the downard shift here, and I'm doing it in the above func
-	y1 := dot.Y + (scaleY * glyph.Bearing.Y) + a.descent
+	y1 := dot.Y + (scaleY * glyph.Bearing.Y) + (a.descent * scale)
 	y2 := y1 + (scaleY * (v2 - v1))
 
 	destRect := R(x1, y1, x2, y2)
@@ -381,7 +381,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 		// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 	}
 
-	dot.X += (scaleX * glyph.Advance) + a.defaultKerning // TODO: Kerning should come from text, not atlas
+	dot.X += (scaleX * glyph.Advance) + (a.defaultKerning * scale) // TODO: Kerning should come from text, not atlas
 
 	return dot, y2
 }
@@ -481,7 +481,8 @@ func (t *Text) Clear() {
 // This resets the text and sets it to the passed in string (if the passed in string is different!)
 // TODO - I need to deprecate this in favor of a better interface
 func (t *Text) Set(str string) {
-	if t.currentString != str {
+	// TODO: If wordwrap we also need to regenerate, but technically only if the bounds of the wrapRect have changed
+	if t.currentString != str || t.wordWrap {
 		t.currentString = str
 		t.regenerate()
 	}
@@ -558,13 +559,14 @@ func (t *Text) AppendStringVerts(text string) Rect {
 		if t.wordWrap && r == ' ' {
 			nextSpaceIdx := strings.Index(text[i+1:], " ")
 			if nextSpaceIdx < 0 {
-				// There is no next space, so we can't wrap.
-			} else {
-				nextWord := t.atlas.Measure(text[i:i+nextSpaceIdx], t.scale)
+				// There is no next space so we measure the rest of the line
+				nextSpaceIdx = len(text) - i
+			}
 
-				if (t.Dot.X - initialDot.X) + nextWord.W() > t.wrapRect.W() {
-					newline = true
-				}
+			nextWord := t.atlas.Measure(text[i:i+nextSpaceIdx], t.scale)
+
+			if (t.Dot.X - initialDot.X) + nextWord.W() > t.wrapRect.W() {
+				newline = true
 			}
 		}
 		if newline {
