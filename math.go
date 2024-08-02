@@ -470,6 +470,12 @@ func (r Rect) FitScale(r2 Rect) float64 {
 	return min
 }
 
+// Fits rect 'r' into another rect 'r2' with same center but only integer scaled
+func (r Rect) FitInt(r2 Rect) Rect {
+	scale := math.Floor(r.FitScale(r2))
+	return r.Scaled(scale).WithCenter(r2.Center())
+}
+
 // Scales rect r uniformly to fit inside rect r2
 // TODO This only scales around {0, 0}
 func (r Rect) ScaledToFit(r2 Rect) Rect {
@@ -489,6 +495,13 @@ func (r Rect) CenterScaled(scale float64) Rect {
 	c := r.Center()
 	w := r.W() * scale / 2.0
 	h := r.H() * scale / 2.0
+	return R(c.X - w, c.Y - h, c.X + w, c.Y + h)
+}
+
+func (r Rect) CenterScaledXY(scaleX, scaleY float64) Rect {
+	c := r.Center()
+	w := r.W() * scaleX / 2.0
+	h := r.H() * scaleY / 2.0
 	return R(c.X - w, c.Y - h, c.X + w, c.Y + h)
 }
 

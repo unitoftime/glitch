@@ -263,8 +263,10 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 
 	global.flush() // TODO: You technically only need to do this if it will change the uniform
 	global.camera = camMaterial
-	global.shader.setUniform("projection", global.camera.Projection)
-	global.shader.setUniform("view", global.camera.View)
+	if global.shader != nil {
+		global.shader.setUniform("projection", global.camera.Projection)
+		global.shader.setUniform("view", global.camera.View)
+	}
 
 	global.metric.setCamera++
 }

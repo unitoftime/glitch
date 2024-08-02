@@ -71,6 +71,22 @@ func (c1 RGBA) Mult(c2 RGBA) RGBA {
 	}
 }
 
+func (c RGBA) Desaturate(val float64) RGBA {
+	// https://stackoverflow.com/questions/70966873/algorithm-to-desaturate-rgb-color
+	i := (c.R + c.G + c.B) / 3
+
+	dr := i - c.R
+	dg := i - c.G
+	db := i - c.B
+
+	return RGBA{
+		c.R + (dr * val),
+		c.G + (dg * val),
+		c.B + (db * val),
+		c.A,
+	}
+}
+
 func (c RGBA) gl() glVec4 {
 	return glVec4{float32(c.R), float32(c.G), float32(c.B), float32(c.A)}
 }
