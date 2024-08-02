@@ -82,7 +82,6 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 
 		lastUpdateTime: time.Now(),
 	}
-	// win.Batcher.target = win
 
 	err := mainthread.CallErr(func() error {
 		err := glfw.Init(gl.ContextWatcher)

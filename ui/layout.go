@@ -122,6 +122,13 @@ func HList(rect glitch.Rect, num int) hList {
 		size: size,
 	}
 }
+func HList2(rect glitch.Rect, size float64) hList {
+	return hList{
+		rect: rect,
+		last: rect,
+		size: size,
+	}
+}
 func (l *hList) Next() glitch.Rect {
 	l.last = l.rect.CutLeft(l.size)
 	return l.last

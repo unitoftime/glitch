@@ -325,6 +325,8 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 
 			// TODO: Do I need to differentiate for dragged item? Or just use pressed style
 			// drawSprite(rect, style.Pressed)
+		} else if global.downId == id {
+			drawSprite(rect, style.Pressed) // Note: This is for wmDragItem
 		} else if global.hotId == id {
 			drawSprite(rect, style.Hovered)
 		} else {
@@ -369,7 +371,8 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 			rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
 		}
 	} else {
-		rect = rect.FullAnchor(text.Bounds().Scaled(global.fontScale * t.scale), t.anchor, t.pivot)
+		// rect = rect.FullAnchor(text.Bounds().Scaled(global.fontScale * t.scale), t.anchor, t.pivot)
+		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
 
@@ -491,6 +494,10 @@ func Hovered(rect glitch.Rect) bool {
 	return isHovering
 }
 
+func HoveredNoBlock(rect glitch.Rect) bool {
+	return mouseCheck(rect, global.mousePos)
+}
+
 // func Text(label string, rect glitch.Rect) glitch.Rect {
 // 	return TextExt(label, rect, gStyle.textStyle)
 // }
@@ -521,18 +528,25 @@ func ButtonExt(label string, rect glitch.Rect, style Style) bool {
 	return resp.Released
 }
 
-func Checkbox(val *bool, rect glitch.Rect) bool {
-	style := gStyle.checkboxStyleTrue
-	str := "X##checkbox"
+func CheckboxExt(val *bool, rect glitch.Rect, styleTrue, styleFalse Style) bool {
+	style := styleTrue
+	str := "##checkbox"
+	// str := "X##checkbox"
 	if !(*val) {
-		style = gStyle.checkboxStyleFalse
-		str = "##checkbox"
+		style = styleFalse
+		// str = "##checkbox"
 	}
 
-	if ButtonExt(str, rect, style) {
+	toggle := ButtonExt(str, rect, style)
+	if toggle {
 		*val = !(*val)
 	}
-	return *val
+	return toggle
+}
+
+// Returns true if the value has changed
+func Checkbox(val *bool, rect glitch.Rect) bool {
+	return CheckboxExt(val, rect, gStyle.checkboxStyleTrue, gStyle.checkboxStyleFalse)
 }
 
 func Button2(label string, rect glitch.Rect) bool {
@@ -608,7 +622,7 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	buttonBot := rect.CutBottom(square.H())
 
 	delta := max - min
-	ratio := *val / delta
+	ratio := (*val - min) / delta
 	height := rect.H() - square.H()
 
 	// deltaY := rect.Min.Y - rect.Max.Y + square.H()
@@ -624,7 +638,7 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
 
 		ratio := y / height
-		*val = ratio * float64(max)
+		*val = ratio * float64(max) + min
 	}
 
 	topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle)
@@ -636,7 +650,7 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		*val += step
 	}
 
-	if Hovered(hoverRect) || Hovered(rect) {
+	if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
 		_, scrollY := global.win.MouseScroll()
 		*val -= (scrollY * step)
 	}
@@ -651,7 +665,7 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	buttonRight := rect.CutRight(square.W())
 
 	delta := max - min
-	ratio := *val / delta
+	ratio := (*val - min) / delta
 	width := rect.W() - square.W()
 
 	xPos := (ratio * width) + rect.Min.X + (square.W() / 2)
@@ -664,7 +678,7 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		x := -rect.Min.X + draggerRect.Center().X - (square.W() / 2)
 
 		ratio := x / width
-		*val = ratio * float64(max)
+		*val = (ratio * float64(delta)) + min
 	}
 
 	leftResp := ButtonFull("##hscrollup", buttonLeft, gStyle.scrollbarTopStyle)
@@ -677,7 +691,7 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		*val += step
 	}
 
-	if Hovered(hoverRect) || Hovered(rect) {
+	if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
 		_, scrollY := global.win.MouseScroll()
 		*val += (scrollY * step)
 	}
@@ -773,16 +787,16 @@ func Tooltip(label string, rect glitch.Rect) {
 	// g.draw(tip, cursorRect, style.Normal, style.Text)
 }
 
-func MultiText(label string, rect glitch.Rect) {
-	style := Style{
-		Text: NewTextStyle().Padding(glitch.R(5, 5, 5, 5)).WordWrap(true).Anchor(glitch.Vec2{0, 1.0}),
-		// Text: textStyle.WordWrap(true),
-	}
+func MultiText(label string, rect glitch.Rect, textStyle TextStyle) glitch.Rect {
+	// style := Style{
+	// 	Text: NewTextStyle().Padding(glitch.R(5, 5, 5, 5)).WordWrap(true).Anchor(glitch.Vec2{0, 1.0}),
+	// 	// Text: textStyle.WordWrap(true),
+	// }
 	// mask := wmDrawText
 	// id := getId(label)
 	text := removeDedup(label)
 	// doWidget(id, text, mask, style, rect)
-	drawText(text, rect, style.Text)
+	return drawText(text, rect, textStyle)
 }
 
 func LineGraph(rect glitch.Rect, series []glitch.Vec2, textStyle TextStyle) {

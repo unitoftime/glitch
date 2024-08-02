@@ -344,7 +344,7 @@ func MousePosition() (float64, float64) {
 // TODO: I used to pass the style scale into the text here, but it never quite lined up right. so I just scale later now
 func (g *uiGlobals) getText(str string, style TextStyle, bounds glitch.Rect) *glitch.Text {
 	if g.currentTextBufferIndex >= len(g.textBuffer) {
-		text := g.atlas.Text("", 1.0)
+		text := g.atlas.Text("", g.fontScale)
 		text.SetShadow(style.shadow)
 		g.textBuffer = append(g.textBuffer, text)
 	}
@@ -355,6 +355,7 @@ func (g *uiGlobals) getText(str string, style TextStyle, bounds glitch.Rect) *gl
 	// g.textBuffer[idx].SetScale(style.scale)
 	g.textBuffer[idx].SetShadow(style.shadow)
 	g.textBuffer[idx].SetWordWrap(style.wordWrap, bounds)
+	g.textBuffer[idx].SetScale(g.fontScale)
 	g.textBuffer[idx].Set(str)
 	return g.textBuffer[idx]
 }
