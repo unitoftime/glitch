@@ -691,10 +691,11 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		*val += step
 	}
 
-	if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
-		_, scrollY := global.win.MouseScroll()
-		*val += (scrollY * step)
-	}
+	// TODO: I disabled this for horizontal sliders  because I dont have a good way to detect if a scroll has been captured. For example. when you have a horizontal slider inside of a scrollbox (which is a vertical slider). the scroll from one should block the scroll from the other. I think I could fix by having the scroll get constructed and consumed each frame. So for example, you'd have it get consumed by the sliderH if the mouse is over that, then it wouldn't be consumable by the sliderV of the scrollbox (which is usually placed after)
+	// if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
+	// 	_, scrollY := global.win.MouseScroll()
+	// 	*val += (scrollY * step)
+	// }
 
 	*val = clamp(min, max, *val)
 }
