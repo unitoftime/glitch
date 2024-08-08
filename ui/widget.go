@@ -551,6 +551,11 @@ func Checkbox(val *bool, rect glitch.Rect) bool {
 	return CheckboxExt(val, rect, gStyle.checkboxStyleTrue, gStyle.checkboxStyleFalse)
 }
 
+func Button(label string, rect glitch.Rect) bool {
+	style := gStyle.buttonStyle
+	return ButtonExt(label, rect, style)
+}
+
 func Button2(label string, rect glitch.Rect) bool {
 	style := gStyle.buttonStyle
 	return ButtonExt(label, rect, style)

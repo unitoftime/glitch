@@ -525,6 +525,10 @@ func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	target.Add(t.mesh, matrix.gl(), color, t.material, true)
 }
 
+func (t *Text) RectDraw(target BatchTarget, rect Rect) {
+	t.DrawRect(target, rect, White)
+}
+
 func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
 

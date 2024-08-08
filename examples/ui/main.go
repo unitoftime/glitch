@@ -105,7 +105,7 @@ func runGame() {
 	ui.SetDragItemLayer(int8(0))
 
 	modes := []string{
-		"text", "scroll", "drag", "lists", "grid",
+		"basic", "text", "scroll", "drag", "lists", "grid",
 	}
 	mode := modes[0]
 
@@ -227,23 +227,28 @@ func runGame() {
 
 		bounds := win.Bounds()
 		panelBounds := bounds.SliceVertical(0.5 * bounds.W()).SliceHorizontal(0.5 * bounds.H())
+		padding := glitch.R(5, 5, 5, 5)
 
 		switch mode {
+		case "basic":
+			ui.Panel2("##panel", panelBounds)
+			list := ui.VList(panelBounds.Unpad(padding), 5)
+			ui.TextExt("Panel Title", list.Next().Unpad(padding), textStyle)
+			buttonRect := list.Next().Unpad(padding)
+			if ui.Button("My Button", buttonRect) {
+				println("You clicked me!")
+			}
+
 		case "lists":
 			ui.Panel2("##panel", panelBounds)
 
-			// numButtons := 3
 			list := ui.VList(panelBounds.Unpad(glitch.R(5, 5, 5, 5)), 7)
-			// list := ui.VList2(panelBounds.Unpad(glitch.R(5, 5, 5, 5)), 100)
-
 			ui.TextExt("Title Section", list.Next().Unpad(glitch.R(5, 5, 5, 5)), textStyle)
 			ui.TextInput("textinput", &inputStr, list.Next().Unpad(glitch.R(5, 5, 5, 5)), ui.DragItemStyle())
 
 			topButton := ui.HList(list.Next().Unpad(glitch.R(5, 5, 5, 5)), 2)
 
 			ui.Button2("Left", topButton.Next().Unpad(glitch.R(5, 5, 5, 5)))
-			// ui.Tooltip("Tooltip:Left", ui.LastRect())
-			ui.Tooltip("Tooltip:Left", topButton.Last())
 			ui.Button2("Right", topButton.Next().Unpad(glitch.R(5, 5, 5, 5)))
 			ui.Button2("Hello2", list.Next().Unpad(glitch.R(5, 5, 5, 5)))
 			ui.Button2("Hello3", list.Next().Unpad(glitch.R(5, 5, 5, 5)))
@@ -325,7 +330,7 @@ func runGame() {
 		case "text":
 			ui.Panel2("##panel", panelBounds)
 			textAreaBounds := panelBounds// .Unpad(glitch.R(10, 10, 10, 10))
-			ui.MultiText("Unfinished: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textAreaBounds)
+			ui.MultiText("Unfinished: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textAreaBounds, textStyle)
 		}
 
 		ui.Update()
