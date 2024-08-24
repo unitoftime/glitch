@@ -759,6 +759,10 @@ func TextInput(label string, str *string, rect glitch.Rect, style Style) {
 }
 
 func Tooltip(label string, rect glitch.Rect) {
+	TooltipExt(label, rect, gStyle.tooltipStyle)
+}
+
+func TooltipExt(label string, rect glitch.Rect, style Style) {
 	id := getId(label)
 	text := removeDedup(label)
 
@@ -787,7 +791,7 @@ func Tooltip(label string, rect glitch.Rect) {
 
 	cursorRect := glitch.R(0, 0, 0, 0).WithCenter(global.mousePos)
 	// style.Text = style.Text.Anchor(movement.Scaled(-1)).Pivot(glitch.Vec2{0.5, 0.5})
-	tmpTextStyle := gStyle.tooltipStyle.Text.Anchor(movement)
+	tmpTextStyle := style.Text.Anchor(movement)
 
 	// TODO: Panel drawing?
 	resp.textRect = drawText(text, cursorRect, tmpTextStyle)
