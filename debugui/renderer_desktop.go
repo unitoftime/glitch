@@ -1,4 +1,5 @@
 //go:build !js
+
 package debugui
 
 // Note: this whole file is ripped directly from: https://github.com/inkyblackness/imgui-go-examples/tree/master/internal
@@ -180,7 +181,7 @@ func (renderer *OpenGL3) Render(displaySize [2]float32, framebufferSize [2]float
 				// 	uintptr(cmd.IndexOffset()*indexSize), int32(cmd.VertexOffset()))
 				gl.DrawElements(gl.TRIANGLES, int(cmd.ElementCount()), gl.Enum(drawType),
 					cmd.IndexOffset()*indexSize)
-					// uintptr(cmd.IndexOffset()*indexSize), int32(cmd.VertexOffset()))
+				// uintptr(cmd.IndexOffset()*indexSize), int32(cmd.VertexOffset()))
 			}
 		}
 	}

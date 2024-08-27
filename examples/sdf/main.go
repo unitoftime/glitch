@@ -45,6 +45,7 @@ func main() {
 		}
 	}
 }
+
 // func main() {
 // 	log.Println("Begin")
 // 	glitch.Run(runGame)
@@ -59,7 +60,7 @@ func runGame() {
 		panic(err)
 	}
 
- 	atlasImg, err := assets.LoadImage("atlas-msdf.png")
+	atlasImg, err := assets.LoadImage("atlas-msdf.png")
 	if err != nil {
 		panic(err)
 	}
@@ -81,7 +82,6 @@ func runGame() {
 	// text := atlas.Text("Hello World", 1.0)
 	text := atlas.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
 	text2 := atlas2.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
-
 
 	screenScale := 1.0 // This is just a weird scaling number
 
@@ -140,7 +140,7 @@ func runGame() {
 			mat := glitch.Mat4Ident
 			mat.
 				Scale(scale, scale, 1).
-				Translate(10, y + 10, 0)
+				Translate(10, y+10, 0)
 
 			if drawText1 {
 				text.Draw(win, mat)

@@ -1,21 +1,21 @@
 package glitch
 
 type Sprite struct {
-	mesh *Mesh
-	bounds Rect // Represents the bounds centered on (0, 0)
-	frame Rect // Represents the bounds inside the spritesheet
-	texture *Texture
-	material Material
+	mesh        *Mesh
+	bounds      Rect // Represents the bounds centered on (0, 0)
+	frame       Rect // Represents the bounds inside the spritesheet
+	texture     *Texture
+	material    Material
 	Translucent bool
-	uvBounds Rect
+	uvBounds    Rect
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	uvBounds := R(
-		bounds.Min.X / float64(texture.width),
-		bounds.Min.Y / float64(texture.height),
-		bounds.Max.X / float64(texture.width),
-		bounds.Max.Y / float64(texture.height),
+		bounds.Min.X/float64(texture.width),
+		bounds.Min.Y/float64(texture.height),
+		bounds.Max.X/float64(texture.width),
+		bounds.Max.Y/float64(texture.height),
 	)
 
 	material := DefaultMaterial(texture)
@@ -24,7 +24,7 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	return &Sprite{
 		mesh: mesh,
 		// bounds: bounds,
-		frame: bounds,
+		frame:  bounds,
 		bounds: bounds.Moved(bounds.Center().Scaled(-1)),
 		// bounds: mesh.Bounds().Rect(),
 		texture: texture,
@@ -34,9 +34,9 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 	}
 }
 
-// func (s *Sprite) SetMaterial(material Material) {
-// 	s.material = material
-// }
+//	func (s *Sprite) SetMaterial(material Material) {
+//		s.material = material
+//	}
 func (s *Sprite) Material() *Material {
 	return &s.material
 }
@@ -65,7 +65,7 @@ func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
 }
 func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
+	matrix.Scale(bounds.W()/s.bounds.W(), bounds.H()/s.bounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
 	s.DrawColorMask(target, matrix, mask)
 }
 
@@ -80,10 +80,10 @@ func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds
 	s.bounds = bounds.Moved(bounds.Center().Scaled(-1))
 	s.uvBounds = R(
-		bounds.Min.X / float64(s.texture.width),
-		bounds.Min.Y / float64(s.texture.height),
-		bounds.Max.X / float64(s.texture.width),
-		bounds.Max.Y / float64(s.texture.height),
+		bounds.Min.X/float64(s.texture.width),
+		bounds.Min.Y/float64(s.texture.height),
+		bounds.Max.X/float64(s.texture.width),
+		bounds.Max.Y/float64(s.texture.height),
 	)
 
 	w := bounds.W()
@@ -159,8 +159,8 @@ func (s *Sprite) SetTextureBounds(bounds Rect) {
 
 type NinePanelSprite struct {
 	sprites []*Sprite
-	border Rect
-	bounds Rect
+	border  Rect
+	bounds  Rect
 	// Mask RGBA // This represents the default color mask to draw with (unless one is passed in via a draw function, Example: *Mask)
 	Scale float64
 }
@@ -186,14 +186,14 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 	rects := []Rect{
 		bounds, // Center
 
-		top, // Top
-		bot, // Bot
-		left, // Left
+		top,   // Top
+		bot,   // Bot
+		left,  // Left
 		right, // Right
 
-		topLeft, // TL
+		topLeft,  // TL
 		topRight, // TR
-		botLeft, // BL
+		botLeft,  // BL
 		botRight, // BR
 	}
 
@@ -205,8 +205,8 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 
 	return &NinePanelSprite{
 		sprites: sprites,
-		bounds: fullBounds,
-		border: border,
+		bounds:  fullBounds,
+		border:  border,
 		// Mask: White,
 		Scale: 1,
 	}
@@ -232,10 +232,10 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 	// fmt.Println(bounds.W(), bounds.H())
 
 	border := R(
-		s.Scale * s.border.Min.X,
-		s.Scale * s.border.Min.Y,
-		s.Scale * s.border.Max.X,
-		s.Scale * s.border.Max.Y)
+		s.Scale*s.border.Min.X,
+		s.Scale*s.border.Min.Y,
+		s.Scale*s.border.Max.X,
+		s.Scale*s.border.Max.Y)
 
 	top := rect.CutTop(border.Max.Y)
 	bot := rect.CutBottom(border.Min.Y)
@@ -250,14 +250,14 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 	destRects := [9]Rect{
 		rect, //center
 
-		top, // Top
-		bot, // Bot
-		left, // Left
+		top,   // Top
+		bot,   // Bot
+		left,  // Left
 		right, // Right
 
-		topLeft, // TL
+		topLeft,  // TL
 		topRight, // TR
-		botLeft, // BL
+		botLeft,  // BL
 		botRight, // BR
 	}
 
@@ -265,7 +265,7 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 	for i := range s.sprites {
 		// fmt.Println(destRects[i].W(), destRects[i].H())
 		matrix = Mat4Ident
-		matrix.Scale(destRects[i].W() / s.sprites[i].bounds.W(), destRects[i].H() / s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2 + destRects[i].Min.X, destRects[i].H()/2 + destRects[i].Min.Y, 0)
+		matrix.Scale(destRects[i].W()/s.sprites[i].bounds.W(), destRects[i].H()/s.sprites[i].bounds.H(), 1).Translate(destRects[i].W()/2+destRects[i].Min.X, destRects[i].H()/2+destRects[i].Min.Y, 0)
 		// pass.Add(s.sprites[i], matrix, mask, s.sprites[i].material, false)
 		s.sprites[i].DrawColorMask(pass, matrix, mask)
 	}
@@ -286,7 +286,7 @@ func (s *NinePanelSprite) Border() Rect {
 // // }
 
 // // func NewGeometry() *Geometry {
-	
+
 // // }
 
 // // type Sprite struct {

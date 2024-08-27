@@ -24,12 +24,13 @@ type widget struct {
 	id eid
 
 	// Recompute each frame
-	relPos glitch.Vec2 // Position relative to parent position
+	relPos       glitch.Vec2 // Position relative to parent position
 	computedSize glitch.Vec2
-	rect glitch.Rect // The actual bounding rect for the draw
+	rect         glitch.Rect // The actual bounding rect for the draw
 }
 
 type widgetMask uint64
+
 const (
 	wmHoverable widgetMask = 1 << iota
 	wmClickable
@@ -39,19 +40,20 @@ const (
 	wmDragItem
 	// wmDragY
 )
+
 func (m widgetMask) Get(m2 widgetMask) bool {
 	return (m & m2) != 0
 }
 
 type WidgetResp struct {
-	id eid
+	id        eid
 	droppedId eid
-	textRect glitch.Rect
-	mousePos glitch.Vec2
+	textRect  glitch.Rect
+	mousePos  glitch.Vec2
 	// mouseDragDelta glitch.Vec2
-	Pressed bool
+	Pressed  bool
 	Repeated bool
-	Held bool
+	Held     bool
 	Released bool
 	Dragging bool
 }
@@ -108,11 +110,10 @@ func (resp *WidgetResp) smoothDrag(rect *glitch.Rect, bounds glitch.Rect, step g
 			pos.Y = (math.Round(pos.Y / step.Y)) * step.Y
 		}
 
-
 		// pos.X = min(max(pos.X, bounds.Min.X), bounds.Max.X)
 		// pos.Y = min(max(pos.Y, bounds.Min.Y), bounds.Max.Y)
-		pos.X = clamp(bounds.Min.X + halfWidth, bounds.Max.X - halfWidth, pos.X)
-		pos.Y = clamp(bounds.Min.Y + halfHeight, bounds.Max.Y - halfHeight, pos.Y)
+		pos.X = clamp(bounds.Min.X+halfWidth, bounds.Max.X-halfWidth, pos.X)
+		pos.Y = clamp(bounds.Min.Y+halfHeight, bounds.Max.Y-halfHeight, pos.Y)
 
 		*rect = rect.WithCenter(pos)
 	}
@@ -159,7 +160,9 @@ func findWordIndexRight(str string, cursorPos int) int {
 }
 
 func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
-	if str == nil { return }
+	if str == nil {
+		return
+	}
 
 	runes := global.win.Typed()
 
@@ -345,7 +348,9 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 }
 
 func drawSprite(rect glitch.Rect, style SpriteStyle) {
-	if style.sprite == nil { return }
+	if style.sprite == nil {
+		return
+	}
 	style.sprite.RectDrawColorMask(global.sorter, rect, style.color)
 
 	// TODO: add back
@@ -355,7 +360,9 @@ func drawSprite(rect glitch.Rect, style SpriteStyle) {
 
 // Returns the rectangular bounds of the drawn text
 func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
-	if str == "" { return rect } // TODO: Return empty?
+	if str == "" {
+		return rect
+	} // TODO: Return empty?
 
 	text := global.getText(str, t, rect)
 
@@ -388,7 +395,9 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 
 // Returns the rectangular bounds of the drawn text
 func measureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
-	if str == "" { return glitch.Rect{} }
+	if str == "" {
+		return glitch.Rect{}
+	}
 
 	// text := global.getText(str, t)
 	textBounds := global.atlas.Measure(str, 1.0)
@@ -402,7 +411,7 @@ func measureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 			rect = rect.FullAnchor(textBounds.ScaledToFit(rect), t.anchor, t.pivot)
 		}
 	} else {
-		rect = rect.FullAnchor(textBounds.Scaled(global.fontScale * t.scale), t.anchor, t.pivot)
+		rect = rect.FullAnchor(textBounds.Scaled(global.fontScale*t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
 
@@ -410,7 +419,9 @@ func measureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 }
 
 func drawDebug(rect glitch.Rect) {
-	if !global.debug { return }
+	if !global.debug {
+		return
+	}
 
 	lineWidth := 2.0
 
@@ -465,7 +476,7 @@ func drawDebug(rect glitch.Rect) {
 // 	return resp
 // }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 func SmoothDragButton(label string, rect *glitch.Rect, bounds glitch.Rect, step glitch.Vec2, style Style) bool {
 	// mask := wmHoverable | wmClickable | wmDrawPanel | wmDrawText // | wmDragY
 	mask := wmDrawPanel
@@ -645,7 +656,7 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
 
 		ratio := y / height
-		*val = ratio * float64(max) + min
+		*val = ratio*float64(max) + min
 	}
 
 	topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle)
@@ -751,9 +762,9 @@ func TextInput(label string, str *string, rect glitch.Rect, style Style) {
 			cursoredTextRect = glitch.R(0, 0, 0, textResp.textRect.H())
 		}
 
-		cursorWidth := 2.0 // TODO: Configurable?
+		cursorWidth := 2.0                                                // TODO: Configurable?
 		cursorRect := glitch.R(0, 0, cursorWidth, textResp.textRect.H()). // cursoredTextRect.H()
-			Moved(glitch.Vec2{textResp.textRect.Min.X + cursoredTextRect.W(), textResp.textRect.Min.Y})
+											Moved(glitch.Vec2{textResp.textRect.Min.X + cursoredTextRect.W(), textResp.textRect.Min.Y})
 		drawSprite(cursorRect, gStyle.textCursorStyle.Normal)
 	}
 }

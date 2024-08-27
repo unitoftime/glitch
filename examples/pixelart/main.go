@@ -92,14 +92,14 @@ func run() {
 		counter = (counter + 1) % 60
 
 		radius := 50.0
-		man[0].position.X = radius * math.Cos(t.Seconds()) + targetBounds.Center().X
-		man[0].position.Y = radius * math.Sin(t.Seconds()) + targetBounds.Center().Y
+		man[0].position.X = radius*math.Cos(t.Seconds()) + targetBounds.Center().X
+		man[0].position.Y = radius*math.Sin(t.Seconds()) + targetBounds.Center().Y
 
-		man[1].position.X = radius * math.Cos(t.Seconds()) + targetBounds.Center().X
+		man[1].position.X = radius*math.Cos(t.Seconds()) + targetBounds.Center().X
 		man[1].position.Y = (2 * radius) + targetBounds.Center().Y
 
 		man[2].position.X = (2 * radius) + targetBounds.Center().X
-		man[2].position.Y = radius * math.Sin(t.Seconds()) + targetBounds.Center().Y
+		man[2].position.Y = radius*math.Sin(t.Seconds()) + targetBounds.Center().Y
 
 		pass.Clear()
 

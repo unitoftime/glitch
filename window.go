@@ -9,12 +9,11 @@ import (
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
-
 type WindowConfig struct {
-	Fullscreen bool
+	Fullscreen  bool
 	Undecorated bool
-	Maximized bool
-	Vsync bool
+	Maximized   bool
+	Vsync       bool
 	// Resizable bool
 	Samples int
 }
@@ -27,9 +26,9 @@ type Window struct {
 	width, height int
 
 	tmpInput, input struct {
-		justPressed [KeyLast + 1]bool
+		justPressed  [KeyLast + 1]bool
 		justReleased [KeyLast + 1]bool
-		repeated [KeyLast + 1]bool
+		repeated     [KeyLast + 1]bool
 
 		scroll struct {
 			X, Y float64
@@ -41,18 +40,18 @@ type Window struct {
 	// The back and front buffers for tracking typed characters
 	typedBack, typedFront []rune
 
-	mainthreadUpdate func()
+	mainthreadUpdate  func()
 	mainthreadPressed func()
-	pressedKeyCheck Key
-	pressedKeyReturn bool
+	pressedKeyCheck   Key
+	pressedKeyReturn  bool
 
-	scrollCallbacks []glfw.ScrollCallback
-	keyCallbacks []glfw.KeyCallback
+	scrollCallbacks      []glfw.ScrollCallback
+	keyCallbacks         []glfw.KeyCallback
 	mouseButtonCallbacks []glfw.MouseButtonCallback
-	charCallbacks []glfw.CharCallback
+	charCallbacks        []glfw.CharCallback
 
-	repeatTracker []repeatData
-	mouseRepeatDelay time.Duration // amount of time delay to wait after a mouse hold to consider it repeated
+	repeatTracker     []repeatData
+	mouseRepeatDelay  time.Duration // amount of time delay to wait after a mouse hold to consider it repeated
 	mouseRepeatPeriod time.Duration // amount of time in between consecutive repeats after a repeat has started
 
 	lastUpdateTime time.Time
@@ -65,8 +64,8 @@ type repeatData struct {
 
 func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
 	win := &Window{
-		scrollCallbacks: make([]glfw.ScrollCallback, 0),
-		keyCallbacks: make([]glfw.KeyCallback, 0),
+		scrollCallbacks:      make([]glfw.ScrollCallback, 0),
+		keyCallbacks:         make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
 
 		repeatTracker: []repeatData{
@@ -77,7 +76,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			// TODO: Add all mousebuttons
 			// TODO: Add all gamepad buttons
 		},
-		mouseRepeatDelay: 350 * time.Millisecond, // Note: The total delay for first repeat is delay + period
+		mouseRepeatDelay:  350 * time.Millisecond, // Note: The total delay for first repeat is delay + period
 		mouseRepeatPeriod: 150 * time.Millisecond,
 
 		lastUpdateTime: time.Now(),
@@ -131,7 +130,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 
 		gl.Enable(gl.BLEND) // TODO: Will this ever need to be disabled?
 		// gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Non premult
-		gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA); // Premult
+		gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA) // Premult
 
 		if config.Vsync {
 			glfw.SwapInterval(1)
@@ -151,13 +150,13 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		})
 
 		win.AddScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
-		// win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
+			// win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
 			win.tmpInput.scroll.X += xoff
 			win.tmpInput.scroll.Y += yoff
 		})
 
 		win.AddMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
-		// win.window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
+			// win.window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mods glfw.ModifierKey) {
 			switch action {
 			case glfw.Press:
 				win.tmpInput.justPressed[Key(button)] = true
@@ -171,7 +170,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		})
 
 		win.AddKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
-		// win.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
+			// win.window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
 			if key == glfw.KeyUnknown {
 				return
 			}
@@ -187,7 +186,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		})
 
 		win.AddCharCallback(func(w *glfw.Window, char rune) {
-		// win.window.SetCharCallback(func(w *glfw.Window, char rune) {
+			// win.window.SetCharCallback(func(w *glfw.Window, char rune) {
 			win.typedBack = append(win.typedBack, char)
 		})
 
@@ -351,17 +350,23 @@ func (w *Window) mainthreadCacheMousePosition() {
 
 // // Returns true if the key was pressed in the last frame
 func (w *Window) JustPressed(key Key) bool {
-	if key == KeyUnknown { return false }
+	if key == KeyUnknown {
+		return false
+	}
 	return w.input.justPressed[key]
 }
 
 func (w *Window) JustReleased(key Key) bool {
-	if key == KeyUnknown { return false }
+	if key == KeyUnknown {
+		return false
+	}
 	return w.input.justReleased[key]
 }
 
 func (w *Window) Repeated(key Key) bool {
-	if key == KeyUnknown { return false }
+	if key == KeyUnknown {
+		return false
+	}
 	return w.input.repeated[key]
 }
 
@@ -381,7 +386,9 @@ func (w *Window) Bind() {
 // }
 
 func (w *Window) Pressed(key Key) bool {
-	if key == KeyUnknown { return false }
+	if key == KeyUnknown {
+		return false
+	}
 	// TODO: You could cache these every frame to avoid calling mainthread call (ie {unset, pressed, unpressed})
 
 	w.pressedKeyCheck = key
@@ -432,11 +439,13 @@ func (w *Window) MouseScroll() (float64, float64) {
 }
 
 type CursorMode uint8
+
 const (
-	CursorNormal CursorMode = iota // A normal cursor
-	CursorHidden // A normal cursor, but not rendered
-	CursorDisabled // Hides and locks the cursor
+	CursorNormal   CursorMode = iota // A normal cursor
+	CursorHidden                     // A normal cursor, but not rendered
+	CursorDisabled                   // Hides and locks the cursor
 )
+
 func (w *Window) SetCursor(mode CursorMode) {
 	mainthread.Call(func() {
 		if mode == CursorNormal {
@@ -466,8 +475,9 @@ func (w *Window) SetVSync(enable bool) {
 }
 
 type ScreenModeType glfw.ScreenModeType
+
 const (
-	ScreenModeFull = ScreenModeType(glfw.ScreenModeFull)
+	ScreenModeFull     = ScreenModeType(glfw.ScreenModeFull)
 	ScreenModeWindowed = ScreenModeType(glfw.ScreenModeWindowed)
 )
 
@@ -529,4 +539,3 @@ func (w *Window) AddMouseButtonCallback(cb glfw.MouseButtonCallback) {
 	w.mouseButtonCallbacks = append(w.mouseButtonCallbacks, cb)
 	// fmt.Println("Adding new mouse button callback. Currently: ", len(w.mouseButtonCallbacks))
 }
-

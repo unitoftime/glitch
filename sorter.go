@@ -9,10 +9,10 @@ import (
 // 1. every draw command needs ALL of the data to be sorted
 // 2. you need to simplify the sorting to its all command based imo
 type Sorter struct {
-	DepthTest bool
+	DepthTest    bool
 	SoftwareSort SoftwareSortMode
-	DepthBump bool
-	depthBump float32
+	DepthBump    bool
+	depthBump    float32
 	currentLayer int8
 
 	// States that are used for forming the draw command
@@ -73,7 +73,7 @@ func (s *Sorter) Draw(target BatchTarget) {
 		}
 
 		// Translucent goes from back to front (255 to 0)
-		for l := len(s.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+		for l := len(s.commands) - 1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for i := range s.commands[l].Translucent {
 				// for i := len(s.commands[l].Translucent)-1; i >= 0; i-- {
 				// fmt.Println("- Transl: (layer, x, z)", l, s.commands[l].Translucent[i].matrix[i4_3_1], s.commands[l].Translucent[i].matrix[i4_3_2])
@@ -81,7 +81,7 @@ func (s *Sorter) Draw(target BatchTarget) {
 			}
 		}
 	} else {
-		for l := len(s.commands)-1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+		for l := len(s.commands) - 1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			for i := range s.commands[l].Opaque {
 				s.applyDrawCommand(target, s.commands[l].Opaque[i])
 			}
@@ -99,7 +99,9 @@ func (s *Sorter) applyDrawCommand(target BatchTarget, c drawCommand) {
 }
 
 func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
-	if mask.A == 0 { return } // discard b/c its completely transparent
+	if mask.A == 0 {
+		return
+	} // discard b/c its completely transparent
 
 	if mask.A != 1 {
 		translucent = true
@@ -167,9 +169,9 @@ func (s *Sorter) sort() {
 	}
 }
 
-//--------------------------------------------------------------------------------
-type cmdList struct{
-	Opaque []drawCommand // TODO: This is kindof more like the unsorted list
+// --------------------------------------------------------------------------------
+type cmdList struct {
+	Opaque      []drawCommand // TODO: This is kindof more like the unsorted list
 	Translucent []drawCommand // TODO: This is kindof more like the sorted list
 
 }
@@ -198,24 +200,27 @@ func (c *cmdList) Clear() {
 }
 
 type SoftwareSortMode uint8
+
 const (
-	SoftwareSortNone SoftwareSortMode = iota
-	SoftwareSortX // Sort based on the X position
-	SoftwareSortY // Sort based on the Y position
-	SoftwareSortZ // Sort based on the Z position
-	SoftwareSortZNegative // Opposite order to SoftwareSortZ
-	SoftwareSortCommand // Sort by the computed drawCommand.command
+	SoftwareSortNone      SoftwareSortMode = iota
+	SoftwareSortX                          // Sort based on the X position
+	SoftwareSortY                          // Sort based on the Y position
+	SoftwareSortZ                          // Sort based on the Z position
+	SoftwareSortZNegative                  // Opposite order to SoftwareSortZ
+	SoftwareSortCommand                    // Sort by the computed drawCommand.command
 )
 
 type drawCommand struct {
-	filler GeometryFiller
-	matrix glMat4
-	mask RGBA
+	filler   GeometryFiller
+	matrix   glMat4
+	mask     RGBA
 	material Material
 }
 
 func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
-	if sortMode == SoftwareSortNone { return } // Skip if sorting disabled
+	if sortMode == SoftwareSortNone {
+		return
+	} // Skip if sorting disabled
 
 	if sortMode == SoftwareSortX {
 		slices.SortStableFunc(buf, func(a, b drawCommand) int {
@@ -233,7 +238,7 @@ func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
 		slices.SortStableFunc(buf, func(a, b drawCommand) int {
 			return -cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
 		})
-	}//  else if sortMode == SoftwareSortCommand {
+	} //  else if sortMode == SoftwareSortCommand {
 	// 	slices.SortStableFunc(buf, func(a, b drawCommand) int {
 	// 		return -cmp.Compare(a.command, b.command) // sort by command
 	// 	})

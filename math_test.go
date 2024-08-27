@@ -24,7 +24,7 @@ func TestAngle(t *testing.T) {
 
 func TestRotate(t *testing.T) {
 	a := Vec3{1, 0, 0}
-	b := a.Rotate2D(3.14159/2)
+	b := a.Rotate2D(3.14159 / 2)
 	fmt.Println(b)
 }
 

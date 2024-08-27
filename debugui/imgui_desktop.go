@@ -1,4 +1,5 @@
 //go:build !js
+
 package debugui
 
 import (
@@ -21,12 +22,12 @@ type GuiWindow interface {
 }
 
 type Gui struct {
-	context *imgui.Context
-	io imgui.IO
+	context  *imgui.Context
+	io       imgui.IO
 	renderer *OpenGL3
 
 	mouseJustPressed [3]bool
-	win *glitch.Window
+	win              *glitch.Window
 }
 
 func NewImgui(win *glitch.Window) *Gui {
@@ -38,7 +39,9 @@ func NewImgui(win *glitch.Window) *Gui {
 		g.io = imgui.CurrentIO()
 
 		renderer, err := NewOpenGL3(g.io)
-		if err != nil { log.Fatal(err) }
+		if err != nil {
+			log.Fatal(err)
+		}
 		g.renderer = renderer
 
 		g.setKeyMapping()
@@ -53,11 +56,11 @@ func (g *Gui) NewFrame() {
 		mouseX, mouseY := g.win.GetMouse()
 
 		g.io.SetDisplaySize(imgui.Vec2{X: ds[0], Y: ds[1]})
-		g.io.SetDeltaTime(float32(1/60.0))
+		g.io.SetDeltaTime(float32(1 / 60.0))
 		// TODO - before setting this check if window is focused
 		g.io.SetMousePosition(imgui.Vec2{X: float32(mouseX), Y: float32(mouseY)})
 
-		for i := 0; i<len(g.mouseJustPressed); i++ {
+		for i := 0; i < len(g.mouseJustPressed); i++ {
 			down := g.mouseJustPressed[i] || (g.win.GetMouseButton(glfwButtonIDByIndex[i]) == glfw.Press)
 			g.io.SetMouseButtonDown(i, down)
 			g.mouseJustPressed[i] = false
@@ -88,10 +91,10 @@ func (g *Gui) Terminate() {
 	})
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
 // Most of this is taken directly from:
 // https://github.com/inkyblackness/imgui-go-examples/blob/master/internal/platforms/glfw.go
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
 func (g *Gui) setKeyMapping() {
 	// Keyboard mapping. ImGui will use those indices to peek into the io.KeysDown[] array.
 	g.io.KeyMap(imgui.KeyTab, int(glfw.KeyTab))

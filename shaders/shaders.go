@@ -16,7 +16,7 @@ type VertexFormat []VertexAttr
 type UniformFormat []Attr
 
 type VertexAttr struct {
-	Attr // The underlying Attribute
+	Attr                // The underlying Attribute
 	Swizzle SwizzleType // This defines how the shader wants to map a generic object (like a mesh, to the shader buffers)
 }
 
@@ -28,26 +28,42 @@ type Attr struct {
 // Returns the size of the attribute type
 func (a Attr) Size() int {
 	switch a.Type {
-	case AttrInt: return 1
-	case AttrFloat: return 1
-	case AttrVec2: return 2
-	case AttrVec3: return 3
-	case AttrVec4: return 4
-	case AttrMat2: return 2 * 2
-	case AttrMat23: return 2 * 3
-	case AttrMat24: return 2 * 4
-	case AttrMat3: return 3 * 3
-	case AttrMat32: return 3 * 2
-	case AttrMat34: return 3 * 4
-	case AttrMat4: return 4 * 4
-	case AttrMat42: return 4 * 2
-	case AttrMat43: return 4 * 3
-	default: panic(fmt.Sprintf("Invalid Attribute: %v", a))
+	case AttrInt:
+		return 1
+	case AttrFloat:
+		return 1
+	case AttrVec2:
+		return 2
+	case AttrVec3:
+		return 3
+	case AttrVec4:
+		return 4
+	case AttrMat2:
+		return 2 * 2
+	case AttrMat23:
+		return 2 * 3
+	case AttrMat24:
+		return 2 * 4
+	case AttrMat3:
+		return 3 * 3
+	case AttrMat32:
+		return 3 * 2
+	case AttrMat34:
+		return 3 * 4
+	case AttrMat4:
+		return 4 * 4
+	case AttrMat42:
+		return 4 * 2
+	case AttrMat43:
+		return 4 * 3
+	default:
+		panic(fmt.Sprintf("Invalid Attribute: %v", a))
 	}
 }
 
 // This type is used to define the underlying data type of a vertex attribute or uniform attribute
 type AttrType uint8
+
 const (
 	// TODO - others
 	AttrInt AttrType = iota
@@ -68,6 +84,7 @@ const (
 
 // This type is used to define how generic meshes map into specific shader buffers
 type SwizzleType uint8
+
 const (
 	PositionXY SwizzleType = iota
 	PositionXYZ
@@ -113,13 +130,13 @@ func VertexAttribute(name string, Type AttrType, swizzle SwizzleType) VertexAttr
 // }
 
 //go:embed sprite.vs
-var SpriteVertexShader string;
+var SpriteVertexShader string
 
 //go:embed sprite.fs
-var SpriteFragmentShader string;
+var SpriteFragmentShader string
 
 var SpriteShader = ShaderConfig{
-	VertexShader: SpriteVertexShader,
+	VertexShader:   SpriteVertexShader,
 	FragmentShader: SpriteFragmentShader,
 	VertexFormat: VertexFormat{
 		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
@@ -134,10 +151,10 @@ var SpriteShader = ShaderConfig{
 }
 
 //go:embed msdf.fs
-var MSDFFragmentShader string;
+var MSDFFragmentShader string
 
 var MSDFShader = ShaderConfig{
-	VertexShader: SpriteVertexShader,
+	VertexShader:   SpriteVertexShader,
 	FragmentShader: MSDFFragmentShader,
 	VertexFormat: VertexFormat{
 		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
@@ -156,10 +173,10 @@ var MSDFShader = ShaderConfig{
 }
 
 //go:embed sdf.fs
-var SDFFragmentShader string;
+var SDFFragmentShader string
 
 var SDFShader = ShaderConfig{
-	VertexShader: SpriteVertexShader,
+	VertexShader:   SpriteVertexShader,
 	FragmentShader: SDFFragmentShader,
 	VertexFormat: VertexFormat{
 		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
@@ -174,10 +191,10 @@ var SDFShader = ShaderConfig{
 }
 
 //go:embed minimap.fs
-var MinimapFragmentShader string;
+var MinimapFragmentShader string
 
 var MinimapShader = ShaderConfig{
-	VertexShader: SpriteVertexShader,
+	VertexShader:   SpriteVertexShader,
 	FragmentShader: MinimapFragmentShader,
 	VertexFormat: VertexFormat{
 		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
@@ -192,10 +209,10 @@ var MinimapShader = ShaderConfig{
 }
 
 //go:embed subPixel.fs
-var SubPixelAntiAliased string;
+var SubPixelAntiAliased string
 
 var PixelArtShader = ShaderConfig{
-	VertexShader: PixelArtVert,
+	VertexShader:   PixelArtVert,
 	FragmentShader: SubPixelAntiAliased,
 	// FragmentShader: SubPixelAntiAliased,
 	VertexFormat: VertexFormat{
@@ -212,12 +229,13 @@ var PixelArtShader = ShaderConfig{
 }
 
 //go:embed pixel.vs
-var PixelArtVert string;
+var PixelArtVert string
+
 //go:embed pixel.fs
-var PixelArtFrag string;
+var PixelArtFrag string
 
 var PixelArtShader2 = ShaderConfig{
-	VertexShader: PixelArtVert,
+	VertexShader:   PixelArtVert,
 	FragmentShader: PixelArtFrag,
 	VertexFormat: VertexFormat{
 		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
@@ -232,13 +250,13 @@ var PixelArtShader2 = ShaderConfig{
 }
 
 //go:embed mesh.vs
-var DiffuseVertexShader string;
+var DiffuseVertexShader string
 
 //go:embed flat.fs
-var DiffuseFragmentShader string;
+var DiffuseFragmentShader string
 
 var DiffuseShader = ShaderConfig{
-	VertexShader: DiffuseVertexShader,
+	VertexShader:   DiffuseVertexShader,
 	FragmentShader: DiffuseFragmentShader,
 	VertexFormat: VertexFormat{
 		VertexAttribute("positionIn", AttrVec3, PositionXYZ),

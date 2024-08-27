@@ -29,13 +29,13 @@ type SupportedSubBuffers interface {
 }
 
 type SubBuffer[T SupportedSubBuffers] struct {
-	attr shaders.Attr
-	maxVerts int
-	offset int
+	attr        shaders.Attr
+	maxVerts    int
+	offset      int
 	vertexCount int
-	buffer []T
-	sliceScale int
-	byteBuffer []byte // This is just a byte header that points to the buffer
+	buffer      []T
+	sliceScale  int
+	byteBuffer  []byte // This is just a byte header that points to the buffer
 }
 
 type SubSubBuffer[T SupportedSubBuffers] struct {
@@ -110,21 +110,21 @@ type VertexBuffer struct {
 	format shaders.VertexFormat
 	stride int
 
-	buffers []ISubBuffer
-	indices []uint32
-	numVerts uint32 // The number of vertices we currently have buffered
-	numIndicesToDraw int // The number of indices we are currently drawing
-	bufferedToGPU bool // Tracks whether the data has been written to the GPU
-	deallocAfterBuffer bool // If set true, once we write data to the GPU we deallocate CPU buffers
-	deleted bool // If true, we've already deleted this
+	buffers            []ISubBuffer
+	indices            []uint32
+	numVerts           uint32 // The number of vertices we currently have buffered
+	numIndicesToDraw   int    // The number of indices we are currently drawing
+	bufferedToGPU      bool   // Tracks whether the data has been written to the GPU
+	deallocAfterBuffer bool   // If set true, once we write data to the GPU we deallocate CPU buffers
+	deleted            bool   // If true, we've already deleted this
 }
 
 func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 	format := shader.attrFmt // TODO - cleanup this variable
 	b := &VertexBuffer{
-		format: format,
+		format:  format,
 		buffers: make([]ISubBuffer, len(format)),
-		indices: make([]uint32, 3 * numTris), // 3 indices per triangle
+		indices: make([]uint32, 3*numTris), // 3 indices per triangle
 	}
 
 	b.stride = 0
@@ -134,39 +134,39 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 
 		if format[i].Type == shaders.AttrVec4 {
 			b.buffers[i] = &SubBuffer[glVec4]{
-				attr: format[i].Attr,
-				maxVerts: numVerts,
+				attr:        format[i].Attr,
+				maxVerts:    numVerts,
 				vertexCount: 0,
-				offset: offset,
-				buffer: make([]glVec4, numVerts),
-				sliceScale: format[i].Size() * sof,
+				offset:      offset,
+				buffer:      make([]glVec4, numVerts),
+				sliceScale:  format[i].Size() * sof,
 			}
 		} else if format[i].Type == shaders.AttrVec3 {
 			b.buffers[i] = &SubBuffer[glVec3]{
-				attr: format[i].Attr,
-				maxVerts: numVerts,
+				attr:        format[i].Attr,
+				maxVerts:    numVerts,
 				vertexCount: 0,
-				offset: offset,
-				buffer: make([]glVec3, numVerts),
-				sliceScale: format[i].Size() * sof,
+				offset:      offset,
+				buffer:      make([]glVec3, numVerts),
+				sliceScale:  format[i].Size() * sof,
 			}
 		} else if format[i].Type == shaders.AttrVec2 {
 			b.buffers[i] = &SubBuffer[glVec2]{
-				attr: format[i].Attr,
-				maxVerts: numVerts,
+				attr:        format[i].Attr,
+				maxVerts:    numVerts,
 				vertexCount: 0,
-				offset: offset,
-				buffer: make([]glVec2, numVerts),
-				sliceScale: format[i].Size() * sof,
+				offset:      offset,
+				buffer:      make([]glVec2, numVerts),
+				sliceScale:  format[i].Size() * sof,
 			}
 		} else if format[i].Type == shaders.AttrFloat {
 			b.buffers[i] = &SubBuffer[float32]{
-				attr: format[i].Attr,
-				maxVerts: numVerts,
+				attr:        format[i].Attr,
+				maxVerts:    numVerts,
 				vertexCount: 0,
-				offset: offset,
-				buffer: make([]float32, numVerts),
-				sliceScale: format[i].Size() * sof,
+				offset:      offset,
+				buffer:      make([]float32, numVerts),
+				sliceScale:  format[i].Size() * sof,
 			}
 		} else {
 			panic(fmt.Sprintf("Unknown format: %v", format[i]))
@@ -183,34 +183,34 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 		gl.BindVertexArray(b.vao)
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, sof * numVerts * b.stride, nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, sof*numVerts*b.stride, nil, gl.DYNAMIC_DRAW)
 
 		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize * len(b.indices), nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize*len(b.indices), nil, gl.DYNAMIC_DRAW)
 
 		for i := range b.buffers {
 			switch subBuffer := b.buffers[i].(type) {
 			case *SubBuffer[float32]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
-				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size*sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			case *SubBuffer[glVec2]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
-				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size*sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			case *SubBuffer[glVec3]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
-				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size*sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			case *SubBuffer[glVec4]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
 				// TODO!!! - gl.VertexAttribPointerWithOffset: https://github.com/go-gl/gl/pull/135/files#diff-b335630551682c19a781afebcf4d07bf978fb1f8ac04c6bf87428ed5106870f5R67
-				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size * sof, subBuffer.offset)
+				gl.VertexAttribPointer(loc, size, gl.FLOAT, false, size*sof, subBuffer.offset)
 				gl.EnableVertexAttribArray(loc)
 			default:
 				panic("Unknown!")
@@ -226,7 +226,9 @@ func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
 }
 
 func (v *VertexBuffer) delete() {
-	if v.deleted { return }
+	if v.deleted {
+		return
+	}
 	v.deleted = true
 
 	mainthread.CallNonBlock(func() {
@@ -260,11 +262,11 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	// 	// fmt.Println("VertexBuffer.Reserve - Material Doesn't match")
 	// 	return false
 	// }
-	if len(v.indices) + len(indices) > cap(v.indices) {
+	if len(v.indices)+len(indices) > cap(v.indices) {
 		// fmt.Println("VertexBuffer.Reserve - Not enough index capacity")
 		return false
 	}
-	if v.buffers[0].Len() + numVerts > v.buffers[0].Cap() {
+	if v.buffers[0].Len()+numVerts > v.buffers[0].Cap() {
 		// fmt.Println("VertexBuffer.Reserve - Not enough vertex capacity")
 		return false
 	}
@@ -277,7 +279,7 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	// currentElement := v.buffers[0].VertexCount()
 	currentElement := v.numVerts
 	for i := range indices {
-		v.indices = append(v.indices, currentElement + indices[i])
+		v.indices = append(v.indices, currentElement+indices[i])
 	}
 	v.numVerts += uint32(numVerts)
 	v.numIndicesToDraw = len(v.indices)
@@ -342,21 +344,22 @@ func (v *VertexBuffer) Draw() {
 // BufferPool
 // TODO - Idea Improvements: You'd be able to calculate in the pass how many draws with the same material you'd be doing. Based on that you could have really well sized buffers. Also in here you could have different VertexBuffer sizes and order them as needed into a final draw slice
 type BufferPool struct {
-	shader *Shader
+	shader            *Shader
 	triangleBatchSize int
-	triangleCount int
-	buffers []*VertexBuffer
-	currentIndex int
-	nextClean int // Tracks the next clean vertex buffer (ie clean = buffers that haven't been written reserved on in this case
+	triangleCount     int
+	buffers           []*VertexBuffer
+	currentIndex      int
+	nextClean         int // Tracks the next clean vertex buffer (ie clean = buffers that haven't been written reserved on in this case
 }
+
 func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
 	return &BufferPool{
-		shader: shader,
+		shader:            shader,
 		triangleBatchSize: triangleBatchSize,
-		triangleCount: 0,
-		buffers: make([]*VertexBuffer, 0),
-		currentIndex: 0,
-		nextClean: 0,
+		triangleCount:     0,
+		buffers:           make([]*VertexBuffer, 0),
+		currentIndex:      0,
+		nextClean:         0,
 	}
 }
 

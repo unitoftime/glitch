@@ -36,7 +36,6 @@ import (
 // 	}
 // }
 
-
 var defaultSpriteShader *Shader // Can set this to whatever you want
 
 func SetDefaultSpriteShader(shader *Shader) {
