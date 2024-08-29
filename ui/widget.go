@@ -574,6 +574,12 @@ func PanelExt(label string, rect glitch.Rect, style Style) bool {
 func Panel2(label string, rect glitch.Rect) bool {
 	return PanelExt(label, rect, gStyle.panelStyle)
 }
+func SpritePanel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) bool {
+	label := "##__p"
+	style := NewStyle(sprite, color)
+	return PanelExt(label, rect, style)
+}
+
 
 func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	// style := Style{
