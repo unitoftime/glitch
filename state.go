@@ -98,7 +98,13 @@ func init() {
 	state.textureBinder = func() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
-		gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
+
+		if state.texture == nil {
+			gl.BindTexture(gl.TEXTURE_2D, gl.NoTexture)
+		} else {
+			gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
+		}
+		// gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
 	}
 
 	// state.blendFuncBinder = func() {
