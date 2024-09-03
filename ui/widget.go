@@ -412,7 +412,7 @@ func measureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 func drawDebug(rect glitch.Rect) {
 	if !global.debug { return }
 
-	lineWidth := 2.0
+	lineWidth := 0.4
 
 	// TODO: Do something like this
 	// // rect.Draw(global.sorter)
