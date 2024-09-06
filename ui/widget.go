@@ -203,8 +203,10 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 	} else if global.win.Repeated(glitch.KeyBackspace) {
 		if len(tStr) > 0 {
 			// tStr = tStr[:len(tStr)-1]
-			tStr = tStr[:cursorPos-1] + tStr[cursorPos:]
-			cursorPos--
+			if cursorPos > 0 {
+				tStr = tStr[:cursorPos-1] + tStr[cursorPos:]
+				cursorPos--
+			}
 		}
 	}
 
