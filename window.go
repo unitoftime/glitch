@@ -321,6 +321,7 @@ func (w *Window) Bounds() Rect {
 }
 
 func (w *Window) MousePosition() (float64, float64) {
+	// w.mainthreadCacheMousePosition() // This would decrease cursor lag a *little* bit
 	return w.mousePosition.X, w.mousePosition.Y
 }
 
