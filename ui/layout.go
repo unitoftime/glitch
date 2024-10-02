@@ -81,12 +81,19 @@ type vList struct {
 	rect glitch.Rect
 	last glitch.Rect
 	size float64
+	padNext float64
 	fromBottom bool
 }
 func (l *vList) Next() glitch.Rect {
 	if l.fromBottom {
+		if l.padNext != 0 {
+			l.rect.CutBottom(l.padNext)
+		}
 		l.last = l.rect.CutBottom(l.size)
 	} else {
+		if l.padNext != 0 {
+			l.rect.CutTop(l.padNext)
+		}
 		l.last = l.rect.CutTop(l.size)
 	}
 	return l.last
@@ -115,6 +122,11 @@ func VList2(rect glitch.Rect, size float64) vList {
 
 func (l vList) Bottom(val bool) vList {
 	l.fromBottom = val
+	return l
+}
+
+func (l vList) Pad(val float64) vList {
+	l.padNext = val
 	return l
 }
 

@@ -484,10 +484,10 @@ func SmoothDragButton(label string, rect *glitch.Rect, bounds glitch.Rect, step 
 	return resp.Held
 }
 
-func Hovered(rect glitch.Rect) bool {
+func Hovered(label string, rect glitch.Rect) bool {
 	// return mouseCheck(rect, global.mousePos)
+	// label := "##__h"
 
-	label := "##__h"
 	id := getId(label)
 
 	resp := WidgetResp{}
@@ -591,7 +591,7 @@ func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	// }
 	// PanelExt("##_panelsprite", rect, style)
 	drawSprite(rect, SpriteStyle{sprite, color})
-	Hovered(rect)
+	Hovered("##_h", rect) // Just a discarded hover
 }
 
 // returns (Clicked, hovered, isdragging, dropSlot)
