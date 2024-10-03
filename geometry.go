@@ -13,11 +13,13 @@ type RectFill struct {
 func (s Rect) GetBuffer() *VertexBuffer {
 	return nil
 }
+
 // Note: For caching purposes
 var geomQuadIndices = []uint32{
 	0, 1, 3,
 	1, 2, 3,
 }
+
 func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	numVerts := 4
 	vertexBuffer := pool.Reserve(geomQuadIndices, numVerts, pool.shader.tmpBuffers)
@@ -66,17 +68,17 @@ func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 }
 
 type GeomDraw struct {
-	color RGBA
+	color     RGBA
 	Divisions int
-	mesh *Mesh
+	mesh      *Mesh
 	// defaultMaterial Material
 }
 
 func NewGeomDraw() *GeomDraw {
 	return &GeomDraw{
-		color: RGBA{1, 1, 1, 1},
+		color:     RGBA{1, 1, 1, 1},
 		Divisions: 100,
-		mesh: NewMesh(),
+		mesh:      NewMesh(),
 		// defaultMaterial: DefaultMaterial(WhiteTexture()),
 	}
 }
@@ -119,7 +121,6 @@ func (g *GeomDraw) SetColor(color RGBA) {
 // 	g.Rectangle2(g.mesh, rect, mat.gl())
 // }
 
-
 // if width == 0, then fill the rect
 func (g *GeomDraw) Rectangle2(mesh *Mesh, rect Rect, width float64) {
 	if width <= 0 {
@@ -140,7 +141,7 @@ func (g *GeomDraw) Rectangle2(mesh *Mesh, rect Rect, width float64) {
 func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
 	currentElement := uint32(len(mesh.positions))
 	for i := range geomQuadIndices {
-		mesh.indices = append(mesh.indices, currentElement + geomQuadIndices[i])
+		mesh.indices = append(mesh.indices, currentElement+geomQuadIndices[i])
 	}
 
 	{
@@ -171,7 +172,6 @@ func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
 		)
 	}
 
-
 	{
 		uvBounds := rect // TODO: idk
 		mesh.texCoords = append(mesh.texCoords,
@@ -179,7 +179,7 @@ func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
 			glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)},
 			glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)},
 			glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)},
-			)
+		)
 	}
 }
 
@@ -211,9 +211,9 @@ func (g *GeomDraw) FillRect(rect Rect) *Mesh {
 
 	return &Mesh{
 		positions: positions,
-		colors: colors,
+		colors:    colors,
 		texCoords: texCoords,
-		indices: inds,
+		indices:   inds,
 	}
 }
 
@@ -260,9 +260,9 @@ func (g *GeomDraw) Ellipse(mesh *Mesh, center Vec3, size Vec2, rotation float64,
 		r := b / (math.Sqrt(1 - (eCos * eCos)))
 
 		points[i] = center.Add(Vec3{
-			r * math.Cos(radians - alpha),
-			r * math.Sin(radians - alpha),
-		0,
+			r * math.Cos(radians-alpha),
+			r * math.Sin(radians-alpha),
+			0,
 		})
 		radians += 2 * math.Pi / float64(g.Divisions)
 	}
@@ -273,9 +273,9 @@ func (g *GeomDraw) Ellipse(mesh *Mesh, center Vec3, size Vec2, rotation float64,
 		// r := a * (1 - e * e) / (1 + (e * math.Cos(radians - alpha)))
 		// r := l / (1 + (e * math.Cos(radians - alpha)))
 		lastPoint := center.Add(Vec3{
-		r * math.Cos(radians - alpha),
-		r * math.Sin(radians - alpha),
-		0,
+			r * math.Cos(radians-alpha),
+			r * math.Sin(radians-alpha),
+			0,
 		})
 		points = append(points, lastPoint)
 	}
@@ -322,15 +322,15 @@ func (g *GeomDraw) Polygon(mesh *Mesh, points []Vec3, width float64) {
 			a = points[i-1]
 		}
 		b := points[i]
-		c := points[(i+1) % len(points)]
-		d := points[(i+2) % len(points)]
+		c := points[(i+1)%len(points)]
+		d := points[(i+2)%len(points)]
 
 		v0 := b.Sub(a)
 		v1 := c.Sub(b)
 		v2 := d.Sub(c)
 		// fmt.Println("Index:", i, v0, v1, v2)
 		// Note: Divide by 2 because each connection spills over have the midpoint of the joint
-		g.Line(mesh, b, c, v0.Angle(v1) / 2, v1.Angle(v2) / 2, width)
+		g.Line(mesh, b, c, v0.Angle(v1)/2, v1.Angle(v2)/2, width)
 		// m := NewMesh()
 		// m.Append(g.Line(b, c, v0.Angle(v1) / 2, v1.Angle(v2) / 2, width))
 		// m.Append(g.Line(points[i], points[i+1], v0.Angle(v1), v1.Angle(v2), width))
@@ -422,7 +422,7 @@ func (g *GeomDraw) Line(mesh *Mesh, a, b Vec3, lastAngle, nextAngle float64, wid
 
 	currentElement := uint32(len(mesh.positions))
 	for i := range inds {
-		mesh.indices = append(mesh.indices, currentElement + inds[i])
+		mesh.indices = append(mesh.indices, currentElement+inds[i])
 	}
 
 	mesh.positions = append(mesh.positions, positions...)
@@ -448,8 +448,8 @@ func EllipsePoints(size Vec2, rotation float64, divisions int) []Vec3 {
 		r := b / (math.Sqrt(1 - (eCos * eCos)))
 
 		points[i] = Vec3{
-			r * math.Cos(radians - alpha),
-			r * math.Sin(radians - alpha),
+			r * math.Cos(radians-alpha),
+			r * math.Sin(radians-alpha),
 			0,
 		}
 		radians += 2 * math.Pi / float64(divisions)
@@ -472,4 +472,3 @@ func EllipsePoints(size Vec2, rotation float64, divisions int) []Vec3 {
 
 	return points
 }
-

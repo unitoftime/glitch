@@ -19,7 +19,7 @@ type stateTracker struct {
 	// enableDepthFunc func()
 	// depthFunc       gl.Enum
 	// depthFuncBinder func()
-	depthMode DepthMode
+	depthMode       DepthMode
 	depthModeBinder func()
 
 	// Texture
@@ -28,12 +28,12 @@ type stateTracker struct {
 
 	// BlendFunc
 	// blendSrc, blendDst gl.Enum
-	blendMode BlendMode
-	blendModeBinder    func()
+	blendMode       BlendMode
+	blendModeBinder func()
 
 	// Cull Mode
 	// cullModeEnable bool
-	cullMode CullMode
+	cullMode       CullMode
 	cullModeBinder func()
 
 	// Vert Buffer
@@ -75,7 +75,6 @@ func init() {
 			gl.FrontFace(data.dir)
 		}
 	}
-
 
 	// state.enableDepthFunc = func() {
 	// 	if state.depthTest {

@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package glfw
@@ -7,8 +8,8 @@ import (
 )
 
 const (
-	True = glfw.True
-	False = glfw.False
+	True              = glfw.True
+	False             = glfw.False
 	OpenGLCoreProfile = glfw.OpenGLCoreProfile
 )
 
@@ -21,9 +22,9 @@ const (
 	Samples     = Hint(glfw.Samples)
 	Resizable   = Hint(glfw.Resizable)
 
-	ContextVersionMajor = Hint(glfw.ContextVersionMajor)
-	ContextVersionMinor = Hint(glfw.ContextVersionMinor)
-	OpenGLProfile = Hint(glfw.OpenGLProfile)
+	ContextVersionMajor     = Hint(glfw.ContextVersionMajor)
+	ContextVersionMinor     = Hint(glfw.ContextVersionMinor)
+	OpenGLProfile           = Hint(glfw.OpenGLProfile)
 	OpenGLForwardCompatible = Hint(glfw.OpenGLForwardCompatible)
 
 	// These hints used for WebGL contexts, ignored on desktop.
@@ -32,13 +33,13 @@ const (
 	PreferLowPowerToHighPerformance
 	FailIfMajorPerformanceCaveat
 
-	Focused = Hint(glfw.Focused)
-	Decorated = Hint(glfw.Decorated)
-	Floating = Hint(glfw.Floating)
-	AutoIconify = Hint(glfw.AutoIconify)
+	Focused                = Hint(glfw.Focused)
+	Decorated              = Hint(glfw.Decorated)
+	Floating               = Hint(glfw.Floating)
+	AutoIconify            = Hint(glfw.AutoIconify)
 	TransparentFramebuffer = Hint(glfw.TransparentFramebuffer)
-	Maximized = Hint(glfw.Maximized)
-	Visible = Hint(glfw.Visible)
+	Maximized              = Hint(glfw.Maximized)
+	Visible                = Hint(glfw.Visible)
 )
 
 // noopHint is ignored.

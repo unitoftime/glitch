@@ -57,34 +57,33 @@ func (m *glMat4) Mul(n *glMat4) *glMat4 {
 
 	// This is in column major order
 	*m = glMat4{
-	// return &Mat4{
+		// return &Mat4{
 		// Column 0
-		m[i4_0_0] * n[i4_0_0] + m[i4_1_0] * n[i4_0_1] + m[i4_2_0] * n[i4_0_2] + m[i4_3_0] * n[i4_0_3],
-		m[i4_0_1] * n[i4_0_0] + m[i4_1_1] * n[i4_0_1] + m[i4_2_1] * n[i4_0_2] + m[i4_3_1] * n[i4_0_3],
-		m[i4_0_2] * n[i4_0_0] + m[i4_1_2] * n[i4_0_1] + m[i4_2_2] * n[i4_0_2] + m[i4_3_2] * n[i4_0_3],
-		m[i4_0_3] * n[i4_0_0] + m[i4_1_3] * n[i4_0_1] + m[i4_2_3] * n[i4_0_2] + m[i4_3_3] * n[i4_0_3],
+		m[i4_0_0]*n[i4_0_0] + m[i4_1_0]*n[i4_0_1] + m[i4_2_0]*n[i4_0_2] + m[i4_3_0]*n[i4_0_3],
+		m[i4_0_1]*n[i4_0_0] + m[i4_1_1]*n[i4_0_1] + m[i4_2_1]*n[i4_0_2] + m[i4_3_1]*n[i4_0_3],
+		m[i4_0_2]*n[i4_0_0] + m[i4_1_2]*n[i4_0_1] + m[i4_2_2]*n[i4_0_2] + m[i4_3_2]*n[i4_0_3],
+		m[i4_0_3]*n[i4_0_0] + m[i4_1_3]*n[i4_0_1] + m[i4_2_3]*n[i4_0_2] + m[i4_3_3]*n[i4_0_3],
 
 		// Column 1
-		m[i4_0_0] * n[i4_1_0] + m[i4_1_0] * n[i4_1_1] + m[i4_2_0] * n[i4_1_2] + m[i4_3_0] * n[i4_1_3],
-		m[i4_0_1] * n[i4_1_0] + m[i4_1_1] * n[i4_1_1] + m[i4_2_1] * n[i4_1_2] + m[i4_3_1] * n[i4_1_3],
-		m[i4_0_2] * n[i4_1_0] + m[i4_1_2] * n[i4_1_1] + m[i4_2_2] * n[i4_1_2] + m[i4_3_2] * n[i4_1_3],
-		m[i4_0_3] * n[i4_1_0] + m[i4_1_3] * n[i4_1_1] + m[i4_2_3] * n[i4_1_2] + m[i4_3_3] * n[i4_1_3],
+		m[i4_0_0]*n[i4_1_0] + m[i4_1_0]*n[i4_1_1] + m[i4_2_0]*n[i4_1_2] + m[i4_3_0]*n[i4_1_3],
+		m[i4_0_1]*n[i4_1_0] + m[i4_1_1]*n[i4_1_1] + m[i4_2_1]*n[i4_1_2] + m[i4_3_1]*n[i4_1_3],
+		m[i4_0_2]*n[i4_1_0] + m[i4_1_2]*n[i4_1_1] + m[i4_2_2]*n[i4_1_2] + m[i4_3_2]*n[i4_1_3],
+		m[i4_0_3]*n[i4_1_0] + m[i4_1_3]*n[i4_1_1] + m[i4_2_3]*n[i4_1_2] + m[i4_3_3]*n[i4_1_3],
 
 		// Column 2
-		m[i4_0_0] * n[i4_2_0] + m[i4_1_0] * n[i4_2_1] + m[i4_2_0] * n[i4_2_2] + m[i4_3_0] * n[i4_2_3],
-		m[i4_0_1] * n[i4_2_0] + m[i4_1_1] * n[i4_2_1] + m[i4_2_1] * n[i4_2_2] + m[i4_3_1] * n[i4_2_3],
-		m[i4_0_2] * n[i4_2_0] + m[i4_1_2] * n[i4_2_1] + m[i4_2_2] * n[i4_2_2] + m[i4_3_2] * n[i4_2_3],
-		m[i4_0_3] * n[i4_2_0] + m[i4_1_3] * n[i4_2_1] + m[i4_2_3] * n[i4_2_2] + m[i4_3_3] * n[i4_2_3],
+		m[i4_0_0]*n[i4_2_0] + m[i4_1_0]*n[i4_2_1] + m[i4_2_0]*n[i4_2_2] + m[i4_3_0]*n[i4_2_3],
+		m[i4_0_1]*n[i4_2_0] + m[i4_1_1]*n[i4_2_1] + m[i4_2_1]*n[i4_2_2] + m[i4_3_1]*n[i4_2_3],
+		m[i4_0_2]*n[i4_2_0] + m[i4_1_2]*n[i4_2_1] + m[i4_2_2]*n[i4_2_2] + m[i4_3_2]*n[i4_2_3],
+		m[i4_0_3]*n[i4_2_0] + m[i4_1_3]*n[i4_2_1] + m[i4_2_3]*n[i4_2_2] + m[i4_3_3]*n[i4_2_3],
 
 		// Column 3
-		m[i4_0_0] * n[i4_3_0] + m[i4_1_0] * n[i4_3_1] + m[i4_2_0] * n[i4_3_2] + m[i4_3_0] * n[i4_3_3],
-		m[i4_0_1] * n[i4_3_0] + m[i4_1_1] * n[i4_3_1] + m[i4_2_1] * n[i4_3_2] + m[i4_3_1] * n[i4_3_3],
-		m[i4_0_2] * n[i4_3_0] + m[i4_1_2] * n[i4_3_1] + m[i4_2_2] * n[i4_3_2] + m[i4_3_2] * n[i4_3_3],
-		m[i4_0_3] * n[i4_3_0] + m[i4_1_3] * n[i4_3_1] + m[i4_2_3] * n[i4_3_2] + m[i4_3_3] * n[i4_3_3],
+		m[i4_0_0]*n[i4_3_0] + m[i4_1_0]*n[i4_3_1] + m[i4_2_0]*n[i4_3_2] + m[i4_3_0]*n[i4_3_3],
+		m[i4_0_1]*n[i4_3_0] + m[i4_1_1]*n[i4_3_1] + m[i4_2_1]*n[i4_3_2] + m[i4_3_1]*n[i4_3_3],
+		m[i4_0_2]*n[i4_3_0] + m[i4_1_2]*n[i4_3_1] + m[i4_2_2]*n[i4_3_2] + m[i4_3_2]*n[i4_3_3],
+		m[i4_0_3]*n[i4_3_0] + m[i4_1_3]*n[i4_3_1] + m[i4_2_3]*n[i4_3_2] + m[i4_3_3]*n[i4_3_3],
 	}
 	return m
 }
-
 
 func (v Vec2) gl() glVec2 {
 	return glVec2{float32(v.X), float32(v.Y)}
@@ -144,7 +143,7 @@ func (v Vec2) Snap() Vec2 {
 
 func (v Vec2) Unit() Vec2 {
 	len := v.Len()
-	return Vec2{v.X/len, v.Y/len}
+	return Vec2{v.X / len, v.Y / len}
 }
 
 func (v Vec2) Len() float64 {
@@ -177,7 +176,7 @@ func (v Vec3) Dot(u Vec3) float64 {
 
 // Finds the angle between two vectors
 func (v Vec3) Angle(u Vec3) float64 {
-	return  math.Acos(v.Dot(u) / (v.Len() * u.Len()))
+	return math.Acos(v.Dot(u) / (v.Len() * u.Len()))
 }
 
 func (v Vec3) Theta() float64 {
@@ -189,8 +188,8 @@ func (v Vec3) Rotate2D(theta float64) Vec3 {
 	t := theta
 	x := v.X
 	y := v.Y
-	x1 := x * math.Cos(t) - y * math.Sin(t)
-	y1 := x * math.Sin(t) + y * math.Cos(t)
+	x1 := x*math.Cos(t) - y*math.Sin(t)
+	y1 := x*math.Sin(t) + y*math.Cos(t)
 	return Vec3{x1, y1, v.Z}
 }
 
@@ -208,7 +207,7 @@ func (v Vec3) Vec2() Vec2 {
 
 func (v Vec3) Unit() Vec3 {
 	len := v.Len()
-	return Vec3{v.X/len, v.Y/len, v.Z/len}
+	return Vec3{v.X / len, v.Y / len, v.Z / len}
 }
 
 func (v Vec3) Scaled(x, y, z float64) Vec3 {
@@ -300,30 +299,30 @@ func (m *Mat4) Rotate(angle float64, axis Vec3) *Mat4 {
 func (m *Mat4) Mul(n *Mat4) *Mat4 {
 	// This is in column major order
 	*m = Mat4{
-	// return &Mat4{
+		// return &Mat4{
 		// Column 0
-		m[i4_0_0] * n[i4_0_0] + m[i4_1_0] * n[i4_0_1] + m[i4_2_0] * n[i4_0_2] + m[i4_3_0] * n[i4_0_3],
-		m[i4_0_1] * n[i4_0_0] + m[i4_1_1] * n[i4_0_1] + m[i4_2_1] * n[i4_0_2] + m[i4_3_1] * n[i4_0_3],
-		m[i4_0_2] * n[i4_0_0] + m[i4_1_2] * n[i4_0_1] + m[i4_2_2] * n[i4_0_2] + m[i4_3_2] * n[i4_0_3],
-		m[i4_0_3] * n[i4_0_0] + m[i4_1_3] * n[i4_0_1] + m[i4_2_3] * n[i4_0_2] + m[i4_3_3] * n[i4_0_3],
+		m[i4_0_0]*n[i4_0_0] + m[i4_1_0]*n[i4_0_1] + m[i4_2_0]*n[i4_0_2] + m[i4_3_0]*n[i4_0_3],
+		m[i4_0_1]*n[i4_0_0] + m[i4_1_1]*n[i4_0_1] + m[i4_2_1]*n[i4_0_2] + m[i4_3_1]*n[i4_0_3],
+		m[i4_0_2]*n[i4_0_0] + m[i4_1_2]*n[i4_0_1] + m[i4_2_2]*n[i4_0_2] + m[i4_3_2]*n[i4_0_3],
+		m[i4_0_3]*n[i4_0_0] + m[i4_1_3]*n[i4_0_1] + m[i4_2_3]*n[i4_0_2] + m[i4_3_3]*n[i4_0_3],
 
 		// Column 1
-		m[i4_0_0] * n[i4_1_0] + m[i4_1_0] * n[i4_1_1] + m[i4_2_0] * n[i4_1_2] + m[i4_3_0] * n[i4_1_3],
-		m[i4_0_1] * n[i4_1_0] + m[i4_1_1] * n[i4_1_1] + m[i4_2_1] * n[i4_1_2] + m[i4_3_1] * n[i4_1_3],
-		m[i4_0_2] * n[i4_1_0] + m[i4_1_2] * n[i4_1_1] + m[i4_2_2] * n[i4_1_2] + m[i4_3_2] * n[i4_1_3],
-		m[i4_0_3] * n[i4_1_0] + m[i4_1_3] * n[i4_1_1] + m[i4_2_3] * n[i4_1_2] + m[i4_3_3] * n[i4_1_3],
+		m[i4_0_0]*n[i4_1_0] + m[i4_1_0]*n[i4_1_1] + m[i4_2_0]*n[i4_1_2] + m[i4_3_0]*n[i4_1_3],
+		m[i4_0_1]*n[i4_1_0] + m[i4_1_1]*n[i4_1_1] + m[i4_2_1]*n[i4_1_2] + m[i4_3_1]*n[i4_1_3],
+		m[i4_0_2]*n[i4_1_0] + m[i4_1_2]*n[i4_1_1] + m[i4_2_2]*n[i4_1_2] + m[i4_3_2]*n[i4_1_3],
+		m[i4_0_3]*n[i4_1_0] + m[i4_1_3]*n[i4_1_1] + m[i4_2_3]*n[i4_1_2] + m[i4_3_3]*n[i4_1_3],
 
 		// Column 2
-		m[i4_0_0] * n[i4_2_0] + m[i4_1_0] * n[i4_2_1] + m[i4_2_0] * n[i4_2_2] + m[i4_3_0] * n[i4_2_3],
-		m[i4_0_1] * n[i4_2_0] + m[i4_1_1] * n[i4_2_1] + m[i4_2_1] * n[i4_2_2] + m[i4_3_1] * n[i4_2_3],
-		m[i4_0_2] * n[i4_2_0] + m[i4_1_2] * n[i4_2_1] + m[i4_2_2] * n[i4_2_2] + m[i4_3_2] * n[i4_2_3],
-		m[i4_0_3] * n[i4_2_0] + m[i4_1_3] * n[i4_2_1] + m[i4_2_3] * n[i4_2_2] + m[i4_3_3] * n[i4_2_3],
+		m[i4_0_0]*n[i4_2_0] + m[i4_1_0]*n[i4_2_1] + m[i4_2_0]*n[i4_2_2] + m[i4_3_0]*n[i4_2_3],
+		m[i4_0_1]*n[i4_2_0] + m[i4_1_1]*n[i4_2_1] + m[i4_2_1]*n[i4_2_2] + m[i4_3_1]*n[i4_2_3],
+		m[i4_0_2]*n[i4_2_0] + m[i4_1_2]*n[i4_2_1] + m[i4_2_2]*n[i4_2_2] + m[i4_3_2]*n[i4_2_3],
+		m[i4_0_3]*n[i4_2_0] + m[i4_1_3]*n[i4_2_1] + m[i4_2_3]*n[i4_2_2] + m[i4_3_3]*n[i4_2_3],
 
 		// Column 3
-		m[i4_0_0] * n[i4_3_0] + m[i4_1_0] * n[i4_3_1] + m[i4_2_0] * n[i4_3_2] + m[i4_3_0] * n[i4_3_3],
-		m[i4_0_1] * n[i4_3_0] + m[i4_1_1] * n[i4_3_1] + m[i4_2_1] * n[i4_3_2] + m[i4_3_1] * n[i4_3_3],
-		m[i4_0_2] * n[i4_3_0] + m[i4_1_2] * n[i4_3_1] + m[i4_2_2] * n[i4_3_2] + m[i4_3_2] * n[i4_3_3],
-		m[i4_0_3] * n[i4_3_0] + m[i4_1_3] * n[i4_3_1] + m[i4_2_3] * n[i4_3_2] + m[i4_3_3] * n[i4_3_3],
+		m[i4_0_0]*n[i4_3_0] + m[i4_1_0]*n[i4_3_1] + m[i4_2_0]*n[i4_3_2] + m[i4_3_0]*n[i4_3_3],
+		m[i4_0_1]*n[i4_3_0] + m[i4_1_1]*n[i4_3_1] + m[i4_2_1]*n[i4_3_2] + m[i4_3_1]*n[i4_3_3],
+		m[i4_0_2]*n[i4_3_0] + m[i4_1_2]*n[i4_3_1] + m[i4_2_2]*n[i4_3_2] + m[i4_3_2]*n[i4_3_3],
+		m[i4_0_3]*n[i4_3_0] + m[i4_1_3]*n[i4_3_1] + m[i4_2_3]*n[i4_3_2] + m[i4_3_3]*n[i4_3_3],
 	}
 	return m
 }
@@ -364,13 +363,13 @@ const (
 type Box struct {
 	Min, Max Vec3
 }
+
 func (b Box) Rect() Rect {
 	return Rect{
 		Min: Vec2{b.Min.X, b.Min.Y},
 		Max: Vec2{b.Max.X, b.Max.Y},
 	}
 }
-
 
 func (a Box) Union(b Box) Box {
 	x1, _ := minMax(a.Min.X, b.Min.X)
@@ -393,10 +392,10 @@ func (b Box) Apply(mat glMat4) Box {
 	}
 }
 
-
 type Rect struct {
 	Min, Max Vec2
 }
+
 func R(minX, minY, maxX, maxY float64) Rect {
 	// TODO - guarantee min is less than max
 	return Rect{
@@ -430,16 +429,16 @@ func (r Rect) H() float64 {
 }
 
 func (r Rect) Center() Vec2 {
-	return Vec2{r.Min.X + (r.W()/2), r.Min.Y + (r.H()/2)}
+	return Vec2{r.Min.X + (r.W() / 2), r.Min.Y + (r.H() / 2)}
 }
 
-// func (r Rect) CenterAt(v Vec2) Rect {
-// 	return r.Moved(r.Center().Scaled(-1)).Moved(v)
-// }
+//	func (r Rect) CenterAt(v Vec2) Rect {
+//		return r.Moved(r.Center().Scaled(-1)).Moved(v)
+//	}
 func (r Rect) WithCenter(v Vec2) Rect {
-	w := r.W()/2
-	h := r.H()/2
-	return R(v.X - w, v.Y - h, v.X + w, v.Y + h)
+	w := r.W() / 2
+	h := r.H() / 2
+	return R(v.X-w, v.Y-h, v.X+w, v.Y+h)
 }
 
 // TODO: Should I make a pointer version of this that handles the nil case too?
@@ -487,7 +486,7 @@ func (r Rect) SubSquare() Rect {
 	w := r.W()
 	h := r.H()
 	min, _ := minMax(w, h)
-	m2 := min/2
+	m2 := min / 2
 	return R(-m2, -m2, m2, m2).Moved(r.Center())
 }
 
@@ -495,14 +494,14 @@ func (r Rect) CenterScaled(scale float64) Rect {
 	c := r.Center()
 	w := r.W() * scale / 2.0
 	h := r.H() * scale / 2.0
-	return R(c.X - w, c.Y - h, c.X + w, c.Y + h)
+	return R(c.X-w, c.Y-h, c.X+w, c.Y+h)
 }
 
 func (r Rect) CenterScaledXY(scaleX, scaleY float64) Rect {
 	c := r.Center()
 	w := r.W() * scaleX / 2.0
 	h := r.H() * scaleY / 2.0
-	return R(c.X - w, c.Y - h, c.X + w, c.Y + h)
+	return R(c.X-w, c.Y-h, c.X+w, c.Y+h)
 }
 
 // Note: This scales around the center
@@ -544,11 +543,10 @@ func (r Rect) Contains(x, y float64) bool {
 }
 
 func (r Rect) Intersects(r2 Rect) bool {
-	return (
-		r.Min.X <= r2.Max.X &&
-			r.Max.X >= r2.Min.X &&
-			r.Min.Y <= r2.Max.Y &&
-			r.Max.Y >= r2.Min.Y)
+	return (r.Min.X <= r2.Max.X &&
+		r.Max.X >= r2.Min.X &&
+		r.Min.Y <= r2.Max.Y &&
+		r.Max.Y >= r2.Min.Y)
 }
 
 // Layous out 'n' rectangles horizontally with specified padding between them and returns that rect
@@ -557,7 +555,7 @@ func (r Rect) LayoutHorizontal(n int, padding float64) Rect {
 	return R(
 		0,
 		0,
-		float64(n) * r.W() + float64(n-1) * padding,
+		float64(n)*r.W()+float64(n-1)*padding,
 		r.H(),
 	)
 }
@@ -615,7 +613,7 @@ func (r Rect) PadAll(padding float64) Rect {
 
 // Adds padding to a rectangle (pads inward if padding is negative)
 func (r Rect) Pad(pad Rect) Rect {
-	return R(r.Min.X - pad.Min.X, r.Min.Y - pad.Min.Y, r.Max.X + pad.Max.X, r.Max.Y + pad.Max.Y)
+	return R(r.Min.X-pad.Min.X, r.Min.Y-pad.Min.Y, r.Max.X+pad.Max.X, r.Max.Y+pad.Max.Y)
 }
 
 // Removes padding from a rectangle (pads outward if padding is negative). Essentially calls pad but with negative values
@@ -627,24 +625,24 @@ func (r Rect) Unpad(pad Rect) Rect {
 // TODO - rename to InnerAnchor?
 func (r Rect) Anchor(r2 Rect, anchor Vec2) Rect {
 	// Anchor point is the position in r that we are anchoring to
-	anchorPoint := Vec2{r.Min.X + (anchor.X * r.W()) , r.Min.Y + (anchor.Y * r.H())}
-	pivotPoint := Vec2{r2.Min.X + (anchor.X * r2.W()) , r2.Min.Y + (anchor.Y * r2.H())}
+	anchorPoint := Vec2{r.Min.X + (anchor.X * r.W()), r.Min.Y + (anchor.Y * r.H())}
+	pivotPoint := Vec2{r2.Min.X + (anchor.X * r2.W()), r2.Min.Y + (anchor.Y * r2.H())}
 
 	// fmt.Println("Anchor:", anchorPoint)
 	// fmt.Println("Pivot:", pivotPoint)
 
 	a := Vec2{anchorPoint.X - pivotPoint.X, anchorPoint.Y - pivotPoint.Y}
-	return R(a.X, a.Y, a.X + r2.W(), a.Y + r2.H()).Norm()
+	return R(a.X, a.Y, a.X+r2.W(), a.Y+r2.H()).Norm()
 }
 
 // Anchors r2 to r1 based on two anchors, one for r and one for r2
 // TODO - rename to Anchor?
 func (r Rect) FullAnchor(r2 Rect, anchor, pivot Vec2) Rect {
 	anchorPoint := Vec2{r.Min.X + (anchor.X * r.W()), r.Min.Y + (anchor.Y * r.H())}
-	pivotPoint := Vec2{r2.Min.X + (pivot.X * r2.W()) , r2.Min.Y + (pivot.Y * r2.H())}
+	pivotPoint := Vec2{r2.Min.X + (pivot.X * r2.W()), r2.Min.Y + (pivot.Y * r2.H())}
 
 	a := Vec2{anchorPoint.X - pivotPoint.X, anchorPoint.Y - pivotPoint.Y}
-	return R(a.X, a.Y, a.X + r2.W(), a.Y + r2.H()).Norm()
+	return R(a.X, a.Y, a.X+r2.W(), a.Y+r2.H()).Norm()
 }
 
 // Move the min point of the rect to a certain position
@@ -652,7 +650,6 @@ func (r Rect) MoveMin(pos Vec2) Rect {
 	dv := r.Min.Sub(pos)
 	return r.Moved(dv)
 }
-
 
 func lerp(a, b float64, t float64) float64 {
 	m := b - a // Slope = Rise over run | Note: Run = (1 - 0)
@@ -676,7 +673,7 @@ func (m *Mat4) Apply(v Vec3) Vec3 {
 	}
 }
 
-func (m *Mat3) Apply( v Vec2) Vec2 {
+func (m *Mat3) Apply(v Vec2) Vec2 {
 	return Vec2{
 		m[i3_0_0]*v.X + m[i3_1_0]*v.Y + m[i3_2_0],
 		m[i3_0_1]*v.X + m[i3_1_1]*v.Y + m[i3_2_1],
@@ -697,7 +694,7 @@ func (m *Mat4) Transpose() *Mat4 {
 func (r Rect) RectDraw(r2 Rect) Mat4 {
 	mat := Mat4Ident
 	mat.
-		Scale(r2.W() / r.W(), r2.H() / r.H(), 1).
+		Scale(r2.W()/r.W(), r2.H()/r.H(), 1).
 		Translate(r2.Min.X, r2.Min.Y, 0)
 	return mat
 }
@@ -705,22 +702,22 @@ func (r Rect) RectDraw(r2 Rect) Mat4 {
 // TODO - I feel like camera should be a higher-up abstraction and not held here
 type CameraOrtho struct {
 	Projection Mat4
-	View Mat4
+	View       Mat4
 	// ViewSnapped Mat4
-	bounds Rect
+	bounds     Rect
 	DepthRange Vec2 // Specifies the near and far plane of the camera, defaults to (-1, 1)
 
 	// Tracks the view inverse and whether or not its been recalculated or not
-	ViewInv Mat4
+	ViewInv      Mat4
 	dirtyViewInv bool
 }
 
 func NewCameraOrtho() *CameraOrtho {
 	return &CameraOrtho{
 		Projection: Mat4Ident,
-		View: Mat4Ident,
+		View:       Mat4Ident,
 		// ViewSnapped: Mat4Ident,
-		bounds: R(0,0,1,1),
+		bounds:     R(0, 0, 1, 1),
 		DepthRange: Vec2{-1, 1},
 	}
 }
@@ -762,7 +759,6 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 		Scale(scaleX, scaleY, 1.0).
 		Translate(cX, cY, 0)
 
-
 	// // TODO - this is literally only for pixel art
 	// c.ViewSnapped = Mat4Ident
 	// centerX := math.Round(cameraCenter[0])
@@ -773,9 +769,6 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 	// 	Translate(-pX - centerX, -pY - centerY, 0).
 	// 	Scale(scaleX, scaleY, 1.0).
 	// 	Translate(centerX, centerY, 0)
-
-
-
 
 	// centerX := float32(math.Round(float64(cameraCenter[0])))
 	// centerY := float32(math.Round(float64(cameraCenter[1])))
@@ -794,7 +787,6 @@ func (c *CameraOrtho) SetView2D(x, y, scaleX, scaleY float64) {
 	// 	Translate(float32(-pX - centerX), float32(-pY - centerY), 0).
 	// 	Scale(scaleX, scaleY, 1.0).
 	// 	Translate(float32(centerX), float32(centerY), 0)
-
 
 	// c.View.
 	// 	// Translate by x, y of the camera
@@ -824,18 +816,18 @@ func (c *CameraOrtho) Unproject(point Vec3) Vec3 {
 
 type Camera struct {
 	Projection Mat4
-	View Mat4
+	View       Mat4
 
 	Position Vec3
-	Target Vec3
+	Target   Vec3
 }
 
 func NewCamera() *Camera {
 	return &Camera{
 		Projection: Mat4Ident,
-		View: Mat4Ident,
-		Position: Vec3{0, 0, 0},
-		Target: Vec3{0, 0, 0},
+		View:       Mat4Ident,
+		Position:   Vec3{0, 0, 0},
+		Target:     Vec3{0, 0, 0},
 	}
 }
 
@@ -858,6 +850,6 @@ func (c *Camera) SetViewLookAt(win *Window) {
 func (c *Camera) Material() CameraMaterial {
 	return CameraMaterial{
 		Projection: c.Projection.gl(),
-		View: c.View.gl(),
+		View:       c.View.gl(),
 	}
 }

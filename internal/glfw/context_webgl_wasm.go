@@ -1,3 +1,4 @@
+//go:build js && wasm
 // +build js,wasm
 
 package glfw
@@ -7,11 +8,11 @@ import (
 	"syscall/js"
 )
 
-
 type webglSupport struct {
-	WebGLRenderingContext bool // WebGL1
+	WebGLRenderingContext  bool // WebGL1
 	WebGLRenderingContext2 bool // WebGl2
 }
+
 func (s webglSupport) String() string {
 	return fmt.Sprintf(
 		"WebGLRenderingContext: %v | WebGLRenderingContext2: %v",

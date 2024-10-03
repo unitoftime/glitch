@@ -2,6 +2,7 @@
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
+//go:build js && wasm
 // +build js,wasm
 
 package gl
@@ -29,6 +30,7 @@ type Buffer struct {
 type Framebuffer struct {
 	js.Value
 }
+
 func (o Framebuffer) Equal(o2 Framebuffer) bool {
 	return o.Value.Equal(o2.Value)
 }

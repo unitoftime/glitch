@@ -19,7 +19,7 @@ var htmlWindow = js.Global().Get("window")
 var document = js.Global().Get("document")
 var navigator = htmlWindow.Get("navigator")
 var (
-	navKeyboard js.Value
+	navKeyboard       js.Value
 	keyboardLayoutMap js.Value
 	// fnKeyboardLayoutMapGet js.Value
 )
@@ -50,19 +50,29 @@ func resolveCanvas() js.Value {
 // Constructs the keyboard map based on navigator.Keyboard
 func resolveNavigatorKeyboard() {
 	// Notes: https://developer.mozilla.org/en-US/docs/Web/API/Keyboard
-	if isNilOrUndefined(navigator) { return }
+	if isNilOrUndefined(navigator) {
+		return
+	}
 
 	navKeyboard = navigator.Get("keyboard")
-	if isNilOrUndefined(navKeyboard) { return }
+	if isNilOrUndefined(navKeyboard) {
+		return
+	}
 
 	keyboardPromise := navKeyboard.Call("getLayoutMap")
-	if isNilOrUndefined(keyboardPromise) { return }
+	if isNilOrUndefined(keyboardPromise) {
+		return
+	}
 
 	keyboardPromise.Call("then", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-		if len(args) <= 0 { return nil }
+		if len(args) <= 0 {
+			return nil
+		}
 
 		keyboardLayoutMap = args[0]
-		if isNilOrUndefined(keyboardLayoutMap) { return nil }
+		if isNilOrUndefined(keyboardLayoutMap) {
+			return nil
+		}
 
 		// // TODO: This is a nice optimization, but I'd have to bind it to something, maybe the window?
 		// fnKeyboardLayoutMapGet = keyboardLayoutMap.Get("get").Call("bind", htmlWindow)
@@ -120,8 +130,8 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 	height := js.Global().Get("innerHeight").Int()
 
 	devicePixelRatio := getDevicePixelRatio()
-	canvas.Set("width", int((float64(width) * devicePixelRatio) + 0.5))   // Nearest non-negative int.
-	canvas.Set("height", int((float64(height) * devicePixelRatio) + 0.5)) // Nearest non-negative int.
+	canvas.Set("width", int((float64(width)*devicePixelRatio)+0.5))   // Nearest non-negative int.
+	canvas.Set("height", int((float64(height)*devicePixelRatio)+0.5)) // Nearest non-negative int.
 	canvas.Get("style").Call("setProperty", "width", fmt.Sprintf("%vpx", width))
 	canvas.Get("style").Call("setProperty", "height", fmt.Sprintf("%vpx", height))
 
@@ -208,8 +218,8 @@ func SetupEventListeners(w *Window) {
 
 		w.devicePixelRatio = getDevicePixelRatio()
 		// fmt.Println("DevicePixelRatio:", w.devicePixelRatio)
-		w.canvas.Set("width", int((float64(width) * w.devicePixelRatio) + 0.5))   // Nearest non-negative int.
-		w.canvas.Set("height", int((float64(height) * w.devicePixelRatio) + 0.5)) // Nearest non-negative int.
+		w.canvas.Set("width", int((float64(width)*w.devicePixelRatio)+0.5))   // Nearest non-negative int.
+		w.canvas.Set("height", int((float64(height)*w.devicePixelRatio)+0.5)) // Nearest non-negative int.
 		w.canvas.Get("style").Call("setProperty", "width", fmt.Sprintf("%vpx", width))
 		w.canvas.Get("style").Call("setProperty", "height", fmt.Sprintf("%vpx", height))
 
@@ -571,7 +581,7 @@ type Window struct {
 	sizeCallback            SizeCallback
 	focusCallback           FocusCallback
 
-	hidden bool // Used to track if the window is hidden or visible
+	hidden  bool // Used to track if the window is hidden or visible
 	rafOnce sync.Once
 
 	touches js.Value // Hacky mouse-emulation-via-touch.
@@ -1164,6 +1174,7 @@ var keycodeMap = map[string]Key{
 
 // Contains the reverse mapping of the keycodeMap
 var reverseKeycodeMap = make(map[Key]string)
+
 func init() {
 	for s, k := range keycodeMap {
 		reverseKeycodeMap[k] = s
@@ -1177,6 +1188,7 @@ func GetKeyScanCode(key Key) int {
 
 // TODO: scancode doesn't work
 var keynameCache = make(map[Key]string)
+
 func GetKeyName(key Key, scancode int) string {
 	name, has := keynameCache[key]
 	if has {
@@ -1247,10 +1259,10 @@ const (
 	MouseButtonRight  = MouseButton2
 	MouseButtonMiddle = MouseButton3
 
-	MouseButton4    = 3 // Typically Browser Back
-	MouseButton5    = 4 // Typically Browser Forward
+	MouseButton4 = 3 // Typically Browser Back
+	MouseButton5 = 4 // Typically Browser Forward
 
-	mouseButtonMax  = 5 // This is for checking buttons to see if they are mouse buttons
+	mouseButtonMax = 5 // This is for checking buttons to see if they are mouse buttons
 
 	// TODO - everything below this is wrong
 	MouseButton6    = 5
@@ -1335,7 +1347,6 @@ func (w *Window) Destroy() {
 		}
 	}
 }
-
 
 func (w *Window) SetMonitor(monitor *Monitor, xpos, ypos, width, height, refreshRate int) {
 	// TODO: Not sure?
@@ -1484,49 +1495,49 @@ const (
 // TODO: Some of these might be wrong
 var qwertyKeyNameMap map[Key]string = map[Key]string{
 	KeySpace:        " ",
-	KeyApostrophe:        "'", //???
+	KeyApostrophe:   "'", //???
 	KeyComma:        ",",
 	KeyMinus:        "-",
 	KeyPeriod:       ".",
 	KeySlash:        "/",
-	Key0:       "0",
-	Key1:       "1",
-	Key2:       "2",
-	Key3:       "3",
-	Key4:       "4",
-	Key5:       "5",
-	Key6:       "6",
-	Key7:       "7",
-	Key8:       "8",
-	Key9:       "9",
+	Key0:            "0",
+	Key1:            "1",
+	Key2:            "2",
+	Key3:            "3",
+	Key4:            "4",
+	Key5:            "5",
+	Key6:            "6",
+	Key7:            "7",
+	Key8:            "8",
+	Key9:            "9",
 	KeySemicolon:    ";",
 	KeyEqual:        "=",
-	KeyA:         "a",
-	KeyB:         "b",
-	KeyC:         "c",
-	KeyD:         "d",
-	KeyE:         "e",
-	KeyF:         "f",
-	KeyG:         "g",
-	KeyH:         "h",
-	KeyI:         "i",
-	KeyJ:         "j",
-	KeyK:         "k",
-	KeyL:         "l",
-	KeyM:         "m",
-	KeyN:         "n",
-	KeyO:         "o",
-	KeyP:         "p",
-	KeyQ:         "q",
-	KeyR:         "r",
-	KeyS:         "s",
-	KeyT:         "t",
-	KeyU:         "u",
-	KeyV:         "v",
-	KeyW:         "w",
-	KeyX:         "x",
-	KeyY:         "y",
-	KeyZ:         "z",
+	KeyA:            "a",
+	KeyB:            "b",
+	KeyC:            "c",
+	KeyD:            "d",
+	KeyE:            "e",
+	KeyF:            "f",
+	KeyG:            "g",
+	KeyH:            "h",
+	KeyI:            "i",
+	KeyJ:            "j",
+	KeyK:            "k",
+	KeyL:            "l",
+	KeyM:            "m",
+	KeyN:            "n",
+	KeyO:            "o",
+	KeyP:            "p",
+	KeyQ:            "q",
+	KeyR:            "r",
+	KeyS:            "s",
+	KeyT:            "t",
+	KeyU:            "u",
+	KeyV:            "v",
+	KeyW:            "w",
+	KeyX:            "x",
+	KeyY:            "y",
+	KeyZ:            "z",
 	KeyLeftBracket:  "[",
 	KeyBackslash:    "\\",
 	KeyRightBracket: "[",
@@ -1539,10 +1550,10 @@ var qwertyKeyNameMap map[Key]string = map[Key]string{
 	KeyBackspace:   "Backspace",
 	KeyInsert:      "Insert",
 	KeyDelete:      "Delete",
-	KeyRight:  "ArrowRight",
-	KeyLeft:   "ArrowLeft",
-	KeyDown:   "ArrowDown",
-	KeyUp:     "ArrowUp",
+	KeyRight:       "ArrowRight",
+	KeyLeft:        "ArrowLeft",
+	KeyDown:        "ArrowDown",
+	KeyUp:          "ArrowUp",
 	KeyPageUp:      "PageUp",
 	KeyPageDown:    "PageDown",
 	KeyHome:        "Home",
@@ -1577,32 +1588,32 @@ var qwertyKeyNameMap map[Key]string = map[Key]string{
 	KeyF23:         "F23",
 	KeyF24:         "F24",
 	// "F25": KeyF25,
-	KeyKP0:        "Numpad0",
-	KeyKP1:        "Numpad1",
-	KeyKP2:        "Numpad2",
-	KeyKP3:        "Numpad3",
-	KeyKP4:        "Numpad4",
-	KeyKP5:        "Numpad5",
-	KeyKP6:        "Numpad6",
-	KeyKP7:        "Numpad7",
-	KeyKP8:        "Numpad8",
-	KeyKP9:        "Numpad9",
-	KeyKPDecimal:  "NumpadDecimal",
-	KeyKPDivide:   "NumpadDivide",
-	KeyKPMultiply: "NumpadMultiply",
-	KeyKPSubtract: "NumpadSubtract",
-	KeyKPAdd:      "NumpadAdd",
-	KeyKPEnter:    "NumpadEnter",
-	KeyKPEqual:    "NumpadEqual",
-	KeyLeftShift:      "ShiftLeft",
-	KeyLeftControl:    "ControlLeft",
-	KeyLeftAlt:        "AltLeft",
+	KeyKP0:         "Numpad0",
+	KeyKP1:         "Numpad1",
+	KeyKP2:         "Numpad2",
+	KeyKP3:         "Numpad3",
+	KeyKP4:         "Numpad4",
+	KeyKP5:         "Numpad5",
+	KeyKP6:         "Numpad6",
+	KeyKP7:         "Numpad7",
+	KeyKP8:         "Numpad8",
+	KeyKP9:         "Numpad9",
+	KeyKPDecimal:   "NumpadDecimal",
+	KeyKPDivide:    "NumpadDivide",
+	KeyKPMultiply:  "NumpadMultiply",
+	KeyKPSubtract:  "NumpadSubtract",
+	KeyKPAdd:       "NumpadAdd",
+	KeyKPEnter:     "NumpadEnter",
+	KeyKPEqual:     "NumpadEqual",
+	KeyLeftShift:   "ShiftLeft",
+	KeyLeftControl: "ControlLeft",
+	KeyLeftAlt:     "AltLeft",
 	// KeyLeftSuper:         "OSLeft",
-	KeyLeftSuper:       "MetaLeft",
-	KeyRightShift:     "ShiftRight",
-	KeyRightControl:   "ControlRight",
-	KeyRightAlt:       "AltRight",
+	KeyLeftSuper:    "MetaLeft",
+	KeyRightShift:   "ShiftRight",
+	KeyRightControl: "ControlRight",
+	KeyRightAlt:     "AltRight",
 	// KeyRightSuper:        "OSRight",
-	KeyRightSuper:      "MetaRight",
-	KeyMenu:    "ContextMenu", // ????
+	KeyRightSuper: "MetaRight",
+	KeyMenu:       "ContextMenu", // ????
 }

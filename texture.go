@@ -12,8 +12,11 @@ import (
 
 // TODO - Should I use this as default? Or is there a way to do null textures for textureless things?
 var whiteTexture *Texture
+
 func WhiteTexture() *Texture {
-	if whiteTexture != nil { return whiteTexture }
+	if whiteTexture != nil {
+		return whiteTexture
+	}
 	max := 128 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
 
 	whiteColor := color.RGBA{0xFF, 0xFF, 0xFF, 0xFF}
@@ -24,9 +27,9 @@ func WhiteTexture() *Texture {
 func NewRGBATexture(width, height int, col color.RGBA, smooth bool) *Texture {
 	img := image.NewRGBA(image.Rect(0, 0, width, height))
 
-	for x:=0; x<width; x++ {
-		for y:=0; y<height; y++ {
-			img.SetRGBA(x,y, col)
+	for x := 0; x < width; x++ {
+		for y := 0; y < height; y++ {
+			img.SetRGBA(x, y, col)
 		}
 	}
 	return NewTexture(img, smooth)
@@ -34,11 +37,11 @@ func NewRGBATexture(width, height int, col color.RGBA, smooth bool) *Texture {
 
 func NewTransparentTexture64() *Texture {
 	max := 64 // TODO - webgl forces textures to be power of 2 - maybe I can go smaller though
-	img := image.NewRGBA(image.Rect(0,0,max,max))
+	img := image.NewRGBA(image.Rect(0, 0, max, max))
 
-	for x:=0; x<max; x++ {
-		for y:=0; y<max; y++ {
-			img.SetRGBA(x,y, color.RGBA{255,255,255, 255})
+	for x := 0; x < max; x++ {
+		for y := 0; y < max; y++ {
+			img.SetRGBA(x, y, color.RGBA{255, 255, 255, 255})
 			// img.SetRGBA(x,y, color.RGBA{0, 0, 0, 0})
 		}
 	}
@@ -47,9 +50,9 @@ func NewTransparentTexture64() *Texture {
 }
 
 type Texture struct {
-	texture gl.Texture
+	texture       gl.Texture
 	width, height int
-	smooth bool
+	smooth        bool
 }
 
 func toRgba(img image.Image) *image.RGBA {
@@ -61,7 +64,7 @@ func toRgba(img image.Image) *image.RGBA {
 func NewEmptyTexture(width, height int, smooth bool) *Texture {
 	// We can only use RGBA images right now.
 	t := &Texture{
-		width: width,
+		width:  width,
 		height: height,
 		smooth: smooth,
 	}
@@ -77,7 +80,7 @@ func NewTexture(img image.Image, smooth bool) *Texture {
 	width := rgba.Bounds().Dx()
 	height := rgba.Bounds().Dy()
 	t := &Texture{
-		width: width,
+		width:  width,
 		height: height,
 		smooth: smooth,
 	}
@@ -121,9 +124,9 @@ func (t *Texture) initialize(pixels []uint8) {
 // TODO: This needs to be combined into the NewTexture function, or this needs to bind the texture
 func (t *Texture) GenerateMipmap() {
 	mainthread.Call(func() {
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-		gl.GenerateMipmap(gl.TEXTURE_2D);
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+		gl.GenerateMipmap(gl.TEXTURE_2D)
 	})
 }
 
@@ -131,7 +134,9 @@ func (t *Texture) GenerateMipmap() {
 // Texture size must match img size or this will panic!
 // TODO - Should I just try and set it? or do nothing?
 func (t *Texture) SetImage(img image.Image) {
-	if img == nil { return }
+	if img == nil {
+		return
+	}
 
 	if t.width != img.Bounds().Dx() || t.height != img.Bounds().Dy() {
 		panic("SetImage: img bounds are not equal to texture bounds!")

@@ -36,8 +36,11 @@ func Run(function func()) {
 type Uniforms struct {
 	set map[string]any
 }
+
 func (u *Uniforms) Bind(shader *Shader) {
-	if u == nil { return }
+	if u == nil {
+		return
+	}
 	for k, v := range u.set {
 		shader.setUniform(k, v)
 	}
@@ -52,7 +55,7 @@ func (u *Uniforms) SetUniform(name string, val any) {
 
 func (u *Uniforms) Copy() *Uniforms {
 	u2 := &Uniforms{}
-	for k,v := range u.set {
+	for k, v := range u.set {
 		u2.SetUniform(k, v)
 	}
 	return u2
@@ -63,19 +66,19 @@ func (u *Uniforms) Copy() *Uniforms {
 // Texture: texture slot lut ID 256 maximum
 // Uniform: uniform slot lut ID 256 maximum
 type Material struct {
-	shader *Shader
-	texture *Texture
+	shader   *Shader
+	texture  *Texture
 	uniforms *Uniforms // TODO: Generic binder (eg old Material interface)?
 
 	blend BlendMode
 	depth DepthMode
-	cull CullMode
+	cull  CullMode
 }
 
 func NewMaterial(shader *Shader) Material {
 	return Material{
-		shader: shader,
-		blend: BlendModeNormal,
+		shader:   shader,
+		blend:    BlendModeNormal,
 		uniforms: nil,
 	}
 }
@@ -102,7 +105,7 @@ func (m *Material) SetUniform(name string, val any) *Material {
 	return m
 }
 
-func (m *Material) SetTexture(/* slot int, */ texture *Texture) {
+func (m *Material) SetTexture( /* slot int, */ texture *Texture) {
 	m.texture = texture
 }
 
@@ -135,7 +138,6 @@ func (m Material) Bind() {
 	state.setBlendMode(m.blend)
 	state.setDepthMode(m.depth)
 	state.setCullMode(m.cull)
-
 
 	// // Bind Depthmode
 	// if m.depth == DepthModeNone {
@@ -180,19 +182,19 @@ func (m Material) Bind() {
 // }
 
 type Metrics struct {
-	setShader int
-	setCamera int
-	clearTarget int
-	setTarget int
-	setMaterial int
-	add int
+	setShader    int
+	setCamera    int
+	clearTarget  int
+	setTarget    int
+	setMaterial  int
+	add          int
 	flushAttempt int
-	flush int
-	finish int
-	draw int
+	flush        int
+	finish       int
+	draw         int
 
 	vertsTotal int // The total number of vertices drawn
-	vertsAvg int // The average number of vertices drawn per drawCall
+	vertsAvg   int // The average number of vertices drawn per drawCall
 
 	// Note: Disabled because this didn't really give me any insight
 	// vertsMin int
@@ -206,10 +208,11 @@ func GetMetrics() Metrics {
 	return metric
 }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 type CameraMaterial struct {
 	Projection, View glMat4
 }
+
 //--------------------------------------------------------------------------------
 
 var global = &globalBatcher{
@@ -221,12 +224,12 @@ var global = &globalBatcher{
 } // TODO: Default case for shader?
 
 type globalBatcher struct {
-	shader *Shader
-	camera CameraMaterial
+	shader     *Shader
+	camera     CameraMaterial
 	lastBuffer *VertexBuffer
-	target Target
-	texture *Texture
-	blend BlendMode
+	target     Target
+	texture    *Texture
+	blend      BlendMode
 
 	material Material
 
@@ -274,7 +277,7 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 func SetCamera(camera *CameraOrtho) {
 	camMaterial := CameraMaterial{
 		Projection: camera.Projection.gl(),
-		View: camera.View.gl(),
+		View:       camera.View.gl(),
 	}
 	SetCameraMaterial(camMaterial)
 }
@@ -308,7 +311,9 @@ func setShader(shader *Shader) {
 }
 
 func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
-	if filler == nil { return } // Skip nil meshes
+	if filler == nil {
+		return
+	} // Skip nil meshes
 
 	global.metric.add++
 
@@ -353,7 +358,9 @@ func (g *globalBatcher) finish() {
 // Draws the current buffer and progress the shader pool to the next available
 func (g *globalBatcher) flush() {
 	g.metric.flushAttempt++
-	if g.lastBuffer == nil { return }
+	if g.lastBuffer == nil {
+		return
+	}
 
 	g.drawCall(g.lastBuffer, glMat4Ident)
 	g.lastBuffer = nil
