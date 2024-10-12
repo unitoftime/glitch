@@ -65,7 +65,8 @@ func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
 }
 func (s *Sprite) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
+	matrix.Scale(bounds.W() / s.bounds.W(), bounds.H() / s.bounds.H(), 1).
+		Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
 	s.DrawColorMask(target, matrix, mask)
 }
 

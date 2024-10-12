@@ -405,6 +405,15 @@ func R(minX, minY, maxX, maxY float64) Rect {
 	}
 }
 
+// Creates a centered rect
+func CR(radius float64) Rect {
+	// TODO - guarantee min is less than max
+	return Rect{
+		Min: Vec2{-radius, -radius},
+		Max: Vec2{radius, radius},
+	}
+}
+
 // Creates a quad mesh from this rect
 func (r Rect) ToMesh() *Mesh {
 	return NewQuadMesh(r, R(0, 0, 1, 1))
@@ -695,10 +704,13 @@ func (m *Mat4) Transpose() *Mat4 {
 }
 
 func (r Rect) RectDraw(r2 Rect) Mat4 {
+	srcCenter := r.Center()
+	dstCenter := r2.Center()
 	mat := Mat4Ident
 	mat.
+		Translate(-srcCenter.X, -srcCenter.Y, 0).
 		Scale(r2.W() / r.W(), r2.H() / r.H(), 1).
-		Translate(r2.Min.X, r2.Min.Y, 0)
+		Translate(dstCenter.X, dstCenter.Y, 0)
 	return mat
 }
 
