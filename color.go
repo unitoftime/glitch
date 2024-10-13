@@ -71,6 +71,15 @@ func (c1 RGBA) Mult(c2 RGBA) RGBA {
 	}
 }
 
+func (c1 RGBA) Add(c2 RGBA) RGBA {
+	return RGBA{
+		c1.R + c2.R,
+		c1.G + c2.G,
+		c1.B + c2.B,
+		c1.A + c2.A,
+	}
+}
+
 func (c RGBA) Desaturate(val float64) RGBA {
 	// https://stackoverflow.com/questions/70966873/algorithm-to-desaturate-rgb-color
 	i := (c.R + c.G + c.B) / 3

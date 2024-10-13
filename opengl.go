@@ -119,12 +119,12 @@ type VertexBuffer struct {
 	deleted bool // If true, we've already deleted this
 }
 
-func NewVertexBuffer(shader *Shader, numVerts, numTris int) *VertexBuffer {
+func NewVertexBuffer(shader *Shader, numVerts, numIndices int) *VertexBuffer {
 	format := shader.attrFmt // TODO - cleanup this variable
 	b := &VertexBuffer{
 		format: format,
 		buffers: make([]ISubBuffer, len(format)),
-		indices: make([]uint32, 3 * numTris), // 3 indices per triangle
+		indices: make([]uint32, numIndices),
 	}
 
 	b.stride = 0
@@ -386,12 +386,16 @@ func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}
 		}
 	}
 
-	// fmt.Printf("NEW BATCH: %d - index: %d\n", b.triangleCount, b.currentIndex)
-	newBuff := NewVertexBuffer(b.shader, b.triangleBatchSize, b.triangleBatchSize)
+	// Since we are making a new buffer, ensure we have at least enough for what we are trying to reserve. Else use the default triangleBatchSize
+	// TODO: For indexBatchSize: 3x is a bit hacky. assumes each triangle has 3 indices
+	vertBatchSize := max(numVerts, b.triangleBatchSize)
+	indexBatchSize := max(len(indices), 3 * b.triangleBatchSize)
+
+	newBuff := NewVertexBuffer(b.shader, vertBatchSize, indexBatchSize)
 	success := newBuff.Reserve(indices, numVerts, dests)
 	if !success {
-		panic(fmt.Sprintf("Failed to reserve on freshly created buffer:\nReserve: %v, %v, %v\nOn: %v",
-			len(indices), numVerts, len(dests), b.triangleBatchSize,
+		panic(fmt.Sprintf("Failed to reserve on freshly created buffer:\nReserve: %v, %v, %v\nOn: %v %v",
+			len(indices), numVerts, len(dests), vertBatchSize, indexBatchSize,
 		))
 	}
 	b.buffers = append(b.buffers, newBuff)

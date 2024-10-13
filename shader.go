@@ -358,8 +358,7 @@ func (shader *Shader) BufferMesh(mesh *Mesh, translucent bool) *VertexBuffer {
 		panic("Cmd.Mesh indices must have 3 indices per triangle!")
 	}
 	numVerts := len(mesh.positions)
-	numTris := len(mesh.indices) / 3
-	buffer := NewVertexBuffer(shader, numVerts, numTris)
+	buffer := NewVertexBuffer(shader, numVerts, len(mesh.indices))
 	buffer.deallocAfterBuffer = true
 
 	success := buffer.Reserve(mesh.indices, numVerts, shader.tmpBuffers)
