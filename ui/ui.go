@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/graph"
 )
@@ -42,7 +43,7 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 
 	// // Setup Default styles
 	// gStyle.textStyle = NewTextStyle().Autofit(true).Padding(glitch.R(5, 5, 5, 5))
-	defaultTextStyle := NewTextStyle().Autofit(true).Padding(glitch.R(5, 5, 5, 5))
+	defaultTextStyle := NewTextStyle().Autofit(true).Padding(glm.R(5, 5, 5, 5))
 
 	whiteTexture := glitch.WhiteTexture()
 	whiteSquare := glitch.NewSprite(whiteTexture, whiteTexture.Bounds())
@@ -50,7 +51,7 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 	grey := make([]glitch.RGBA, 16)
 	for i := range grey {
 		val := uint8(i * 0x11)
-		grey[i] = glitch.FromUint8(val, val, val, 0xff)
+		grey[i] = glm.FromUint8(val, val, val, 0xff)
 	}
 
 	gStyle.buttonStyle = Style{
@@ -280,7 +281,7 @@ func mouseCheck(rect glitch.Rect, point glitch.Vec2) bool {
 	// if global.mouseCaught {
 	// 	return false
 	// }
-	if rect.Contains(point.X, point.Y) {
+	if rect.Contains(point) {
 		global.mouseCaught = true
 		return true
 	}

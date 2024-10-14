@@ -1,5 +1,7 @@
 package glitch
 
+import "github.com/unitoftime/flow/glm"
+
 // Sorting
 // 1. FBO Target
 // 2. Shader program
@@ -17,7 +19,7 @@ type GeometryFiller interface {
 	// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
 	Fill(*BufferPool, glMat4, RGBA) *VertexBuffer
-	Bounds() Box
+	Bounds() glm.Box
 }
 
 type BatchTarget interface {

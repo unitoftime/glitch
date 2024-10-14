@@ -4,6 +4,7 @@ import (
 	// "fmt"
 	"math"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 )
 
@@ -62,7 +63,7 @@ func (g *Graph) Line(series []glitch.Vec2) {
 		maxRange = math.Max(maxRange, float64(p.Y))
 	}
 
-	g.axes = glitch.R(minDomain, minRange, maxDomain, maxRange)
+	g.axes = glm.R(minDomain, minRange, maxDomain, maxRange)
 
 	dx := g.bounds.W() / (maxDomain - minDomain)
 	dy := g.bounds.H() / (maxRange - minRange)

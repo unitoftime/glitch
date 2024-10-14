@@ -15,6 +15,7 @@ import (
 	"unicode"
 
 	"github.com/golang/freetype/truetype"
+	"github.com/unitoftime/flow/glm"
 	"golang.org/x/image/font/basicfont"
 	"golang.org/x/image/font/gofont/goregular"
 )
@@ -216,7 +217,7 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
-			BoundsUV: R(
+			BoundsUV: glm.R(
 				float64(bounds.Min.X - atlas.border)/fSize, float64(bounds.Min.Y - atlas.border)/fSize,
 				float64(bounds.Max.X + atlas.border)/fSize, float64(bounds.Max.Y + atlas.border)/fSize,
 			).Norm(),
@@ -371,13 +372,13 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	y1 := dot.Y + (scaleY * glyph.Bearing.Y) + (a.descent * scale)
 	y2 := y1 + (scaleY * (v2 - v1))
 
-	destRect := R(x1, y1, x2, y2)
+	destRect := glm.R(x1, y1, x2, y2)
 	if a.pixelPerfect {
-		destRect = R(math.Round(x1), math.Round(y1), math.Round(x2), math.Round(y2))
+		destRect = glm.R(math.Round(x1), math.Round(y1), math.Round(x2), math.Round(y2))
 	}
 
 	if mesh != nil {
-		mesh.AppendQuadMesh(destRect, R(u1, v1, u2, v2), color)
+		mesh.AppendQuadMesh(destRect, glm.R(u1, v1, u2, v2), color)
 		// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 	}
 
@@ -522,7 +523,7 @@ func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	// mat2.Translate(0, -0.5, 0)
 	// target.Add(t.mesh, mat2, Black, t.material, false)
 
-	target.Add(t.mesh, matrix.gl(), color, t.material, true)
+	target.Add(t.mesh, glm4(matrix), color, t.material, true)
 }
 
 func (t *Text) RectDraw(target BatchTarget, rect Rect) {
@@ -533,7 +534,7 @@ func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
 
 	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min.X, rect.Min.Y, 0)
-	target.Add(t.mesh, mat.gl(), color, t.material, true)
+	target.Add(t.mesh, glm4(mat), color, t.material, true)
 }
 
 func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
@@ -545,7 +546,7 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// TODO!!! - There's something wrong with this
 	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min.X, bounds.Min.Y, 0)
 
-	target.Add(t.mesh, mat.gl(), mask, t.material, true)
+	target.Add(t.mesh, glm4(mat), mask, t.material, true)
 }
 
 func (t *Text) AppendStringVerts(text string) Rect {
@@ -618,7 +619,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// top := initialDot.Y + t.atlas.descent
 
 	bot := top - (numLines * lineHeight)
-	return R(initialDot.X, top, maxDotX, bot).Norm()// .MoveMin(Vec2{})
+	return glm.R(initialDot.X, top, maxDotX, bot).Norm()// .MoveMin(Vec2{})
 
 
 	//--------------------------------------------------------------------------------

@@ -4,6 +4,7 @@ import (
 	"image"
 	"runtime"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
@@ -34,7 +35,7 @@ func NewFrame(bounds Rect, smooth bool) *Frame {
 
 	// Create mesh (in case we want to draw the fbo to another target)
 	// frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))
-	frame.mesh = NewQuadMesh(bounds, R(0, 1, 1, 0))
+	frame.mesh = NewQuadMesh(bounds, glm.R(0, 1, 1, 0))
 	// frame.material = NewSpriteMaterial(frame.tex)
 	frame.material = NewMaterial(GetDefaultSpriteShader())
 	frame.material.texture = frame.tex
@@ -72,7 +73,7 @@ func (f *Frame) Draw(target BatchTarget, matrix Mat4) {
 }
 func (f *Frame) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	target.Add(f.mesh, matrix.gl(), mask, f.material, false)
+	target.Add(f.mesh, glm4(matrix), mask, f.material, false)
 }
 
 func (f *Frame) RectDraw(target BatchTarget, bounds Rect) {

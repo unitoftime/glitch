@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 )
 
@@ -756,11 +757,11 @@ func TextInput(label string, str *string, rect glitch.Rect, style Style) {
 		cursoredTextRect := measureText((*str)[:global.cursorPos], rect, style.Text)
 		// cursoredTextRect := drawText((*str)[:global.cursorPos], rect, textStyle)
 		if global.cursorPos == 0 {
-			cursoredTextRect = glitch.R(0, 0, 0, textResp.textRect.H())
+			cursoredTextRect = glm.R(0, 0, 0, textResp.textRect.H())
 		}
 
 		cursorWidth := 2.0 // TODO: Configurable?
-		cursorRect := glitch.R(0, 0, cursorWidth, textResp.textRect.H()). // cursoredTextRect.H()
+		cursorRect := glm.R(0, 0, cursorWidth, textResp.textRect.H()). // cursoredTextRect.H()
 			Moved(glitch.Vec2{textResp.textRect.Min.X + cursoredTextRect.W(), textResp.textRect.Min.Y})
 		drawSprite(cursorRect, gStyle.textCursorStyle.Normal)
 	}
@@ -781,7 +782,7 @@ func TooltipExt(label string, rect glitch.Rect, style Style) {
 		return // Exit early if not hovered
 	}
 
-	quadrant := Bounds().Center().Sub(global.mousePos).Unit()
+	quadrant := Bounds().Center().Sub(global.mousePos).Norm()
 
 	var movement glitch.Vec2
 	if quadrant.X < 0 {
@@ -797,7 +798,7 @@ func TooltipExt(label string, rect glitch.Rect, style Style) {
 	// 	movement.Y = 0
 	// }
 
-	cursorRect := glitch.R(0, 0, 0, 0).WithCenter(global.mousePos)
+	cursorRect := glm.R(0, 0, 0, 0).WithCenter(global.mousePos)
 	// style.Text = style.Text.Anchor(movement.Scaled(-1)).Pivot(glitch.Vec2{0.5, 0.5})
 	tmpTextStyle := style.Text.Anchor(movement)
 

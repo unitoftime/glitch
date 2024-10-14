@@ -273,8 +273,8 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 
 func SetCamera(camera *CameraOrtho) {
 	camMaterial := CameraMaterial{
-		Projection: camera.Projection.gl(),
-		View: camera.View.gl(),
+		Projection: glm4(camera.Projection),
+		View: glm4(camera.View),
 	}
 	SetCameraMaterial(camMaterial)
 }

@@ -1,5 +1,7 @@
 package glitch
 
+import "github.com/unitoftime/flow/glm"
+
 type Sprite struct {
 	mesh *Mesh
 	bounds Rect // Represents the bounds centered on (0, 0)
@@ -11,7 +13,7 @@ type Sprite struct {
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
-	uvBounds := R(
+	uvBounds := glm.R(
 		bounds.Min.X / float64(texture.width),
 		bounds.Min.Y / float64(texture.height),
 		bounds.Max.X / float64(texture.width),
@@ -57,7 +59,7 @@ func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
 	s.DrawColorMask(target, matrix, White)
 }
 func (s *Sprite) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(s.mesh, matrix.gl(), mask, s.material, s.Translucent)
+	target.Add(s.mesh, glm4(matrix), mask, s.material, s.Translucent)
 }
 
 func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
@@ -80,7 +82,7 @@ func (s *Sprite) Frame() Rect {
 func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds
 	s.bounds = bounds.Moved(bounds.Center().Scaled(-1))
-	s.uvBounds = R(
+	s.uvBounds = glm.R(
 		bounds.Min.X / float64(s.texture.width),
 		bounds.Min.Y / float64(s.texture.height),
 		bounds.Max.X / float64(s.texture.width),
@@ -89,7 +91,7 @@ func (s *Sprite) SetTextureBounds(bounds Rect) {
 
 	w := bounds.W()
 	h := bounds.H()
-	meshBounds := R(-w/2, -h/2, w/2, h/2)
+	meshBounds := glm.R(-w/2, -h/2, w/2, h/2)
 
 	s.mesh.positions[0] = glVec3{float32(meshBounds.Max.X), float32(meshBounds.Max.Y), float32(0.0)}
 	s.mesh.positions[1] = glVec3{float32(meshBounds.Max.X), float32(meshBounds.Min.Y), float32(0.0)}
@@ -232,7 +234,7 @@ func (s *NinePanelSprite) RectDrawColorMask(pass BatchTarget, rect Rect, mask RG
 	// fmt.Println("here")
 	// fmt.Println(bounds.W(), bounds.H())
 
-	border := R(
+	border := glm.R(
 		s.Scale * s.border.Min.X,
 		s.Scale * s.border.Min.Y,
 		s.Scale * s.border.Max.X,

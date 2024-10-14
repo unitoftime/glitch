@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/glfw"
 	"github.com/unitoftime/glitch/internal/mainthread"
@@ -317,7 +318,7 @@ func (w *Window) Close() {
 }
 
 func (w *Window) Bounds() Rect {
-	return R(0, 0, float64(w.width), float64(w.height))
+	return glm.R(0, 0, float64(w.width), float64(w.height))
 }
 
 func (w *Window) MousePosition() (float64, float64) {

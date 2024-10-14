@@ -6,6 +6,7 @@ import (
 	"image/draw"
 	"runtime"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch/internal/gl"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
@@ -175,7 +176,7 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 }
 
 func (t *Texture) Bounds() Rect {
-	return R(0, 0, float64(t.width), float64(t.height))
+	return glm.R(0, 0, float64(t.width), float64(t.height))
 }
 
 // func (t *Texture) bind(position int) {

@@ -1,6 +1,9 @@
 package ui
 
-import "github.com/unitoftime/glitch"
+import (
+	"github.com/unitoftime/flow/glm"
+	"github.com/unitoftime/glitch"
+)
 
 type FullStyle struct {
 	buttonStyle Style
@@ -156,7 +159,7 @@ func NewTextStyle() TextStyle {
 	return TextStyle{
 		anchor: glitch.Vec2{0.5, 0.5},
 		pivot: glitch.Vec2{0.5, 0.5},
-		padding: glitch.R(0, 0, 0, 0),
+		padding: glm.R(0, 0, 0, 0),
 		color: glitch.White,
 		scale: 1.0,
 		autoFit: false,

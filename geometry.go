@@ -2,68 +2,69 @@ package glitch
 
 import (
 	"math"
-
-	"github.com/unitoftime/glitch/shaders"
 )
 
-type RectFill struct {
-	bounds Rect
-}
-
-func (s Rect) GetBuffer() *VertexBuffer {
-	return nil
-}
 // Note: For caching purposes
 var geomQuadIndices = []uint32{
 	0, 1, 3,
 	1, 2, 3,
 }
-func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
-	numVerts := 4
-	vertexBuffer := pool.Reserve(geomQuadIndices, numVerts, pool.shader.tmpBuffers)
-	bounds := s
 
-	destBuffs := pool.shader.tmpBuffers
-	for bufIdx, attr := range pool.shader.attrFmt {
-		// TODO - I'm not sure of a good way to break up this switch statement
-		switch attr.Swizzle {
-		case shaders.PositionXYZ:
-			bounds := bounds.Box()
-			min := bounds.Min.gl()
-			max := bounds.Max.gl()
-			if mat != glMat4Ident {
-				min = mat.Apply(min)
-				max = mat.Apply(max)
-			}
-
-			// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
-			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
-			posBuf[0] = glVec3{float32(max[0]), float32(max[1]), float32(min[2])}
-			posBuf[1] = glVec3{float32(max[0]), float32(min[1]), float32(min[2])}
-			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
-			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
-
-		case shaders.ColorRGBA:
-			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
-			color := mask.gl()
-			colBuf[0] = color
-			colBuf[1] = color
-			colBuf[2] = color
-			colBuf[3] = color
-		case shaders.TexCoordXY:
-			uvBounds := bounds
-			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			texBuf[0] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)}
-			texBuf[1] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)}
-			texBuf[2] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)}
-			texBuf[3] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)}
-		default:
-			panic("Unsupported")
-		}
-	}
-
-	return vertexBuffer
+type RectFill struct {
+	bounds Rect
 }
+
+
+// func (s Rect) GetBuffer() *VertexBuffer {
+// 	return nil
+// }
+
+// func (s Rect) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
+// 	numVerts := 4
+// 	vertexBuffer := pool.Reserve(geomQuadIndices, numVerts, pool.shader.tmpBuffers)
+// 	bounds := s
+
+// 	destBuffs := pool.shader.tmpBuffers
+// 	for bufIdx, attr := range pool.shader.attrFmt {
+// 		// TODO - I'm not sure of a good way to break up this switch statement
+// 		switch attr.Swizzle {
+// 		case shaders.PositionXYZ:
+// 			bounds := bounds.Box()
+// 			min := bounds.Min.gl()
+// 			max := bounds.Max.gl()
+// 			if mat != glMat4Ident {
+// 				min = mat.Apply(min)
+// 				max = mat.Apply(max)
+// 			}
+
+// 			// TODO: Depth? Right now I just do min[2] b/c max and min should be on same Z axis
+// 			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+// 			posBuf[0] = glVec3{float32(max[0]), float32(max[1]), float32(min[2])}
+// 			posBuf[1] = glVec3{float32(max[0]), float32(min[1]), float32(min[2])}
+// 			posBuf[2] = glVec3{float32(min[0]), float32(min[1]), float32(min[2])}
+// 			posBuf[3] = glVec3{float32(min[0]), float32(max[1]), float32(min[2])}
+
+// 		case shaders.ColorRGBA:
+// 			colBuf := *(destBuffs[bufIdx]).(*[]glVec4)
+// 			color := mask.gl()
+// 			colBuf[0] = color
+// 			colBuf[1] = color
+// 			colBuf[2] = color
+// 			colBuf[3] = color
+// 		case shaders.TexCoordXY:
+// 			uvBounds := bounds
+// 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
+// 			texBuf[0] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)}
+// 			texBuf[1] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)}
+// 			texBuf[2] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)}
+// 			texBuf[3] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)}
+// 		default:
+// 			panic("Unsupported")
+// 		}
+// 	}
+
+// 	return vertexBuffer
+// }
 
 type GeomDraw struct {
 	color RGBA
@@ -145,8 +146,8 @@ func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
 
 	{
 		bounds := rect.Box()
-		min := bounds.Min.gl()
-		max := bounds.Max.gl()
+		min := glv3(bounds.Min)
+		max := glv3(bounds.Max)
 		if mat != glMat4Ident {
 			min = mat.Apply(min)
 			max = mat.Apply(max)
@@ -162,7 +163,7 @@ func (g *GeomDraw) FillRect2(mesh *Mesh, rect Rect, mat glMat4) {
 	}
 
 	{
-		color := g.color.gl()
+		color := glc4(g.color)
 		mesh.colors = append(mesh.colors,
 			color,
 			color,
@@ -393,10 +394,10 @@ func (g *GeomDraw) Line(mesh *Mesh, a, b Vec3, lastAngle, nextAngle float64, wid
 	}
 
 	positions := []glVec3{
-		b1.gl(),
-		b2.gl(),
-		a2.gl(),
-		a1.gl(),
+		glv3(b1),
+		glv3(b2),
+		glv3(a2),
+		glv3(a1),
 	}
 	// fmt.Println("Positions:", positions)
 

@@ -47,3 +47,15 @@ func TestProjectUnproject(t *testing.T) {
 		fmt.Println("Out: ", result)
 	}
 }
+
+// func TestSettingGlobalVariable(t *testing.T) {
+// 	original := Mat4Ident
+// 	original[2] = 123
+// 	fmt.Println(Mat4Ident)
+// 	Mat4Ident[0] += 10
+// 	fmt.Println(Mat4Ident)
+// 	Mat4Ident[0] -= 10
+// 	fmt.Println(Mat4Ident)
+// 	Mat4Ident = Mat4Ident
+// 	fmt.Println(Mat4Ident)
+// }

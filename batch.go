@@ -41,7 +41,7 @@ func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, materia
 		translucent: translucent,
 	})
 
-	newBounds := filler.Bounds().Apply(matrix)
+	newBounds := filler.Bounds().Apply(matrix.Mat4())
 	// TODO: Does this improve performance?
 	// if matrix != glMat4Ident {
 	// 	newBounds = newBounds.Apply(matrix)
@@ -62,7 +62,7 @@ func (b *DrawBatch) Clear() {
 
 func (b *DrawBatch) Draw(target BatchTarget, matrix Mat4) {
 	for i := range b.draws {
-		mat := matrix.gl()
+		mat := glm4(matrix)
 		mat.Mul(&b.draws[i].matrix)
 		target.Add(b.draws[i].filler, mat, b.draws[i].mask, b.draws[i].material, b.draws[i].translucent)
 	}
@@ -72,7 +72,7 @@ func (b *DrawBatch) Draw(target BatchTarget, matrix Mat4) {
 
 func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	for i := range b.draws {
-		mat := matrix.gl()
+		mat := glm4(matrix)
 		mat.Mul(&b.draws[i].matrix)
 
 		mask := b.draws[i].mask.Mult(color)
@@ -412,13 +412,13 @@ func (b *Batch) Clear() {
 
 func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
 	if b.material == nil { return }
-	target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, *b.material, b.Translucent)
+	target.Add(b.mesh, glm4(matrix), RGBA{1.0, 1.0, 1.0, 1.0}, *b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
 }
 
 func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	if b.material == nil { return }
-	target.Add(b.mesh, matrix.gl(), color, *b.material, b.Translucent)
+	target.Add(b.mesh, glm4(matrix), color, *b.material, b.Translucent)
 }
 
 func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
@@ -435,7 +435,7 @@ func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
-	target.Add(b.mesh, matrix.gl(), mask, *b.material, false)
+	target.Add(b.mesh, glm4(matrix), mask, *b.material, false)
 }
 
 func (b *Batch) Bounds() Box {

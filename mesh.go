@@ -3,6 +3,7 @@ package glitch
 import (
 	"fmt"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch/shaders"
 )
 
@@ -56,7 +57,7 @@ func (m *Mesh) Draw(target BatchTarget, matrix Mat4) {
 
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(m, matrix.gl(), mask, DefaultMaterial(WhiteTexture()), false)
+	target.Add(m, glm4(matrix), mask, DefaultMaterial(WhiteTexture()), false)
 }
 
 func (m *Mesh) Bounds() Box {
@@ -89,7 +90,7 @@ func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
 	newMesh := NewMesh()
 	newMesh.Append(originalMesh)
 	// TODO - should I do this in a different order?
-	delta := newMesh.origin.Sub(newOrigin).gl()
+	delta := glv3(newMesh.origin.Sub(newOrigin))
 	for i := range newMesh.positions {
 		newMesh.positions[i] = delta.Add(newMesh.positions[i])
 	}
@@ -97,8 +98,8 @@ func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
 	newMesh.origin = newOrigin
 
 	newMesh.bounds = Box{
-		Min: delta.Add(newMesh.bounds.Min.gl()).Float64(),
-		Max: delta.Add(newMesh.bounds.Max.gl()).Float64(),
+		Min: delta.Add(glv3(newMesh.bounds.Min)).Float64(),
+		Max: delta.Add(glv3(newMesh.bounds.Max)).Float64(),
 	}
 
 	return newMesh
@@ -168,7 +169,7 @@ func (m *Mesh) AppendQuadMesh(bounds Rect, uvBounds Rect, color RGBA) {
 
 // Basically a quad mesh, but with a centered position
 func NewSpriteMesh(w, h float64, uvBounds Rect) *Mesh {
-	return NewQuadMesh(R(-w/2, -h/2, w/2, h/2), uvBounds)
+	return NewQuadMesh(glm.R(-w/2, -h/2, w/2, h/2), uvBounds)
 }
 
 func NewQuadMesh(bounds Rect, uvBounds Rect) *Mesh {

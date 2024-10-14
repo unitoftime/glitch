@@ -312,21 +312,21 @@ func (u *uniformSetter) Func() {
 		gl.UniformMatrix4fv(uniform.loc, []float32(val[:]))
 
 	case Vec3:
-		vec := val.gl()
+		vec := glv3(val)
 		gl.Uniform3fv(uniform.loc, vec[:])
 	case Vec4:
-		vec := val.gl()
+		vec := glv4(val)
 		gl.Uniform4fv(uniform.loc, vec[:])
 	case RGBA: // Same as vec4
-		vec := val.gl()
+		vec := glc4(val)
 		gl.Uniform4fv(uniform.loc, vec[:])
 	case Mat4:
 		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-		s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
+		s.tmpFloat32Slice = mat4ToFloat32(val, s.tmpFloat32Slice)
 		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
 	case *Mat4:
 		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-		s.tmpFloat32Slice = val.writeToFloat32(s.tmpFloat32Slice)
+		s.tmpFloat32Slice = mat4ToFloat32(*val, s.tmpFloat32Slice)
 		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
 	default:
 		panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))

@@ -2,6 +2,8 @@ package glitch
 
 import (
 	"image"
+
+	"github.com/unitoftime/flow/glm"
 )
 
 // RBG: msdf-atlas-gen -type mtsdf -emrange 0.2 -dimensions 255 255 -font ~/Library/Fonts/FiraSans-Regular.otf -imageout assets/FiraSans-Regular.png -json assets/FiraSans-Regular.json
@@ -111,7 +113,7 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image, kerning float64) (*Atlas, er
 			// Advance: (g.Advance * float64(sdf.Atlas.Size)) / float64(sdf.Atlas.Width),
 			Advance: sdfUnitToFloat(g.Advance, sdf.Atlas.Size, sdf.Atlas.Width),
 			Bearing: Vec2{bearingX, bearingY},
-			BoundsUV: R(
+			BoundsUV: glm.R(
 				g.AtlasBounds.Left / float64(sdf.Atlas.Width),
 				g.AtlasBounds.Top / float64(sdf.Atlas.Height),
 				g.AtlasBounds.Right / float64(sdf.Atlas.Width),
