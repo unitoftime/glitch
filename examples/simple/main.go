@@ -3,6 +3,7 @@ package main
 import (
 	_ "image/png"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
 )
@@ -42,7 +43,7 @@ func run() {
 	atlasJson := glitch.SdfAtlas{}
 	err = assets.LoadJson("atlas-msdf.json", &atlasJson)
 	check(err)
-	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg)
+	atlas, err := glitch.AtlasFromSdf(atlasJson, atlasImg, 1.0)
 	check(err)
 	text := atlas.Text("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 1.0)
 	text.Material().SetUniform("u_threshold", 0.6) // TODO: Should mostly come from default
@@ -82,12 +83,12 @@ func run() {
 		sprite.Draw(sorter, *mat.Translate(100, 100, 0))
 		text.Draw(sorter, *mat.Translate(100, 100, 0))
 
-		glitch.Clear(frame, glitch.Alpha(0.5))
-		sprite.Draw(frame, glitch.Mat4Ident)
+		glitch.Clear(frame, glm.Alpha(0.5))
+		sprite.Draw(frame, glm.Mat4Ident)
 
 		sorter.Draw(frame)
 
-		glitch.Clear(win, glitch.Greyscale(0.5))
+		glitch.Clear(win, glm.Greyscale(0.5))
 
 		mat = glitch.Mat4Ident
 		mat.Translate(win.Bounds().Center().X, win.Bounds().Center().Y - 100, 0)

@@ -5,11 +5,10 @@ import (
 	"math"
 	"time"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/graph"
-
 	// "github.com/unitoftime/glitch/ui"
-	"github.com/unitoftime/glitch/shaders"
 )
 
 func check(err error) {
@@ -30,12 +29,10 @@ func runGame() {
 	})
 	check(err)
 
-	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil {
-		panic(err)
-	}
-
-	pass := glitch.NewRenderPass(shader)
+	// shader, err := glitch.NewShader(shaders.SpriteShader)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
 	dat := make([]glitch.Vec2, 0)
 	for i := 0; i < 1000; i++ {
@@ -49,7 +46,7 @@ func runGame() {
 	// rect := glitch.R(0 + pad, 0 + pad, 1920 - pad, 1080 - pad)
 	// rect := glitch.R(0, 0, 1, 1)
 	rect := win.Bounds()
-	rect = glitch.R(rect.Min.X, rect.Min.Y, rect.Min.X+500, rect.Min.Y+500)
+	rect = glm.R(rect.Min.X, rect.Min.Y, rect.Min.X+500, rect.Min.Y+500)
 
 	graph := graph.NewGraph(rect)
 
@@ -58,23 +55,18 @@ func runGame() {
 	dt := 15 * time.Millisecond
 	index := 0
 	start := time.Now()
-	for !win.Pressed(glitch.KeyBackspace) {
+	for !win.Pressed(glitch.KeyEscape) {
+		camera.SetOrtho2D(win.Bounds())
+		camera.SetView2D(0, 0, 1, 1)
+		glitch.SetCamera(camera)
 
-		pass.Clear()
+		glitch.Clear(win, glm.Black)
+
 		mat := glitch.Mat4Ident
 		// mat = *mat.Scale(100, 100, 100)
 		graph.Clear()
 		graph.Line(dat)
-		graph.DrawColorMask(pass, mat, glitch.RGBA{0, 1, 1, 1})
-
-		glitch.Clear(win, glitch.RGBA{0, 0, 0, 1.0})
-
-		camera.SetOrtho2D(win.Bounds())
-		camera.SetView2D(0, 0, 1, 1)
-		pass.SetCamera2D(camera)
-		// pass.SetUniform("projection", camera.Projection)
-		// pass.SetUniform("view", camera.View)
-		pass.Draw(win)
+		graph.DrawColorMask(win, mat, glitch.RGBA{0, 1, 1, 1})
 
 		win.Update()
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "image/png"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
 	"github.com/unitoftime/glitch/ui"
@@ -43,23 +44,23 @@ func runGame() {
 
 	// scale := 4.0
 	// texture := glitch.NewTexture(buttonImage, false)
-	// buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
+	// buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glm.R(1, 1, 1, 1))
 	// buttonSprite.Scale = scale
 
 	// texture2 := glitch.NewTexture(buttonPressImage, false)
-	// buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(1, 1, 1, 1))
+	// buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glm.R(1, 1, 1, 1))
 	// buttonPressSprite.Scale = scale
 
 	// texture3 := glitch.NewTexture(buttonHoverImage, false)
-	// buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glitch.R(1, 1, 1, 1))
+	// buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glm.R(1, 1, 1, 1))
 	// buttonHoverSprite.Scale = scale
 
 	// texture4 := glitch.NewTexture(panelImage, false)
-	// panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
+	// panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glm.R(2, 2, 2, 2))
 	// panelSprite.Scale = scale
 
 	// panelInnerTex := glitch.NewTexture(panelInnerImage, false)
-	// panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glitch.R(2, 2, 2, 2))
+	// panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glm.R(2, 2, 2, 2))
 	// panelInnerSprite.Scale = scale
 
 	// Text
@@ -85,7 +86,7 @@ func runGame() {
 	// group.Debug = true
 
 	// // textStyle := ui.NewTextStyle().Scale(4)// .Autofit(true)
-	// textStyle := ui.NewTextStyle().Autofit(true).Padding(glitch.R(5, 5, 5, 5))
+	// textStyle := ui.NewTextStyle().Autofit(true).Padding(glm.R(5, 5, 5, 5))
 	// buttonStyle := ui.Style{
 	// 	Normal:  ui.NewSpriteStyle(buttonSprite, glitch.White),
 	// 	Hovered: ui.NewSpriteStyle(buttonHoverSprite, glitch.White),
@@ -93,7 +94,7 @@ func runGame() {
 	// 	Text:    textStyle,
 	// }
 
-	textStyle := ui.NewTextStyle().Autofit(true).Padding(glitch.R(5, 5, 5, 5))
+	textStyle := ui.NewTextStyle().Autofit(true).Padding(glm.R(5, 5, 5, 5))
 	// ui.SetTextStyle(textStyle)
 	// ui.SetButtonStyle(buttonStyle)
 	// ui.SetPanelStyle(buttonStyle)
@@ -131,7 +132,7 @@ func runGame() {
 		// mx, my := win.MousePosition()
 		// log.Println("Mouse: ", mx, my)
 
-		glitch.Clear(win, glitch.Greyscale(0.5))
+		glitch.Clear(win, glm.Greyscale(0.5))
 		ui.Clear()
 
 		// {
@@ -140,7 +141,7 @@ func runGame() {
 		// 	layout := ui.Layout{
 		// 		Bounds: bounds,
 		// 		Type: ui.CutLeft,
-		// 		Padding: glitch.R(5, 5, 5, 5),
+		// 		Padding: glm.R(5, 5, 5, 5),
 		// 		Size: ui.Size{
 		// 			TypeX: ui.SizePixels,
 		// 			TypeY: ui.SizePixels,
@@ -166,7 +167,7 @@ func runGame() {
 		// 	layout := ui.Layout{
 		// 		Bounds: bounds,
 		// 		Type: ui.CutBottom,
-		// 		Padding: glitch.R(5, 5, 5, 5),
+		// 		Padding: glm.R(5, 5, 5, 5),
 		// 		// Size: ui.Size{
 		// 		// 	TypeX: ui.SizePixels,
 		// 		// 	TypeY: ui.SizePixels,
@@ -196,7 +197,7 @@ func runGame() {
 		// 	layout := ui.Layout{
 		// 		Bounds: bounds,
 		// 		Type: ui.Centered,
-		// 		Padding: glitch.R(5, 5, 5, 5),
+		// 		Padding: glm.R(5, 5, 5, 5),
 		// 		// Size: ui.Size{
 		// 		// 	TypeX: ui.SizePixels,
 		// 		// 	TypeY: ui.SizePixels,
@@ -219,7 +220,7 @@ func runGame() {
 			bounds := win.Bounds()
 			list := ui.VList2(bounds.CutLeft(100), 50)
 			for _, m := range modes {
-				if ui.Button2(m, list.Next().Unpad(glitch.R(5,5,5,5))) {
+				if ui.Button2(m, list.Next().Unpad(glm.R(5,5,5,5))) {
 					mode = m
 				}
 			}
@@ -227,7 +228,7 @@ func runGame() {
 
 		bounds := win.Bounds()
 		panelBounds := bounds.SliceVertical(0.5 * bounds.W()).SliceHorizontal(0.5 * bounds.H())
-		padding := glitch.R(5, 5, 5, 5)
+		padding := glm.R(5, 5, 5, 5)
 
 		switch mode {
 		case "basic":
@@ -242,20 +243,20 @@ func runGame() {
 		case "lists":
 			ui.Panel2("##panel", panelBounds)
 
-			list := ui.VList(panelBounds.Unpad(glitch.R(5, 5, 5, 5)), 7)
-			ui.TextExt("Title Section", list.Next().Unpad(glitch.R(5, 5, 5, 5)), textStyle)
-			ui.TextInput("textinput", &inputStr, list.Next().Unpad(glitch.R(5, 5, 5, 5)), ui.DragItemStyle())
+			list := ui.VList(panelBounds.Unpad(glm.R(5, 5, 5, 5)), 7)
+			ui.TextExt("Title Section", list.Next().Unpad(glm.R(5, 5, 5, 5)), textStyle)
+			ui.TextInput("textinput", &inputStr, list.Next().Unpad(glm.R(5, 5, 5, 5)), ui.DragItemStyle())
 
-			topButton := ui.HList(list.Next().Unpad(glitch.R(5, 5, 5, 5)), 2)
+			topButton := ui.HList(list.Next().Unpad(glm.R(5, 5, 5, 5)), 2)
 
-			ui.Button2("Left", topButton.Next().Unpad(glitch.R(5, 5, 5, 5)))
-			ui.Button2("Right", topButton.Next().Unpad(glitch.R(5, 5, 5, 5)))
-			ui.Button2("Hello2", list.Next().Unpad(glitch.R(5, 5, 5, 5)))
-			ui.Button2("Hello3", list.Next().Unpad(glitch.R(5, 5, 5, 5)))
-			sliderRect := list.Next().Unpad(glitch.R(5, 5, 5, 5))
+			ui.Button2("Left", topButton.Next().Unpad(glm.R(5, 5, 5, 5)))
+			ui.Button2("Right", topButton.Next().Unpad(glm.R(5, 5, 5, 5)))
+			ui.Button2("Hello2", list.Next().Unpad(glm.R(5, 5, 5, 5)))
+			ui.Button2("Hello3", list.Next().Unpad(glm.R(5, 5, 5, 5)))
+			sliderRect := list.Next().Unpad(glm.R(5, 5, 5, 5))
 			ui.SliderH(&sliderVal, 0.0, 100, 1, sliderRect, sliderRect)
 
-			checkboxRow := list.Next().Unpad(glitch.R(5, 5, 5, 5))
+			checkboxRow := list.Next().Unpad(glm.R(5, 5, 5, 5))
 			checkboxRow = checkboxRow.CutLeft(checkboxRow.W()/2)
 			checkboxBounds := checkboxRow.CutRight(checkboxRow.H())
 			ui.TextExt("Checkbox", checkboxRow, textStyle)
@@ -263,22 +264,22 @@ func runGame() {
 		case "grid":
 			ui.Panel2("##panel", panelBounds)
 
-			list := ui.GridList(panelBounds.Unpad(glitch.R(5, 5, 5, 5)), 3, 4)
+			list := ui.GridList(panelBounds.Unpad(glm.R(5, 5, 5, 5)), 3, 4)
 
 			for i := 0; i < 12; i++ {
 				str := fmt.Sprintf("%d", i)
-				if ui.Button2(str, list.Next().Unpad(glitch.R(5, 5, 5, 5))) {
+				if ui.Button2(str, list.Next().Unpad(glm.R(5, 5, 5, 5))) {
 					fmt.Println("PRESSED", str)
 				}
 			}
 		case "drag":
 			ui.Panel2("##panel", panelBounds)
 
-			list := ui.GridList(panelBounds.Unpad(glitch.R(5, 5, 5, 5)), 3, 4)
+			list := ui.GridList(panelBounds.Unpad(glm.R(5, 5, 5, 5)), 3, 4)
 
 			for i := range dragData {
 				str := dragData[i]
-				slotRect := list.Next().Unpad(glitch.R(5, 5, 5, 5))
+				slotRect := list.Next().Unpad(glm.R(5, 5, 5, 5))
 				if ui.DragSlot(str, slotRect, ui.DragSlotStyle()) {
 					dragIdx, ok := ui.DragData().(int)
 					if ok {
@@ -290,7 +291,7 @@ func runGame() {
 
 				if str == "" { continue } // Skip: No item there
 
-				clicked, hovered, dragging, dropping := ui.DragItem(str, slotRect.Unpad(glitch.R(5, 5, 5, 5)), ui.DragItemStyle())
+				clicked, hovered, dragging, dropping := ui.DragItem(str, slotRect.Unpad(glm.R(5, 5, 5, 5)), ui.DragItemStyle())
 				if clicked {
 					fmt.Println("CLICKED", i)
 				}
@@ -320,16 +321,16 @@ func runGame() {
 			drawTotal := 5
 			ui.Scrollbar(&scrollIdx, scrollTotal - drawTotal, scrollbarBounds, panelBounds)
 
-			list := ui.VList2(panelBounds.Unpad(glitch.R(5, 5, 5, 5)), 100)
+			list := ui.VList2(panelBounds.Unpad(glm.R(5, 5, 5, 5)), 100)
 			for i := scrollIdx; i < scrollIdx + drawTotal; i ++ {
 				str := fmt.Sprintf("%d", i)
-				if ui.Button2(str, list.Next().Unpad(glitch.R(5, 5, 5, 5))) {
+				if ui.Button2(str, list.Next().Unpad(glm.R(5, 5, 5, 5))) {
 					fmt.Println("Click:", str)
 				}
 			}
 		case "text":
 			ui.Panel2("##panel", panelBounds)
-			textAreaBounds := panelBounds// .Unpad(glitch.R(10, 10, 10, 10))
+			textAreaBounds := panelBounds// .Unpad(glm.R(10, 10, 10, 10))
 			ui.MultiText("Unfinished: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textAreaBounds, textStyle)
 		}
 
@@ -374,23 +375,23 @@ func runGame() {
 
 // 	scale := 4.0
 // 	texture := glitch.NewTexture(buttonImage, false)
-// 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
+// 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glm.R(1, 1, 1, 1))
 // 	buttonSprite.Scale = scale
 
 // 	texture2 := glitch.NewTexture(buttonPressImage, false)
-// 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(1, 1, 1, 1))
+// 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glm.R(1, 1, 1, 1))
 // 	buttonPressSprite.Scale = scale
 
 // 	texture3 := glitch.NewTexture(buttonHoverImage, false)
-// 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glitch.R(1, 1, 1, 1))
+// 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glm.R(1, 1, 1, 1))
 // 	buttonHoverSprite.Scale = scale
 
 // 	texture4 := glitch.NewTexture(panelImage, false)
-// 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
+// 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glm.R(2, 2, 2, 2))
 // 	panelSprite.Scale = scale
 
 // 	panelInnerTex := glitch.NewTexture(panelInnerImage, false)
-// 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glitch.R(2, 2, 2, 2))
+// 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glm.R(2, 2, 2, 2))
 // 	panelInnerSprite.Scale = scale
 
 // 	// Text
@@ -542,23 +543,23 @@ func runGame() {
 
 // // 	scale := 4.0
 // // 	texture := glitch.NewTexture(buttonImage, false)
-// // 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
+// // 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glm.R(1, 1, 1, 1))
 // // 	buttonSprite.Scale = scale
 
 // // 	texture2 := glitch.NewTexture(buttonPressImage, false)
-// // 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(1, 1, 1, 1))
+// // 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glm.R(1, 1, 1, 1))
 // // 	buttonPressSprite.Scale = scale
 
 // // 	texture3 := glitch.NewTexture(buttonHoverImage, false)
-// // 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glitch.R(1, 1, 1, 1))
+// // 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glm.R(1, 1, 1, 1))
 // // 	buttonHoverSprite.Scale = scale
 
 // // 	texture4 := glitch.NewTexture(panelImage, false)
-// // 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
+// // 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glm.R(2, 2, 2, 2))
 // // 	panelSprite.Scale = scale
 
 // // 	panelInnerTex := glitch.NewTexture(panelInnerImage, false)
-// // 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glitch.R(2, 2, 2, 2))
+// // 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glm.R(2, 2, 2, 2))
 // // 	panelInnerSprite.Scale = scale
 // // 	// panelInnerSprite.Mask = glitch.RGBA{1, 0, 0, 1}
 
@@ -721,23 +722,23 @@ func runGame() {
 // // // 	if err != nil { panic(err) }
 
 // // // 	texture := glitch.NewTexture(buttonImage, false)
-// // // 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glitch.R(1, 1, 1, 1))
+// // // 	buttonSprite := glitch.NewNinePanelSprite(texture, texture.Bounds(), glm.R(1, 1, 1, 1))
 // // // 	buttonSprite.Scale = 1
 
 // // // 	texture2 := glitch.NewTexture(buttonPressImage, false)
-// // // 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glitch.R(1, 1, 1, 1))
+// // // 	buttonPressSprite := glitch.NewNinePanelSprite(texture2, texture2.Bounds(), glm.R(1, 1, 1, 1))
 // // // 	buttonPressSprite.Scale = 1
 
 // // // 	texture3 := glitch.NewTexture(buttonHoverImage, false)
-// // // 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glitch.R(1, 1, 1, 1))
+// // // 	buttonHoverSprite := glitch.NewNinePanelSprite(texture3, texture3.Bounds(), glm.R(1, 1, 1, 1))
 // // // 	buttonHoverSprite.Scale = 1
 
 // // // 	texture4 := glitch.NewTexture(panelImage, false)
-// // // 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glitch.R(2, 2, 2, 2))
+// // // 	panelSprite := glitch.NewNinePanelSprite(texture4, texture4.Bounds(), glm.R(2, 2, 2, 2))
 // // // 	panelSprite.Scale = 1
 
 // // // 	panelInnerTex := glitch.NewTexture(panelInnerImage, false)
-// // // 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glitch.R(2, 2, 2, 2))
+// // // 	panelInnerSprite := glitch.NewNinePanelSprite(panelInnerTex, panelInnerTex.Bounds(), glm.R(2, 2, 2, 2))
 // // // 	panelInnerSprite.Scale = 1
 // // // 	// panelInnerSprite.Mask = glitch.RGBA{1, 0, 0, 1}
 

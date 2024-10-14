@@ -11,7 +11,6 @@ import (
 
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
-	"github.com/unitoftime/glitch/shaders"
 )
 
 func main() {
@@ -26,12 +25,12 @@ func run() {
 		panic(err)
 	}
 
-	// shader, err := glitch.NewShader(shaders.PixelArtShader)
-	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil {
-		panic(err)
-	}
-	pass := glitch.NewRenderPass(shader)
+	// // shader, err := glitch.NewShader(shaders.PixelArtShader)
+	// shader, err := glitch.NewShader(shaders.SpriteShader)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// pass := glitch.NewRenderPass(shader)
 
 	zoom := 1.0
 
@@ -79,6 +78,11 @@ func run() {
 		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
 		}
+
+		camera.SetOrtho2D(targetBounds)
+		camera.SetView2D(0, 0, zoom, zoom)
+		glitch.SetCamera(camera)
+
 		_, sy := win.MouseScroll()
 		if sy > 0 {
 			zoom += 0.1
@@ -101,12 +105,9 @@ func run() {
 		man[2].position.X = (2 * radius) + targetBounds.Center().X
 		man[2].position.Y = radius * math.Sin(t.Seconds()) + targetBounds.Center().Y
 
-		pass.Clear()
 
-		camera.SetOrtho2D(targetBounds)
-		camera.SetView2D(0, 0, zoom, zoom)
+		glitch.Clear(win, glitch.White)
 
-		pass.SetLayer(0)
 		if counter == 0 {
 			text.Clear()
 			text.Set(fmt.Sprintf("%2.2f (%2.2f, %2.2f) ms",
@@ -116,23 +117,18 @@ func run() {
 			min = 100000000000
 			max = 0
 		}
-		text.DrawColorMask(pass, glitch.Mat4Ident, glitch.Black)
+		text.DrawColorMask(win, glitch.Mat4Ident, glitch.Black)
 
-		pass.SetLayer(1)
 		for i := range man {
 			mat = glitch.Mat4Ident
 			// mat.Translate(math.Round(man[i].position[0]), math.Round(man[i].position[1]), 0)
 			mat.Scale(4, 4, 1).Translate(math.Round(man[i].position.X), math.Round(man[i].position.Y), 0)
 			// mat.Scale(1, 1, 1).Translate(man[i].position[0], man[i].position[1], 0)
-			sprite.DrawColorMask(pass, mat, man[i].color)
+			sprite.DrawColorMask(win, mat, man[i].color)
 		}
 
-		glitch.Clear(win, glitch.White)
-
-		pass.SetCamera2D(camera)
 		// texelsPerPixel := 1.0 / zoom
 		// pass.SetUniform("texelsPerPixel", float32(texelsPerPixel))
-		pass.Draw(win)
 
 		win.Update()
 

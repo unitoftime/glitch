@@ -6,9 +6,9 @@ import (
 	"math/rand"
 	"time"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
-	"github.com/unitoftime/glitch/shaders"
 )
 
 func main() {
@@ -23,13 +23,11 @@ func runGame() {
 		panic(err)
 	}
 
-	shader, err := glitch.NewShader(shaders.SpriteShader)
-	if err != nil {
-		panic(err)
-	}
+	// shader, err := glitch.NewShader(shaders.SpriteShader)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	pass := glitch.NewRenderPass(shader)
-	windowPass := glitch.NewRenderPass(shader)
 
 	manImage, err := assets.LoadImage("gopher.png")
 	if err != nil {
@@ -39,7 +37,7 @@ func runGame() {
 
 	x := 0.0
 	y := 0.0
-	manSprite := glitch.NewSprite(texture, glitch.R(x, y, x+160, y+200))
+	manSprite := glitch.NewSprite(texture, glm.R(x, y, x+160, y+200))
 
 	length := 100000
 	man := make([]Man, length)
@@ -65,9 +63,13 @@ func runGame() {
 	start := time.Now()
 	var dt time.Duration
 	for !win.Closed() {
-		if win.Pressed(glitch.KeyBackspace) {
+		if win.Pressed(glitch.KeyEscape) {
 			win.Close()
 		}
+		camera.SetOrtho2D(win.Bounds())
+		camera.SetView2D(0, 0, 1, 1)
+		glitch.SetCamera(camera)
+
 		start = time.Now()
 		for i := range man {
 			man[i].position.X += man[i].velocity.X
@@ -81,10 +83,7 @@ func runGame() {
 			}
 		}
 
-		pass.Clear()
-
-		camera.SetOrtho2D(win.Bounds())
-		camera.SetView2D(0, 0, 1.0, 1.0)
+		glitch.Clear(frame, glm.Greyscale(0.5))
 
 		for i := range man {
 			mat := glitch.Mat4Ident
@@ -92,35 +91,21 @@ func runGame() {
 			mat.Scale(0.25, 0.25, 1.0).Translate(man[i].position.X, man[i].position.Y, 0)
 
 			// mesh.DrawColorMask(pass, mat, glitch.RGBA{0.5, 1.0, 1.0, 1.0})
-			pass.SetLayer(man[i].layer)
-			manSprite.DrawColorMask(pass, mat, man[i].color)
+			// pass.SetLayer(man[i].layer)
+			manSprite.DrawColorMask(frame, mat, man[i].color)
 			// manSprite.DrawColorMask(pass, mat, glitch.RGBA{1.0, 1.0, 1.0, 1.0})
 		}
 
 		mat := glitch.Mat4Ident
-		mat.Translate(0, 0, 0)
-		pass.SetLayer(0)
+
 		text.Set(fmt.Sprintf("%2.2f ms", 1000*dt.Seconds()))
-		text.DrawColorMask(pass, mat, glitch.RGBA{R: 1.0, G: 1.0, B: 0.0, A: 1.0})
+		text.DrawColorMask(frame, mat, glitch.Black)
 
-		glitch.Clear(frame, glitch.RGBA{R: 1, G: 1, B: 1, A: 1})
-
-		pass.SetUniform("projection", camera.Projection)
-		pass.SetUniform("view", camera.View)
-		pass.Draw(frame)
-
-		windowPass.Clear()
-		windowPass.SetUniform("projection", glitch.Mat4Ident)
-		windowPass.SetUniform("view", glitch.Mat4Ident)
-		frame.Draw(windowPass, glitch.Mat4Ident)
-
-		glitch.Clear(win, glitch.RGBA{R: 0.1, G: 0.2, B: 0.3, A: 1.0})
-		windowPass.Draw(win)
+		glitch.Clear(win, glm.White)
+		frame.Draw(win, glitch.Mat4Ident)
 		win.Update()
 
 		dt = time.Since(start)
-		// fmt.Println(dt.Seconds() * 1000)
-		// fmt.Println(win.Bounds())
 	}
 }
 

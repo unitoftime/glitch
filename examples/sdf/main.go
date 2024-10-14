@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 
+	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/examples/assets"
 )
@@ -127,7 +128,7 @@ func runGame() {
 		// mx, my := win.MousePosition()
 		// log.Println("Mouse: ", mx, my)
 
-		glitch.Clear(win, glitch.Greyscale(0.5))
+		glitch.Clear(win, glm.Greyscale(0.5))
 
 		// mat := glitch.Mat4Ident
 		// mat.Translate(win.Bounds().Center()[0], win.Bounds().Center()[1], 0)
