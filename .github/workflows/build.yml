@@ -13,6 +13,14 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
+
+    - name: Update apt
+      if: runner.os == 'Linux'
+      run: sudo apt-get update
+    - name: Install dependencies
+      if: runner.os == 'Linux'
+      run: sudo apt-get install libgl1-mesa-dev xorg-dev libasound2-dev gcc-mingw-w64 g++-mingw-w64
+
     - uses: actions/setup-go@v3
       with:
         go-version: ${{ matrix.go-version }}
