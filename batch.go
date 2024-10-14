@@ -3,10 +3,10 @@ package glitch
 import "fmt"
 
 type meshDraw struct {
-	filler GeometryFiller
-	matrix glMat4
-	mask RGBA
-	material Material
+	filler      GeometryFiller
+	matrix      glMat4
+	mask        RGBA
+	material    Material
 	translucent bool
 }
 
@@ -15,7 +15,7 @@ type DrawBatch struct {
 	draws []meshDraw
 
 	boundsSet bool
-	bounds Box
+	bounds    Box
 }
 
 func NewDrawBatch() *DrawBatch {
@@ -34,10 +34,10 @@ func NewDrawBatch() *DrawBatch {
 
 func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
 	b.draws = append(b.draws, meshDraw{
-		filler: filler,
-		matrix: matrix,
-		mask: mask,
-		material: material,
+		filler:      filler,
+		matrix:      matrix,
+		mask:        mask,
+		material:    material,
 		translucent: translucent,
 	})
 
@@ -88,7 +88,7 @@ func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 func (b *DrawBatch) RectDraw(target BatchTarget, bounds Rect) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
+	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
 
 	b.Draw(target, matrix)
 
@@ -99,7 +99,7 @@ func (b *DrawBatch) RectDraw(target BatchTarget, bounds Rect) {
 func (b *DrawBatch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / batchBounds.W(), bounds.H() / batchBounds.H(), 1).Translate(bounds.W()/2 + bounds.Min.X, bounds.H()/2 + bounds.Min.Y, 0)
+	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
 
 	b.DrawColorMask(target, matrix, mask)
 
@@ -198,7 +198,7 @@ func (b *DrawBatch) Bounds() Box {
 // 	buffer.Draw()
 // }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 // For batching multiple meshes into one mesh
 type Batch struct {
 	mesh        *Mesh
@@ -411,24 +411,32 @@ func (b *Batch) Clear() {
 }
 
 func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
-	if b.material == nil { return }
+	if b.material == nil {
+		return
+	}
 	target.Add(b.mesh, glm4(matrix), RGBA{1.0, 1.0, 1.0, 1.0}, *b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
 }
 
 func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
-	if b.material == nil { return }
+	if b.material == nil {
+		return
+	}
 	target.Add(b.mesh, glm4(matrix), color, *b.material, b.Translucent)
 }
 
 func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
-	if b.material == nil { return }
+	if b.material == nil {
+		return
+	}
 	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
 }
 
 // TODO: Generalize this rectdraw logic. Copy paseted from Sprite
 func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
-	if b.material == nil { return }
+	if b.material == nil {
+		return
+	}
 	// pass.SetTexture(0, s.texture)
 	// pass.Add(s.mesh, matrix, RGBA{1.0, 1.0, 1.0, 1.0}, s.material)
 

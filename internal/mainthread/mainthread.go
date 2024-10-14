@@ -1,3 +1,4 @@
+//go:build !js
 // +build !js
 
 package mainthread
@@ -11,8 +12,8 @@ import (
 var CallQueueCap = 16
 
 var (
-	callQueue chan func()
-	blockingQueue chan func()
+	callQueue         chan func()
+	blockingQueue     chan func()
 	blockingQueueDone chan struct{}
 )
 
@@ -54,8 +55,8 @@ func Run(run func()) {
 			f()
 		case <-done:
 			return
-		// case p := <-panicQueue:
-		// 	panic(p)
+			// case p := <-panicQueue:
+			// 	panic(p)
 		}
 	}
 }

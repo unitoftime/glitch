@@ -6,25 +6,26 @@ import (
 )
 
 type FullStyle struct {
-	buttonStyle Style
-	panelStyle Style
+	buttonStyle   Style
+	panelStyle    Style
 	dragSlotStyle Style
 	dragItemStyle Style
 
-	scrollbarTopStyle Style
-	scrollbarBotStyle Style
+	scrollbarTopStyle    Style
+	scrollbarBotStyle    Style
 	scrollbarHandleStyle Style
-	scrollbarBgStyle Style
+	scrollbarBgStyle     Style
 
-	checkboxStyleTrue Style
+	checkboxStyleTrue  Style
 	checkboxStyleFalse Style
 
 	textInputPanelStyle Style
-	textCursorStyle Style
-	tooltipStyle Style
+	textCursorStyle     Style
+	tooltipStyle        Style
 
 	// textStyle TextStyle // TODO: This should also include the atlas
 }
+
 var gStyle FullStyle
 
 func SetButtonStyle(style Style) {
@@ -39,9 +40,10 @@ func SetDragSlotStyle(style Style) {
 func DragSlotStyle() Style {
 	return gStyle.dragSlotStyle
 }
-// func SetDragItemStyle(style Style) {
-// 	gStyle.dragItemStyle = style
-// }
+
+//	func SetDragItemStyle(style Style) {
+//		gStyle.dragItemStyle = style
+//	}
 func DragItemStyle() Style {
 	return gStyle.dragItemStyle
 }
@@ -72,11 +74,12 @@ func SetScrollbarBgStyle(style Style) {
 func SetScrollbarHandleStyle(style Style) {
 	gStyle.scrollbarHandleStyle = style
 }
+
 //--------------------------------------------------------------------------------
 
 type SpriteStyle struct {
 	sprite Drawer
-	color glitch.RGBA
+	color  glitch.RGBA
 }
 
 func NewSpriteStyle(sprite Drawer, color glitch.RGBA) SpriteStyle {
@@ -95,25 +98,27 @@ func (s SpriteStyle) Color(v glitch.RGBA) SpriteStyle {
 
 type Style struct {
 	Normal, Hovered, Pressed SpriteStyle // These are kind of like button states
-	Text TextStyle
+	Text                     TextStyle
 }
+
 func NewStyle(normal Drawer, color glitch.RGBA) Style {
 	return Style{
-		Normal: NewSpriteStyle(normal, color),
+		Normal:  NewSpriteStyle(normal, color),
 		Hovered: NewSpriteStyle(normal, color),
 		Pressed: NewSpriteStyle(normal, color),
-		Text: NewTextStyle(),
+		Text:    NewTextStyle(),
 	}
 }
 
 func ButtonStyle(normal, hovered, pressed Drawer) Style {
 	return Style{
-		Normal: NewSpriteStyle(normal, glitch.White),
+		Normal:  NewSpriteStyle(normal, glitch.White),
 		Hovered: NewSpriteStyle(hovered, glitch.White),
 		Pressed: NewSpriteStyle(pressed, glitch.White),
-		Text: NewTextStyle(),
+		Text:    NewTextStyle(),
 	}
 }
+
 // func (s Style) Normal(v Drawer, c glitch.RGBA) Style {
 // 	s.normal = SpriteStyle{v, c}
 // 	return s
@@ -145,25 +150,25 @@ type TextStyle struct {
 	// TODO: atlas/fontface
 
 	anchor, pivot glitch.Vec2
-	padding glitch.Rect
-	color glitch.RGBA
-	scale float64
-	autoFit bool // Auto scale the text to fit the rectangle
-	fitInteger bool // If autoscaling, then only scale by integers (for pixel fonts)
-	wordWrap bool
-	shadow glitch.Vec2
+	padding       glitch.Rect
+	color         glitch.RGBA
+	scale         float64
+	autoFit       bool // Auto scale the text to fit the rectangle
+	fitInteger    bool // If autoscaling, then only scale by integers (for pixel fonts)
+	wordWrap      bool
+	shadow        glitch.Vec2
 }
 
 // TODO: I kind of feel like the string needs to be in here, I'm not sure though
 func NewTextStyle() TextStyle {
 	return TextStyle{
-		anchor: glitch.Vec2{0.5, 0.5},
-		pivot: glitch.Vec2{0.5, 0.5},
+		anchor:  glitch.Vec2{0.5, 0.5},
+		pivot:   glitch.Vec2{0.5, 0.5},
 		padding: glm.R(0, 0, 0, 0),
-		color: glitch.White,
-		scale: 1.0,
+		color:   glitch.White,
+		scale:   1.0,
 		autoFit: false,
-		shadow: glitch.Vec2{0.0, 0.0},
+		shadow:  glitch.Vec2{0.0, 0.0},
 	}
 }
 

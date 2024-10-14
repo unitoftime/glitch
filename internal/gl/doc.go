@@ -17,7 +17,7 @@ This is a fork of golang.org/x/mobile/gl package with [CL 8793](https://go-revie
 merged in and Windows support added. This package is fully functional, but may eventually become superceded by
 the new x/mobile/gl plan. It will exist and be fully supported until it can be safely replaced by a better package.
 
-Usage
+# Usage
 
 This OpenGL binding has a ContextWatcher, which implements [glfw.ContextWatcher](https://godoc.org/github.com/goxjs/glfw#ContextWatcher)
 interface. Recommended usage is with github.com/goxjs/glfw package, which accepts a ContextWatcher in its Init, and takes on the responsibility

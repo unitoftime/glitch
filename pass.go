@@ -353,7 +353,6 @@ type Target interface {
 // 	}
 // }
 
-
 // // Not thread safe
 // var lastState BufferState
 // // Not thread safe

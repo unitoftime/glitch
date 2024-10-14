@@ -1,4 +1,5 @@
 //go:build js || wasm
+
 package debugui
 
 import (
@@ -31,10 +32,10 @@ func (g *Gui) Draw(win *glitch.Window) {
 func (g *Gui) Terminate() {
 }
 
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// --------------------------------------------------------------------------------
 // Most of this is taken directly from:
 // https://github.com/inkyblackness/imgui-go-examples/blob/master/internal/platforms/glfw.go
-////////////////////////////////////////////////////////////////////////////////////////////////////
+// --------------------------------------------------------------------------------
 func (g *Gui) setKeyMapping() {
 }
 

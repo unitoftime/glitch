@@ -17,21 +17,21 @@ import (
 // ./msdf-atlas-gen/build/bin/msdf-atlas-gen -font ./Lato-Black.ttf -imageout atlas.png -json atlas.json -pots -size 32 -yorigin top -pxrange 10
 // PlaneBounds: https://github.com/Chlumsky/msdf-atlas-gen/issues/2
 type SdfAtlasPreamble struct {
-	Type string
-	DistanceRange float64
+	Type                string
+	DistanceRange       float64
 	DistanceRangeMiddle int
-	Size int
-	Width int
-	Height int
-	YOrigin string
+	Size                int
+	Width               int
+	Height              int
+	YOrigin             string
 }
 
 type SdfMetrics struct {
-	EmSize int
-	LineHeight float64
-	Ascender float64
-	Descender float64
-	UnderlineY float64
+	EmSize             int
+	LineHeight         float64
+	Ascender           float64
+	Descender          float64
+	UnderlineY         float64
 	UnderlineThickness float64
 }
 
@@ -40,16 +40,16 @@ type AtlasRect struct {
 }
 
 type GlyphData struct {
-	Unicode int
-	Advance float64
+	Unicode     int
+	Advance     float64
 	PlaneBounds AtlasRect
 	AtlasBounds AtlasRect
 }
 
 type SdfAtlas struct {
-	Atlas SdfAtlasPreamble
+	Atlas   SdfAtlasPreamble
 	Metrics SdfMetrics
-	Glyphs []GlyphData
+	Glyphs  []GlyphData
 }
 
 // Multiply by font size to get in pixels, then divide by texture size
@@ -73,15 +73,15 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image, kerning float64) (*Atlas, er
 		// ascent: floatToFixed(ascent),//floatToFixed(sdf.Metrics.Ascender),
 		// descent: floatToFixed(descent), //floatToFixed(sdf.Metrics.Descender),
 		// height: floatToFixed(height),
-		ascent: -ascent,//floatToFixed(sdf.Metrics.Ascender),
+		ascent:  -ascent, //floatToFixed(sdf.Metrics.Ascender),
 		descent: descent, //floatToFixed(sdf.Metrics.Descender),
-		height: height,
+		height:  height,
 		// ascent: descent,
 		// descent: ascent,
 		// height: height,
 		texture: texture,
 		// pixelPerfect: true,
-		defaultKerning: kerning,
+		defaultKerning:  kerning,
 		defaultMaterial: DefaultMsdfMaterial(texture),
 	}
 
@@ -114,10 +114,10 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image, kerning float64) (*Atlas, er
 			Advance: sdfUnitToFloat(g.Advance, sdf.Atlas.Size, sdf.Atlas.Width),
 			Bearing: Vec2{bearingX, bearingY},
 			BoundsUV: glm.R(
-				g.AtlasBounds.Left / float64(sdf.Atlas.Width),
-				g.AtlasBounds.Top / float64(sdf.Atlas.Height),
-				g.AtlasBounds.Right / float64(sdf.Atlas.Width),
-				g.AtlasBounds.Bottom / float64(sdf.Atlas.Height),
+				g.AtlasBounds.Left/float64(sdf.Atlas.Width),
+				g.AtlasBounds.Top/float64(sdf.Atlas.Height),
+				g.AtlasBounds.Right/float64(sdf.Atlas.Width),
+				g.AtlasBounds.Bottom/float64(sdf.Atlas.Height),
 			).Norm(),
 		}
 		atlas.mapping[rune(g.Unicode)] = glyph

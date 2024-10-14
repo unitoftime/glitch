@@ -20,7 +20,7 @@ func main() {
 
 func run() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch Demo", glitch.WindowConfig{
-		Vsync:   true,
+		Vsync: true,
 	})
 	check(err)
 
@@ -38,7 +38,7 @@ func run() {
 
 	frame := glitch.NewFrame(win.Bounds(), true)
 
- 	atlasImg, err := assets.LoadImage("atlas-msdf.png")
+	atlasImg, err := assets.LoadImage("atlas-msdf.png")
 	check(err)
 	atlasJson := glitch.SdfAtlas{}
 	err = assets.LoadJson("atlas-msdf.json", &atlasJson)
@@ -91,7 +91,7 @@ func run() {
 		glitch.Clear(win, glm.Greyscale(0.5))
 
 		mat = glitch.Mat4Ident
-		mat.Translate(win.Bounds().Center().X, win.Bounds().Center().Y - 100, 0)
+		mat.Translate(win.Bounds().Center().X, win.Bounds().Center().Y-100, 0)
 		defaultText.Draw(win, mat)
 
 		mat = glitch.Mat4Ident
@@ -135,7 +135,6 @@ func run() {
 		win.Update()
 	}
 }
-
 
 // func check(err error) {
 // 	if err != nil {

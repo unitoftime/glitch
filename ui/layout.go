@@ -6,6 +6,7 @@ import "github.com/unitoftime/glitch"
 // - Layout
 // --------------------------------------------------------------------------------
 type LayoutType uint8
+
 const (
 	CutLeft LayoutType = iota
 	CutTop
@@ -15,6 +16,7 @@ const (
 )
 
 type SizeType uint8
+
 const (
 	// SizeNone SizeType = iota
 	SizePixels SizeType = iota
@@ -37,7 +39,7 @@ func (s SizeType) Calc(val float64, parentSize float64, textSize float64) float6
 
 type Size struct {
 	TypeX, TypeY SizeType
-	Value glitch.Vec2
+	Value        glitch.Vec2
 
 	// Type string // Null, Pixels, TextContent, PercentOfParent, ChildrenSum
 	// value float32
@@ -45,15 +47,16 @@ type Size struct {
 }
 
 type Layout struct {
-	Type LayoutType
-	Bounds glitch.Rect
+	Type    LayoutType
+	Bounds  glitch.Rect
 	Padding glitch.Rect
-	Size Size
+	Size    Size
 }
+
 func (l *Layout) Next(textBounds glitch.Rect) glitch.Rect {
 	size := l.Size
 
- 	// TODO: If percent of parent
+	// TODO: If percent of parent
 	// cutX := size.value.X * l.Bounds.W()
 	// cutY := size.value.Y * l.Bounds.H()
 	cutX := size.TypeX.Calc(size.Value.X, l.Bounds.W(), textBounds.W())
@@ -76,14 +79,15 @@ func (l *Layout) Next(textBounds glitch.Rect) glitch.Rect {
 	return ret.Unpad(l.Padding)
 }
 
-//--------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------
 type vList struct {
-	rect glitch.Rect
-	last glitch.Rect
-	size float64
-	padNext float64
+	rect       glitch.Rect
+	last       glitch.Rect
+	size       float64
+	padNext    float64
 	fromBottom bool
 }
+
 func (l *vList) Next() glitch.Rect {
 	if l.fromBottom {
 		if l.padNext != 0 {
@@ -161,39 +165,38 @@ func (l hList) Last() glitch.Rect {
 }
 
 type gridList struct {
-	rect glitch.Rect
-	last glitch.Rect
-	sizeX float64
-	sizeY float64
+	rect       glitch.Rect
+	last       glitch.Rect
+	sizeX      float64
+	sizeY      float64
 	numX, numY int
 	// Type // TODO: RowOrder or ColumnOrder
 
 	currentRect glitch.Rect
-	currentNum int
+	currentNum  int
 }
 
 func GridList(rect glitch.Rect, numX, numY int) gridList {
 	sizeX := rect.W() / float64(numX)
 	sizeY := rect.H() / float64(numY)
 	return gridList{
-		rect: rect,
-		last: rect,
+		rect:  rect,
+		last:  rect,
 		sizeX: sizeX,
 		sizeY: sizeY,
-		numX: numX,
-		numY: numY,
+		numX:  numX,
+		numY:  numY,
 	}
 }
 
 func (l *gridList) Next() glitch.Rect {
 	// Row Order (ie Horizontal first)
-	if l.currentNum % l.numX == 0 {
+	if l.currentNum%l.numX == 0 {
 		l.currentRect = l.rect.CutTop(l.sizeY)
 	}
 	l.currentNum++
 
 	l.last = l.currentRect.CutLeft(l.sizeX)
-
 
 	return l.last
 }

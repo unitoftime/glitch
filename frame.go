@@ -12,11 +12,11 @@ import (
 type Frame struct {
 	fbo gl.Framebuffer
 	// *Batcher
-	tex *Texture
-	depth gl.Texture
-	mesh *Mesh
+	tex      *Texture
+	depth    gl.Texture
+	mesh     *Mesh
 	material Material
-	bounds Rect
+	bounds   Rect
 }
 
 // Type? Color, depth, stencil?
@@ -82,7 +82,7 @@ func (f *Frame) RectDraw(target BatchTarget, bounds Rect) {
 
 func (f *Frame) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	matrix := Mat4Ident
-	matrix.Scale(bounds.W() / f.bounds.W(), bounds.H() / f.bounds.H(), 1).
+	matrix.Scale(bounds.W()/f.bounds.W(), bounds.H()/f.bounds.H(), 1).
 		Translate(bounds.Min.X, bounds.Min.Y, 0)
 	// Note: because frames are anchored to the bottom left, we don't have to shift by center
 	// .Translate(bounds.W()/2 + bounds.Min[0], bounds.H()/2 + bounds.Min[1], 0)

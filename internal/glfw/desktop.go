@@ -48,11 +48,11 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 	}
 
 	window := &Window{
-		Window: w,
+		Window:            w,
 		currentScreenMode: ScreenModeWindowed,
 		lastWindow: winRect{
 			// TODO: xpos, ypos - fill from monitor info
-			width: width,
+			width:  width,
 			height: height,
 		},
 	}
@@ -84,9 +84,8 @@ type Window struct {
 	*glfw.Window
 
 	currentScreenMode ScreenModeType
-	lastWindow winRect
+	lastWindow        winRect
 }
-
 
 func (w *Window) GetContentScale() (float32, float32) {
 	return w.Window.GetContentScale()
@@ -368,6 +367,7 @@ func GetKeyName(key Key, scancode int) string {
 }
 
 type MouseButton int
+
 const (
 	MouseButton1      = MouseButton(glfw.MouseButton1)
 	MouseButton2      = MouseButton(glfw.MouseButton2)
@@ -420,6 +420,7 @@ const (
 )
 
 type GamepadButton int
+
 // Gamepad button IDs.
 const (
 	ButtonA           = GamepadButton(glfw.ButtonA)
@@ -707,7 +708,6 @@ func (w *Window) GetAttrib(attrib Hint) int {
 	return w.Window.GetAttrib(glfw.Hint(attrib))
 }
 
-
 /////////////////////////////////////////////////
 
 func WaitEventsTimeout(timeout float64) {
@@ -762,14 +762,13 @@ func (m *Monitor) GetVideoModes() []*VidMode {
 	modes := make([]*VidMode, 0)
 	for _, mode := range m.GetVideoModes() {
 		modes = append(modes, &VidMode{
-			Width: mode.Width,
-			Height: mode.Height,
-			RedBits: mode.RedBits,
-			GreenBits: mode.GreenBits,
-			BlueBits: mode.BlueBits,
+			Width:       mode.Width,
+			Height:      mode.Height,
+			RedBits:     mode.RedBits,
+			GreenBits:   mode.GreenBits,
+			BlueBits:    mode.BlueBits,
 			RefreshRate: mode.RefreshRate,
 		})
 	}
 	return modes
 }
-

@@ -1,13 +1,13 @@
 package glitch
 
 type Model struct {
-	mesh *Mesh
+	mesh     *Mesh
 	material Material
 }
 
 func NewModel(mesh *Mesh, material Material) *Model {
 	return &Model{
-		mesh: mesh,
+		mesh:     mesh,
 		material: material,
 	}
 }

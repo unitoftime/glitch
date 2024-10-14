@@ -28,7 +28,6 @@ func runGame() {
 	// 	panic(err)
 	// }
 
-
 	manImage, err := assets.LoadImage("gopher.png")
 	if err != nil {
 		panic(err)

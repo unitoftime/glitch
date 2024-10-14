@@ -37,7 +37,7 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 	global.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
 
 	global.layout = Layout{
-		Type: CutTop,
+		Type:   CutTop,
 		Bounds: win.Bounds(),
 	}
 
@@ -58,28 +58,28 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 		Normal:  NewSpriteStyle(whiteSquare, grey[6]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[7]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[8]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 
 	gStyle.panelStyle = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[3]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[3]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[3]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 
 	gStyle.dragSlotStyle = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[2]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[2]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[2]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 
 	gStyle.dragItemStyle = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[9]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[9]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[9]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 
 	gStyle.scrollbarBotStyle = gStyle.buttonStyle
@@ -88,13 +88,13 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 		Normal:  NewSpriteStyle(whiteSquare, grey[7]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[8]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[9]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 	gStyle.scrollbarBgStyle = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[2]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[2]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[2]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 
 	gStyle.checkboxStyleTrue = gStyle.buttonStyle
@@ -104,13 +104,13 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 		Normal:  NewSpriteStyle(whiteSquare, grey[2]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[2]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[2]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 	gStyle.textCursorStyle = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[15]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[15]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[15]),
-		Text: defaultTextStyle,
+		Text:    defaultTextStyle,
 	}
 
 	gStyle.tooltipStyle = Style{
@@ -125,13 +125,13 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 
 type uiGlobals struct {
 	mouseCaught bool
-	hudScale float64
-	fontScale float64
+	hudScale    float64
+	fontScale   float64
 
 	// For global interface
-	win *glitch.Window
+	win    *glitch.Window
 	camera *glitch.CameraOrtho
-	atlas *glitch.Atlas
+	atlas  *glitch.Atlas
 	sorter *glitch.Sorter
 
 	debug bool
@@ -140,13 +140,13 @@ type uiGlobals struct {
 
 	geomDraw *glitch.GeomDraw
 
-	allBounds []glitch.Rect
-	unionBoundsSet bool
-	unionBounds glitch.Rect // A union of all drawn object's bounds
-	mousePos, mouseDownPos glitch.Vec2
-	textBuffer []*glitch.Text
-	currentTextBufferIndex int
-	graphBuffer []*graph.Graph
+	allBounds               []glitch.Rect
+	unionBoundsSet          bool
+	unionBounds             glitch.Rect // A union of all drawn object's bounds
+	mousePos, mouseDownPos  glitch.Vec2
+	textBuffer              []*glitch.Text
+	currentTextBufferIndex  int
+	graphBuffer             []*graph.Graph
 	currentGraphBufferIndex int
 
 	dragItemLayer int8
@@ -154,40 +154,40 @@ type uiGlobals struct {
 	// lastRect glitch.Rect
 
 	// New Way
-	hotId eid    // The element id that you are hovering over or about to interact with
-	downId eid   // The element id that you have selected or are holding down on
-	activeId eid // The element id that is active?
+	hotId     eid // The element id that you are hovering over or about to interact with
+	downId    eid // The element id that you have selected or are holding down on
+	activeId  eid // The element id that is active?
 	lastHotId eid // HotId from the last frame
 
-
 	// Note: This is for strictly hover zones: Things like tooltips that you dont want blocking actual interactive things like buttons
-	hoverOnlyId eid // The element that you are currently hovering
+	hoverOnlyId     eid // The element that you are currently hovering
 	lastHoverOnlyId eid // HoverId from the last frame
 
 	stopDragging bool
-	dragData any
+	dragData     any
 
 	cursorPos int
 
 	idCounter eid
-	elements map[uint64]eid // Maps labels to elements
+	elements  map[uint64]eid // Maps labels to elements
 	// elementsRev map[eid]string
 	dedup map[uint64]uint32
 }
+
 var global = uiGlobals{
-	hudScale: 1.0,
+	hudScale:  1.0,
 	fontScale: 1.0,
 
 	unionBoundsSet: false,
-	allBounds: make([]glitch.Rect, 0),
-	debug: false,
+	allBounds:      make([]glitch.Rect, 0),
+	debug:          false,
 	// color: glitch.RGBA{1, 1, 1, 1},
-	textBuffer: make([]*glitch.Text, 0),
+	textBuffer:  make([]*glitch.Text, 0),
 	graphBuffer: make([]*graph.Graph, 0),
 
 	// For global interface
 	idCounter: invalidId + 1,
-	elements: make(map[uint64]eid),
+	elements:  make(map[uint64]eid),
 	// elementsRev: make(map[eid]string),
 	dedup: make(map[uint64]uint32),
 }
@@ -231,7 +231,7 @@ func SetCursorPos(pos int) {
 	global.cursorPos = pos
 }
 
-func CursorPos() int{
+func CursorPos() int {
 	return global.cursorPos
 }
 

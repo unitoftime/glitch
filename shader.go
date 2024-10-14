@@ -217,7 +217,7 @@ func init() {
 
 // TODO: Should I use a comparable here? and just force uniforms to be comparable?
 func openglEquals(a, b any) bool {
-		// Note: https://go.dev/ref/spec#Comparison_operators - For interface equality. They are equal if the types are the same and the comparable value at that location is the same (bubbles down to pointer compare or struct compare)
+	// Note: https://go.dev/ref/spec#Comparison_operators - For interface equality. They are equal if the types are the same and the comparable value at that location is the same (bubbles down to pointer compare or struct compare)
 	return a == b
 	// switch aVal := a.(type) {
 	// case float32:
@@ -333,7 +333,6 @@ func (u *uniformSetter) Func() {
 	}
 }
 
-
 func getBuffer(a shaders.Attr) any {
 	switch a.Type {
 	case shaders.AttrFloat:
@@ -354,7 +353,7 @@ func getBuffer(a shaders.Attr) any {
 func (shader *Shader) BufferMesh(mesh *Mesh, translucent bool) *VertexBuffer {
 	// bufferState := BufferState{material, BlendModeNormal} // TODO: Blendmode used to come from renderpass
 
-	if len(mesh.indices) % 3 != 0 {
+	if len(mesh.indices)%3 != 0 {
 		panic("Cmd.Mesh indices must have 3 indices per triangle!")
 	}
 	numVerts := len(mesh.positions)
@@ -403,4 +402,3 @@ func (shader *Shader) BufferMesh(mesh *Mesh, translucent bool) *VertexBuffer {
 // 	vertexBuffer := pass.buffer.Reserve(state, indices, numVerts, pass.shader.tmpBuffers)
 // 	batchToBuffers(pass.shader, m, mat, mask)
 // }
-

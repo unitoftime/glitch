@@ -22,7 +22,7 @@ func check(err error) {
 
 func runGame() {
 	win, err := glitch.NewWindow(1920, 1080, "Glitch UI Demo", glitch.WindowConfig{
-		Vsync:   true,
+		Vsync: true,
 	})
 	check(err)
 
@@ -40,7 +40,6 @@ func runGame() {
 	// check(err)
 	// panelInnerImage, err := assets.LoadImage("panel_inner.png")
 	// check(err)
-
 
 	// scale := 4.0
 	// texture := glitch.NewTexture(buttonImage, false)
@@ -66,7 +65,7 @@ func runGame() {
 	// Text
 	// atlas, err := glitch.BasicFontAtlas()
 	// check(err)
- 	atlasImg, err := assets.LoadImage("atlas-msdf.png")
+	atlasImg, err := assets.LoadImage("atlas-msdf.png")
 	check(err)
 	atlasJson := glitch.SdfAtlas{}
 	err = assets.LoadJson("atlas-msdf.json", &atlasJson)
@@ -220,7 +219,7 @@ func runGame() {
 			bounds := win.Bounds()
 			list := ui.VList2(bounds.CutLeft(100), 50)
 			for _, m := range modes {
-				if ui.Button2(m, list.Next().Unpad(glm.R(5,5,5,5))) {
+				if ui.Button2(m, list.Next().Unpad(glm.R(5, 5, 5, 5))) {
 					mode = m
 				}
 			}
@@ -257,7 +256,7 @@ func runGame() {
 			ui.SliderH(&sliderVal, 0.0, 100, 1, sliderRect, sliderRect)
 
 			checkboxRow := list.Next().Unpad(glm.R(5, 5, 5, 5))
-			checkboxRow = checkboxRow.CutLeft(checkboxRow.W()/2)
+			checkboxRow = checkboxRow.CutLeft(checkboxRow.W() / 2)
 			checkboxBounds := checkboxRow.CutRight(checkboxRow.H())
 			ui.TextExt("Checkbox", checkboxRow, textStyle)
 			ui.Checkbox(&checkboxVal, checkboxBounds)
@@ -289,7 +288,9 @@ func runGame() {
 					}
 				}
 
-				if str == "" { continue } // Skip: No item there
+				if str == "" {
+					continue
+				} // Skip: No item there
 
 				clicked, hovered, dragging, dropping := ui.DragItem(str, slotRect.Unpad(glm.R(5, 5, 5, 5)), ui.DragItemStyle())
 				if clicked {
@@ -319,10 +320,10 @@ func runGame() {
 			scrollbarBounds := panelBounds.CutRight(50)
 			scrollTotal := 10
 			drawTotal := 5
-			ui.Scrollbar(&scrollIdx, scrollTotal - drawTotal, scrollbarBounds, panelBounds)
+			ui.Scrollbar(&scrollIdx, scrollTotal-drawTotal, scrollbarBounds, panelBounds)
 
 			list := ui.VList2(panelBounds.Unpad(glm.R(5, 5, 5, 5)), 100)
-			for i := scrollIdx; i < scrollIdx + drawTotal; i ++ {
+			for i := scrollIdx; i < scrollIdx+drawTotal; i++ {
 				str := fmt.Sprintf("%d", i)
 				if ui.Button2(str, list.Next().Unpad(glm.R(5, 5, 5, 5))) {
 					fmt.Println("Click:", str)
@@ -330,7 +331,7 @@ func runGame() {
 			}
 		case "text":
 			ui.Panel2("##panel", panelBounds)
-			textAreaBounds := panelBounds// .Unpad(glm.R(10, 10, 10, 10))
+			textAreaBounds := panelBounds // .Unpad(glm.R(10, 10, 10, 10))
 			ui.MultiText("Unfinished: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textAreaBounds, textStyle)
 		}
 
@@ -338,8 +339,6 @@ func runGame() {
 		win.Update()
 	}
 }
-
-
 
 // func main() {
 // 	glitch.Run(runGame)
@@ -371,7 +370,6 @@ func runGame() {
 // 	check(err)
 // 	panelInnerImage, err := assets.LoadImage("panel_inner.png")
 // 	check(err)
-
 
 // 	scale := 4.0
 // 	texture := glitch.NewTexture(buttonImage, false)
@@ -500,7 +498,6 @@ func runGame() {
 // 		win.Update()
 // 	}
 // }
-
 
 // // func runGame() {
 // // 	win, err := glitch.NewWindow(1920, 1080, "Glitch UI Demo", glitch.WindowConfig{

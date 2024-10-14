@@ -6,6 +6,7 @@ import (
 )
 
 var hashTable = crc64.MakeTable(crc64.ISO)
+
 func crc(label string) uint64 {
 	return crc64.Checksum([]byte(label), hashTable)
 }

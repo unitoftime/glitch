@@ -10,17 +10,17 @@ import (
 
 // 2D Graph
 type Graph struct {
-	geom *glitch.GeomDraw
-	mesh *glitch.Mesh
+	geom   *glitch.GeomDraw
+	mesh   *glitch.Mesh
 	points []glitch.Vec3
 	bounds glitch.Rect
-	axes glitch.Rect
+	axes   glitch.Rect
 }
 
 func NewGraph(bounds glitch.Rect) *Graph {
 	g := &Graph{
-		geom: glitch.NewGeomDraw(),
-		mesh: glitch.NewMesh(),
+		geom:   glitch.NewGeomDraw(),
+		mesh:   glitch.NewMesh(),
 		points: make([]glitch.Vec3, 0),
 		bounds: bounds,
 	}
@@ -71,8 +71,8 @@ func (g *Graph) Line(series []glitch.Vec2) {
 	g.points = g.points[:0]
 	for _, p := range series {
 		g.points = append(g.points, glitch.Vec3{
-			g.bounds.Min.X + (p.X - (minDomain)) * dx,
-			g.bounds.Min.Y + (p.Y - (minRange)) * dy,
+			g.bounds.Min.X + (p.X-(minDomain))*dx,
+			g.bounds.Min.Y + (p.Y-(minRange))*dy,
 			0,
 		})
 	}

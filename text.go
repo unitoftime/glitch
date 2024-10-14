@@ -26,7 +26,7 @@ import (
 
 // TODO: Ideally this wouldn't return an error
 func DefaultAtlas() (*Atlas, error) {
-	runes := make([]rune, unicode.MaxASCII - 32)
+	runes := make([]rune, unicode.MaxASCII-32)
 	for i := range runes {
 		runes[i] = rune(32 + i)
 	}
@@ -40,9 +40,9 @@ func DefaultAtlas() (*Atlas, error) {
 		// GlyphCacheEntries: 1,
 	})
 	cfg := AtlasConfig{
-		Smooth: true,
+		Smooth:      true,
 		TextureSize: 1024,
-		Padding: 10,
+		Padding:     10,
 	}
 
 	atlas := NewAtlas(fontFace, runes, cfg)
@@ -50,7 +50,7 @@ func DefaultAtlas() (*Atlas, error) {
 }
 
 func BasicFontAtlas() (*Atlas, error) {
-	runes := make([]rune, unicode.MaxASCII - 32)
+	runes := make([]rune, unicode.MaxASCII-32)
 	for i := range runes {
 		runes[i] = rune(32 + i)
 	}
@@ -65,31 +65,30 @@ func BasicFontAtlas() (*Atlas, error) {
 	// })
 	fontFace := basicfont.Face7x13
 	cfg := AtlasConfig{
-		Smooth: true,
+		Smooth:      true,
 		TextureSize: 512,
-		Padding: 10,
+		Padding:     10,
 	}
 	atlas := NewAtlas(fontFace, runes, cfg)
 	return atlas, nil
 }
 
-
 type Glyph struct {
-	Advance float64
-	Bearing Vec2
+	Advance  float64
+	Bearing  Vec2
 	BoundsUV Rect
 }
 
 // TODO - instead of creating a single atlas ahead of time. I should just load the font and then dynamically create the atlas as needed. This should probably change once you add automatic texture batching.
 type Atlas struct {
 	// face font.Face
-	mapping map[rune]Glyph
-	ascent float64 // Distance from top of line to baseline
-	descent float64 // Distance from bottom of line to baseline
-	height float64 // The recommended gap between two lines
-	texture *Texture
-	border int // Specifies a border on the font.
-	pixelPerfect bool // if true anti-aliasing will be disabled
+	mapping        map[rune]Glyph
+	ascent         float64 // Distance from top of line to baseline
+	descent        float64 // Distance from bottom of line to baseline
+	height         float64 // The recommended gap between two lines
+	texture        *Texture
+	border         int  // Specifies a border on the font.
+	pixelPerfect   bool // if true anti-aliasing will be disabled
 	defaultKerning float64
 
 	defaultMaterial Material
@@ -111,10 +110,10 @@ func floatToFixed(val float64) fixed.Int26_6 {
 }
 
 type AtlasConfig struct {
-	Border float64
-	Smooth bool
-	Padding int
-	Kerning float64
+	Border      float64
+	Smooth      bool
+	Padding     int
+	Kerning     float64
 	TextureSize int // TODO: automagically calculate
 }
 
@@ -123,12 +122,12 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	// fmt.Println("Metrics: ", fixedToFloat(metrics.Height), fixedToFloat(metrics.Ascent), fixedToFloat(metrics.Descent))
 	atlas := &Atlas{
 		// face: face,
-		mapping: make(map[rune]Glyph),
-		ascent: fixedToFloat(metrics.Ascent),
-		descent: fixedToFloat(metrics.Descent),
-		height: fixedToFloat(metrics.Height),
-		border: int(config.Border),
-		pixelPerfect: !config.Smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
+		mapping:        make(map[rune]Glyph),
+		ascent:         fixedToFloat(metrics.Ascent),
+		descent:        fixedToFloat(metrics.Descent),
+		height:         fixedToFloat(metrics.Height),
+		border:         int(config.Border),
+		pixelPerfect:   !config.Smooth, // TODO - not sure this is exactly right. You could presumably want a bilinear filtered texture but anti-aliasing turned off on the text.
 		defaultKerning: config.Kerning,
 	}
 
@@ -146,13 +145,15 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	// Note: In case you want to see the boundary of each rune, uncomment this
 	// draw.Draw(img, img.Bounds(), image.NewUniform(color.Black), image.ZP, draw.Src)
 
-	padding := fixed.I(basePadding + (2 * atlas.border)) // Padding for runes drawn to atlas
+	padding := fixed.I(basePadding + (2 * atlas.border))                     // Padding for runes drawn to atlas
 	startDot := fixed.P(padding.Floor(), (metrics.Ascent + padding).Floor()) // Starting point of the dot
 	dot := startDot
 	for i, r := range runes {
 		// https://developer.apple.com/library/archive/documentation/TextFonts/Conceptual/CocoaTextArchitecture/Art/glyphterms_2x.png
 		bounds, mask, maskp, adv, ok := face.Glyph(dot, r)
-		if !ok { panic("Missing rune!") }
+		if !ok {
+			panic("Missing rune!")
+		}
 		bearingRect, _, _ := face.GlyphBounds(r)
 
 		// Instead of flooring we convert from fixed int to float manually (mult by 10^6 then floor, cast and divide by 10^6). I think this is slightly more accurate but it's hard to tell so I'll leave old code below
@@ -209,17 +210,15 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 		draw.Draw(img, bounds, mask, maskp, draw.Over)
 		// draw.DrawMask(img, bounds, blackImg, image.Point{}, mask, maskp, draw.Src)
 
-
-
 		atlas.mapping[r] = Glyph{
 			// Advance: float64(adv.Floor() + (2*border))/fSize,
-			Advance: float64(adv.Floor())/fSize,
+			Advance: float64(adv.Floor()) / fSize,
 			//			Bearing: Vec2{float32(bearingRect.Min.X.Floor())/fSize, float32((-bearingRect.Max.Y).Floor())/fSize},
 			//Advance: advance,
 			Bearing: Vec2{bearingX, bearingY},
 			BoundsUV: glm.R(
-				float64(bounds.Min.X - atlas.border)/fSize, float64(bounds.Min.Y - atlas.border)/fSize,
-				float64(bounds.Max.X + atlas.border)/fSize, float64(bounds.Max.Y + atlas.border)/fSize,
+				float64(bounds.Min.X-atlas.border)/fSize, float64(bounds.Min.Y-atlas.border)/fSize,
+				float64(bounds.Max.X+atlas.border)/fSize, float64(bounds.Max.Y+atlas.border)/fSize,
 			).Norm(),
 		}
 
@@ -228,12 +227,16 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 		nextDotY := dot.Y
 
 		// Exit if we are at the end
-		if (i+1) >= len(runes) { break }
+		if (i + 1) >= len(runes) {
+			break
+		}
 
 		// If the rune after this one pushes us too far then loop around
 		nextAdv, ok := face.GlyphAdvance(runes[i+1])
-		if !ok { panic("Missing rune!") }
-		if nextDotX + nextAdv >= fixedSize {
+		if !ok {
+			panic("Missing rune!")
+		}
+		if nextDotX+nextAdv >= fixedSize {
 			// log.Println("Ascending!")
 			nextDotX = startDot.X
 			nextDotY = dot.Y + metrics.Ascent + padding
@@ -390,13 +393,13 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 func (a *Atlas) Text(str string, scale float64) *Text {
 	t := &Text{
 		currentString: "",
-		atlas: a,
-		texture: a.texture,
+		atlas:         a,
+		texture:       a.texture,
 		// material: NewSpriteMaterial(a.texture),
 		material: a.defaultMaterial,
-		scale: scale,
+		scale:    scale,
 		// LineHeight: a.UngappedLineHeight(),
-		mesh: NewMesh(),
+		mesh:    NewMesh(),
 		tmpMesh: NewMesh(),
 
 		color: RGBA{1, 1, 1, 1},
@@ -411,28 +414,28 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 func (a *Atlas) Measure(str string, scale float64) Rect {
 	fakeText := Text{
 		currentString: str,
-		atlas: a,
-		scale: scale,
+		atlas:         a,
+		scale:         scale,
 	}
 	return fakeText.AppendStringVerts(str)
 }
 
 type Text struct {
 	currentString string
-	mesh *Mesh
-	tmpMesh *Mesh // For temporarily buffering data. TODO - would be more efficient just to append the quads directly to the mesh rather than buffering them here
-	atlas *Atlas
-	bounds Rect
-	texture *Texture
-	material Material
-	scale float64
-	shadow Vec2
-	wordWrap bool
-	wrapRect Rect
+	mesh          *Mesh
+	tmpMesh       *Mesh // For temporarily buffering data. TODO - would be more efficient just to append the quads directly to the mesh rather than buffering them here
+	atlas         *Atlas
+	bounds        Rect
+	texture       *Texture
+	material      Material
+	scale         float64
+	shadow        Vec2
+	wordWrap      bool
+	wrapRect      Rect
 	// LineHeight float64
 
-	Orig Vec2 // The baseline starting point from which to draw the text
-	Dot Vec2 // The location of the next rune to draw
+	Orig  Vec2 // The baseline starting point from which to draw the text
+	Dot   Vec2 // The location of the next rune to draw
 	color RGBA // The color with which to draw the next text
 }
 
@@ -544,7 +547,7 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min.X, rect.Min.Y, 0)
 
 	// TODO!!! - There's something wrong with this
-	mat.Scale(bounds.W() / t.bounds.W(), bounds.H() / t.bounds.H(), 1).Translate(bounds.Min.X, bounds.Min.Y, 0)
+	mat.Scale(bounds.W()/t.bounds.W(), bounds.H()/t.bounds.H(), 1).Translate(bounds.Min.X, bounds.Min.Y, 0)
 
 	target.Add(t.mesh, glm4(mat), mask, t.material, true)
 }
@@ -570,7 +573,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 
 			nextWord := t.atlas.Measure(text[i:i+nextSpaceIdx], t.scale)
 
-			if (t.Dot.X - initialDot.X) + nextWord.W() > t.wrapRect.W() {
+			if (t.Dot.X-initialDot.X)+nextWord.W() > t.wrapRect.W() {
 				newline = true
 			}
 		}
@@ -607,7 +610,6 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// // top := initialDot.Y + (fixedToFloat(t.atlas.ascent) * t.scale)
 	// // bot := top - (numLines * lineHeight)
 
-
 	// top := initialDot.Y + lineHeight
 	// // top := initialDot.Y + t.atlas.descent
 
@@ -619,8 +621,7 @@ func (t *Text) AppendStringVerts(text string) Rect {
 	// top := initialDot.Y + t.atlas.descent
 
 	bot := top - (numLines * lineHeight)
-	return glm.R(initialDot.X, top, maxDotX, bot).Norm()// .MoveMin(Vec2{})
-
+	return glm.R(initialDot.X, top, maxDotX, bot).Norm() // .MoveMin(Vec2{})
 
 	//--------------------------------------------------------------------------------
 
@@ -775,8 +776,6 @@ func (t *Text) AppendStringVerts(text string) Rect {
 
 // 		draw.Draw(img, bounds, mask, maskp, draw.Over)
 // 		// draw.DrawMask(img, bounds, blackImg, image.Point{}, mask, maskp, draw.Src)
-
-
 
 // 		atlas.mapping[r] = Glyph{
 // 			// Advance: float64(adv.Floor() + (2*border))/fSize,
