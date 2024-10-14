@@ -1,3 +1,7 @@
+[![Go Reference](https://pkg.go.dev/badge/github.com/unitoftime/glitch.svg)](https://pkg.go.dev/github.com/unitoftime/glitch)
+[![build](https://github.com/unitoftime/glitch/actions/workflows/build.yml/badge.svg)](https://github.com/unitoftime/glitch/actions/workflows/build.yml)
+
+
 `Warning: This library is very much a work in progress. But you're welcome to check it out and provide feedback/bugs if you want.`
 
 ## Overview
