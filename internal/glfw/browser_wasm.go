@@ -94,6 +94,15 @@ func resolveIframeEmbedding() bool {
 	return !self.Equal(top)
 }
 
+// TODO: Should this get cached somewhere?
+func getGamepads() js.Value {
+	if navigator.IsNull() {
+		return js.Null()
+	}
+	gamepads := navigator.Call("getGamepads")
+	return gamepads
+}
+
 func getDevicePixelRatio() float64 {
 	// // TODO: This is obviously not right, but I'd like to consolidate the contentscale with this and glfw at the same time. Right now the game just scales based on resolution which seems good enough
 	// return 1.0
@@ -1422,6 +1431,121 @@ func (w *Window) SetDropCallback(cbfun DropCallback) (previous DropCallback) {
 
 	// TODO: Handle previous.
 	return nil
+}
+
+type GamepadState struct {
+	Buttons [15]Action
+	Axes    [6]float32
+}
+
+// Notes:
+// - Gamepad Mapping: https://developer.mozilla.org/en-US/docs/Web/API/Gamepad/mapping
+// - Gamepad Mapping: https://w3c.github.io/gamepad/#remapping
+// TODO: Warning: I'm assuming a standard mapping, which is the only option, other than XR which is for VR motion controllers
+var standardButtonMapping = []GamepadButton{
+	0: ButtonA,
+	1: ButtonB,
+	2: ButtonX,
+	3: ButtonY,
+	4: ButtonLeftBumper,
+	5: ButtonRightBumper,
+	6: -1, // Trigger: -1 indicates no mapping
+	7: -1, // Trigger: -1 indicates no mapping
+	8: ButtonBack,
+	9: ButtonStart,
+	10: ButtonLeftThumb,
+	11: ButtonRightThumb,
+	12: ButtonDpadUp,
+	13: ButtonDpadDown,
+	14: ButtonDpadLeft,
+	15: ButtonDpadRight,
+	16: ButtonGuide,
+}
+
+// TODO: This could be optimized by tracking ongamepadconnect/disconnect events
+func GetConnectedGamepads() []Joystick {
+	gamepads := getGamepads()
+	if isNilOrUndefined(gamepads) {
+		return nil
+	}
+	ret := make([]Joystick, 0)
+
+	length := gamepads.Length()
+	for i := range length {
+		gp := gamepads.Index(int(i))
+		if isNilOrUndefined(gp) {
+			continue // Skip: gamepad is not plugged in
+		}
+
+		ret = append(ret, Joystick(i))
+	}
+	return ret
+}
+
+func (j Joystick) GetGamepadState() *GamepadState {
+	gamepads := getGamepads()
+	if isNilOrUndefined(gamepads) {
+		return nil
+	}
+
+	gp := gamepads.Index(int(j))
+	if isNilOrUndefined(gp) { return nil }
+
+	var state GamepadState
+
+	axes := gp.Get("axes")
+	if isNilOrUndefined(axes) {
+		return nil
+	}
+	buttons := gp.Get("buttons")
+	if isNilOrUndefined(buttons) {
+		return nil
+	}
+
+	// --- Joystick Axes ---
+	axesLength := axes.Length()
+	for i := range axesLength {
+		value := axes.Index(i).Float()
+
+		// Exit early: number of axes in javascript is larger than we support
+		if i >= len(state.Axes) { break }
+
+		state.Axes[i] = float32(value)
+	}
+
+	buttonsLength := buttons.Length()
+
+	// --- Trigger buttons ---
+	if buttonsLength > 7 {
+		leftTrigger := buttons.Index(6).Get("value").Float() // Left Trigger
+		state.Axes[AxisLeftTrigger] = (2 * float32(leftTrigger)) - 1 // Renormalize from [0, 1] to [-1, 1]
+		rightTrigger := buttons.Index(7).Get("value").Float() // Right Trigger
+		state.Axes[AxisRightTrigger] = (2 * float32(rightTrigger)) - 1 // Renormalize from [0, 1] to [-1, 1]
+	}
+
+	// --- Normal buttons ---
+
+	for i := range buttonsLength {
+		if i > len(standardButtonMapping) {
+			break // Exit: There are no more buttons to map too
+		}
+
+		dstButton := standardButtonMapping[i]
+		if dstButton < 0 {
+			continue // Skip: This button has no validmapping
+		}
+
+		buttonObject := buttons.Index(i)
+		pressed := buttonObject.Get("pressed").Bool()
+		// isTouched := buttonObject.Get("touched").Bool()  // TODO: Touched?
+		// value := buttonObject.Get("value").Float()       // TODO: Do triggers
+
+		if pressed {
+			state.Buttons[dstButton] = Press
+		}
+	}
+
+	return &state
 }
 
 //------------------------------------------------------------------------------

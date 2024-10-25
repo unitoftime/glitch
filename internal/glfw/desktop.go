@@ -4,12 +4,6 @@
 package glfw
 
 import (
-	"io"
-	"os"
-
-	// "runtime"
-	// "fmt"
-
 	"github.com/go-gl/glfw/v3.3/glfw"
 )
 
@@ -208,6 +202,21 @@ func (w *Window) SetFramebufferSizeCallback(cbfun FramebufferSizeCallback) (prev
 	return nil
 }
 
+
+// Note: This works, but wasn't needed immediately
+// type JoystickCallback func(joy Joystick, event PeripheralEvent)
+
+// func (w *Window) SetJoystickCallback(cbfun JoystickCallback) JoystickCallback {
+// 	wrappedCbfun := func(joy glfw.Joystick, event glfw.PeripheralEvent) {
+// 		cbfun(Joystick(joy), PeripheralEvent(event))
+// 	}
+
+// 	glfw.SetJoystickCallback(wrappedCbfun)
+
+// 	// TODO: Handle previous.
+// 	return nil
+// }
+
 // Always returns false because we aren't in a browser
 func (w *Window) BrowserHidden() bool {
 	return false
@@ -383,6 +392,13 @@ const (
 	MouseButtonMiddle = MouseButton(glfw.MouseButtonMiddle)
 )
 
+type PeripheralEvent glfw.PeripheralEvent
+const (
+	Connected    PeripheralEvent = PeripheralEvent(glfw.Connected)
+	Disconnected PeripheralEvent = PeripheralEvent(glfw.Disconnected)
+)
+
+
 type Joystick int
 
 // List all of the joysticks.
@@ -487,13 +503,6 @@ const (
 	ModAlt     = ModifierKey(glfw.ModAlt)
 	ModSuper   = ModifierKey(glfw.ModSuper)
 )
-
-// Open opens a named asset. It's the caller's responsibility to close it when done.
-//
-// For now, assets are read directly from the current working directory.
-func Open(name string) (io.ReadCloser, error) {
-	return os.Open(name)
-}
 
 // ---
 
@@ -741,6 +750,18 @@ func (j Joystick) GetGamepadState() *GamepadState {
 	}
 	state := GamepadState(*gamepadState)
 	return &state
+}
+
+func GetConnectedGamepads() []Joystick {
+	ret := make([]Joystick, 0)
+	for j := Joystick1; j <= JoystickLast; j++ {
+		if !j.IsGamepad() {
+			continue // Skip: not a gamepad or is not present
+		}
+
+		ret = append(ret, j)
+	}
+	return ret
 }
 
 type GamepadState glfw.GamepadState

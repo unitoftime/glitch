@@ -37,6 +37,12 @@ type Window struct {
 	}
 
 	mousePosition Vec2
+	currentPrimaryGamepad Gamepad // Tracks the current primarily used gamepad
+	justPressedGamepad [ButtonLast + 1]bool // Tracks buttons that were just pressed this frame
+
+	// TODO: Technically you could just store the last primaryGamepadState
+	pressedGamepad [ButtonLast + 1] bool // Tracks buttons that are currently pressed this frame
+	gamepadAxis [AxisLast + 1]float64 // Tracks the current axis state
 
 	// The back and front buffers for tracking typed characters
 	typedBack, typedFront []rune
@@ -290,11 +296,51 @@ func (w *Window) Update() {
 		}
 	}
 
-	// Swap the typed buffers
+	// --- Swap the typed buffers ---
 	{
 		backBuf := w.typedBack
 		w.typedBack = w.typedFront[:0]
 		w.typedFront = backBuf
+	}
+
+	// --- Gamepad ---
+	// 1. I need to decide the current active gamepad
+	primaryGamepadState := w.currentPrimaryGamepad.getGamepadState()
+	primaryStillActive := checkGamepadActive(primaryGamepadState)
+	if !primaryStillActive {
+		newActiveGamepad := findNewActiveGamepad()
+		if newActiveGamepad != GamepadNone {
+			w.currentPrimaryGamepad = newActiveGamepad
+			primaryGamepadState = w.currentPrimaryGamepad.getGamepadState()
+		}
+	}
+
+	// 2. I need to track their input for JustPressed
+	// Note: Here we calculate the *newly* pressed buttons.
+	// - buttons that arent pressed in the last frame, but are pressed in this new gamepad state
+	if primaryGamepadState == nil {
+		// If the primary gamepad is nil, then set everything to false, it maybe got disconnected
+		w.pressedGamepad = [ButtonLast + 1]bool{}
+		w.justPressedGamepad = [ButtonLast + 1]bool{}
+		w.gamepadAxis = [AxisLast + 1]float64{}
+	} else {
+		for i := range primaryGamepadState.Buttons {
+			if w.pressedGamepad[i] {
+				// If currently pressed, then you couldn't possibly have just pressed it
+				w.justPressedGamepad[i] = false
+			} else {
+				// Else, If the new gamepad state has this button pressed, it means this is the first frame it was pressed
+				w.justPressedGamepad[i] = (primaryGamepadState.Buttons[i] == glfw.Press)
+			}
+
+			// Finally, set the current button state
+			w.pressedGamepad[i] = (primaryGamepadState.Buttons[i] == glfw.Press)
+		}
+
+		// And set the current axis state
+		for i := range primaryGamepadState.Axes {
+			w.gamepadAxis[i] = float64(primaryGamepadState.Axes[i])
+		}
 	}
 }
 
