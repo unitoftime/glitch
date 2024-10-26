@@ -40,6 +40,8 @@ type Window struct {
 	currentPrimaryGamepad Gamepad // Tracks the current primarily used gamepad
 	justPressedGamepad [ButtonLast + 1]bool // Tracks buttons that were just pressed this frame
 
+	mainthreadUpdateConnectedGamepads func()
+	connectedGamepads []Gamepad
 	// TODO: Technically you could just store the last primaryGamepadState
 	pressedGamepad [ButtonLast + 1] bool // Tracks buttons that are currently pressed this frame
 	gamepadAxis [AxisLast + 1]float64 // Tracks the current axis state
@@ -256,6 +258,16 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		win.pressed()
 	}
 
+	// Gets and caches the connected gamepads
+	win.mainthreadUpdateConnectedGamepads = func() {
+		joysticks := win.window.GetConnectedGamepads()
+
+		win.connectedGamepads = win.connectedGamepads[:0]
+		for i := range joysticks {
+			win.connectedGamepads = append(win.connectedGamepads, Gamepad(joysticks[i]))
+		}
+	}
+
 	win.Update()
 
 	return win, nil
@@ -304,11 +316,14 @@ func (w *Window) Update() {
 	}
 
 	// --- Gamepad ---
+	// Recalculate all active gamepads
+	mainthread.Call(w.mainthreadUpdateConnectedGamepads)
+
 	// 1. I need to decide the current active gamepad
 	primaryGamepadState := w.currentPrimaryGamepad.getGamepadState()
 	primaryStillActive := checkGamepadActive(primaryGamepadState)
 	if !primaryStillActive {
-		newActiveGamepad := findNewActiveGamepad()
+		newActiveGamepad := w.findNewActiveGamepad()
 		if newActiveGamepad != GamepadNone {
 			w.currentPrimaryGamepad = newActiveGamepad
 			primaryGamepadState = w.currentPrimaryGamepad.getGamepadState()
@@ -551,6 +566,23 @@ func (w *Window) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	global.Add(filler, mat, mask, material, translucent)
 }
 
+func (w *Window) GetConnectedGamepads() []Gamepad {
+	return w.connectedGamepads
+}
+
+func (w *Window) findNewActiveGamepad() Gamepad {
+	gamepads := w.GetConnectedGamepads()
+
+	for _, gp := range gamepads {
+		state := gp.getGamepadState()
+		if checkGamepadActive(state) {
+			return gp
+		}
+	}
+	return GamepadNone
+}
+
+
 // --- Dear Imgui required ---
 func (w *Window) GetMouse() (x, y float64) {
 	return w.window.GetCursorPos()
@@ -587,3 +619,4 @@ func (w *Window) AddMouseButtonCallback(cb glfw.MouseButtonCallback) {
 	w.mouseButtonCallbacks = append(w.mouseButtonCallbacks, cb)
 	// fmt.Println("Adding new mouse button callback. Currently: ", len(w.mouseButtonCallbacks))
 }
+

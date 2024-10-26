@@ -172,6 +172,7 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 		canvas:           canvas,
 		context:          context,
 		devicePixelRatio: devicePixelRatio,
+		connectedJoysticks: make([]Joystick, 0, 16),
 	}
 
 	resolveNavigatorKeyboard()
@@ -579,6 +580,8 @@ type Window struct {
 	mouseButton [mouseButtonMax]Action
 
 	keys []Action
+
+	connectedJoysticks []Joystick
 
 	cursorPosCallback       CursorPosCallback
 	mouseMovementCallback   MouseMovementCallback
@@ -1463,12 +1466,11 @@ var standardButtonMapping = []GamepadButton{
 }
 
 // TODO: This could be optimized by tracking ongamepadconnect/disconnect events
-func GetConnectedGamepads() []Joystick {
+func (w *Window) GetConnectedGamepads() []Joystick {
 	gamepads := getGamepads()
 	if isNilOrUndefined(gamepads) {
 		return nil
 	}
-	ret := make([]Joystick, 0)
 
 	length := gamepads.Length()
 	for i := range length {
@@ -1477,9 +1479,9 @@ func GetConnectedGamepads() []Joystick {
 			continue // Skip: gamepad is not plugged in
 		}
 
-		ret = append(ret, Joystick(i))
+		w.connectedJoysticks = append(w.connectedJoysticks, Joystick(i))
 	}
-	return ret
+	return w.connectedJoysticks
 }
 
 func (j Joystick) GetGamepadState() *GamepadState {

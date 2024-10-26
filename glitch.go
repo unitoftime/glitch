@@ -267,8 +267,8 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 	global.flush() // TODO: You technically only need to do this if it will change the uniform
 	global.camera = camMaterial
 	if global.shader != nil {
-		global.shader.setUniform("projection", global.camera.Projection)
-		global.shader.setUniform("view", global.camera.View)
+		global.shader.setUniformMat4("projection", global.camera.Projection)
+		global.shader.setUniformMat4("view", global.camera.View)
 	}
 
 	global.metric.setCamera++
@@ -303,8 +303,8 @@ func setShader(shader *Shader) {
 	global.shader = shader
 	mainthread.Call(shader.mainthreadBind)
 
-	global.shader.setUniform("projection", global.camera.Projection)
-	global.shader.setUniform("view", global.camera.View)
+	global.shader.setUniformMat4("projection", global.camera.Projection)
+	global.shader.setUniformMat4("view", global.camera.View)
 
 	global.shaderCache[shader] = struct{}{}
 	global.metric.setShader++
@@ -375,7 +375,7 @@ func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
 	// buffer.state.Bind(g.shader)
 
 	// TOOD: Maybe pass this into VertexBuffer.Draw() func
-	ok := g.shader.setUniform("model", mat)
+	ok := g.shader.setUniformMat4("model", mat)
 	if !ok {
 		panic("Error setting model uniform - all shaders must have 'model' uniform")
 	}

@@ -43,6 +43,7 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 
 	window := &Window{
 		Window:            w,
+		connectedJoysticks: make([]Joystick, 0, 16),
 		currentScreenMode: ScreenModeWindowed,
 		lastWindow: winRect{
 			// TODO: xpos, ypos - fill from monitor info
@@ -77,6 +78,7 @@ type winRect struct {
 type Window struct {
 	*glfw.Window
 
+	connectedJoysticks []Joystick
 	currentScreenMode ScreenModeType
 	lastWindow        winRect
 }
@@ -752,16 +754,17 @@ func (j Joystick) GetGamepadState() *GamepadState {
 	return &state
 }
 
-func GetConnectedGamepads() []Joystick {
-	ret := make([]Joystick, 0)
+func (w *Window) GetConnectedGamepads() []Joystick {
+	w.connectedJoysticks = w.connectedJoysticks[:0]
 	for j := Joystick1; j <= JoystickLast; j++ {
 		if !j.IsGamepad() {
 			continue // Skip: not a gamepad or is not present
 		}
 
-		ret = append(ret, j)
+		w.connectedJoysticks = append(w.connectedJoysticks, j)
 	}
-	return ret
+	return w.connectedJoysticks
+
 }
 
 type GamepadState glfw.GamepadState

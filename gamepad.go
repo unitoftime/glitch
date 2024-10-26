@@ -5,20 +5,6 @@ import (
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
-func GetConnectedGamepads() []Gamepad {
-	var joysticks []glfw.Joystick
-
-	mainthread.Call(func() {
-		joysticks = glfw.GetConnectedGamepads()
-	})
-
-	ret := make([]Gamepad, len(joysticks))
-	for i := range joysticks {
-		ret[i] = Gamepad(joysticks[i])
-	}
-	return ret
-}
-
 type Gamepad int
 const GamepadNone = Gamepad(-1)
 // TODO: Comment out and add function that says: GetAllActiveGamepads() or something
@@ -84,18 +70,6 @@ const (
 // Returns the primary gamepad
 func (w *Window) GetPrimaryGamepad() Gamepad {
 	return w.currentPrimaryGamepad
-}
-
-func findNewActiveGamepad() Gamepad {
-	gamepads := GetConnectedGamepads()
-
-	for _, gp := range gamepads {
-		state := gp.getGamepadState()
-		if checkGamepadActive(state) {
-			return gp
-		}
-	}
-	return GamepadNone
 }
 
 // Returns true if the gamepad state is considered active this frame
