@@ -36,15 +36,15 @@ type Window struct {
 		}
 	}
 
-	mousePosition Vec2
-	currentPrimaryGamepad Gamepad // Tracks the current primarily used gamepad
-	justPressedGamepad [ButtonLast + 1]bool // Tracks buttons that were just pressed this frame
+	mousePosition         Vec2
+	currentPrimaryGamepad Gamepad              // Tracks the current primarily used gamepad
+	justPressedGamepad    [ButtonLast + 1]bool // Tracks buttons that were just pressed this frame
 
 	mainthreadUpdateConnectedGamepads func()
-	connectedGamepads []Gamepad
+	connectedGamepads                 []Gamepad
 	// TODO: Technically you could just store the last primaryGamepadState
-	pressedGamepad [ButtonLast + 1] bool // Tracks buttons that are currently pressed this frame
-	gamepadAxis [AxisLast + 1]float64 // Tracks the current axis state
+	pressedGamepad [ButtonLast + 1]bool  // Tracks buttons that are currently pressed this frame
+	gamepadAxis    [AxisLast + 1]float64 // Tracks the current axis state
 
 	// The back and front buffers for tracking typed characters
 	typedBack, typedFront []rune
@@ -582,7 +582,6 @@ func (w *Window) findNewActiveGamepad() Gamepad {
 	return GamepadNone
 }
 
-
 // --- Dear Imgui required ---
 func (w *Window) GetMouse() (x, y float64) {
 	return w.window.GetCursorPos()
@@ -619,4 +618,3 @@ func (w *Window) AddMouseButtonCallback(cb glfw.MouseButtonCallback) {
 	w.mouseButtonCallbacks = append(w.mouseButtonCallbacks, cb)
 	// fmt.Println("Adding new mouse button callback. Currently: ", len(w.mouseButtonCallbacks))
 }
-

@@ -6,9 +6,6 @@ import (
 	"github.com/unitoftime/glitch/graph"
 )
 
-type eid uint64 // Element Id
-const invalidId eid = 0
-
 type Drawer interface {
 	RectDraw(glitch.BatchTarget, glitch.Rect)
 	RectDrawColorMask(glitch.BatchTarget, glitch.Rect, glitch.RGBA)
@@ -172,6 +169,9 @@ type uiGlobals struct {
 	elements  map[uint64]eid // Maps labels to elements
 	// elementsRev map[eid]string
 	dedup map[uint64]uint32
+
+	stackIndex int // Indicates the next stack index for pushing
+	idStack    [][]byte
 }
 
 var global = uiGlobals{
