@@ -57,7 +57,14 @@ type Texture struct {
 }
 
 func toRgba(img image.Image) *image.RGBA {
-	rgba := image.NewRGBA(img.Bounds())
+	// Short circuit if already RGBA
+	rgba, isRGBA := img.(*image.RGBA)
+	if isRGBA {
+		return rgba
+	}
+
+	// Else migrate it to the correct pixel format
+	rgba = image.NewRGBA(img.Bounds())
 	draw.Draw(rgba, rgba.Bounds(), img, img.Bounds().Min, draw.Src)
 	return rgba
 }
@@ -142,12 +149,6 @@ func (t *Texture) SetImage(img image.Image) {
 	if t.width != img.Bounds().Dx() || t.height != img.Bounds().Dy() {
 		panic("SetImage: img bounds are not equal to texture bounds!")
 	}
-
-	// // TODO - skip this if already an NRGBA
-	// nrgba := image.NewNRGBA(img.Bounds())
-	// draw.Draw(nrgba, nrgba.Bounds(), img, img.Bounds().Min, draw.Src)
-
-	// pixels := nrgba.Pix
 
 	rgba := toRgba(img)
 	pixels := rgba.Pix
