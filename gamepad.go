@@ -6,7 +6,9 @@ import (
 )
 
 type Gamepad int
+
 const GamepadNone = Gamepad(-1)
+
 // TODO: Comment out and add function that says: GetAllActiveGamepads() or something
 // Note: I don't think that users should be statically referring to gamepads. I can't think of a use for that
 // const (
@@ -31,6 +33,7 @@ const GamepadNone = Gamepad(-1)
 // )
 
 type GamepadAxis int
+
 const (
 	AxisLeftX        = GamepadAxis(glfw.AxisLeftX)
 	AxisLeftY        = GamepadAxis(glfw.AxisLeftY)
@@ -42,6 +45,7 @@ const (
 )
 
 type GamepadButton int
+
 const (
 	ButtonA           = GamepadButton(glfw.ButtonA)
 	ButtonB           = GamepadButton(glfw.ButtonB)
@@ -63,8 +67,8 @@ const (
 	ButtonSquare      = GamepadButton(glfw.ButtonSquare)
 	ButtonTriangle    = GamepadButton(glfw.ButtonTriangle)
 
-	ButtonFirst       = ButtonA
-	ButtonLast        = GamepadButton(glfw.ButtonLast)
+	ButtonFirst = ButtonA
+	ButtonLast  = GamepadButton(glfw.ButtonLast)
 )
 
 // Returns the primary gamepad
@@ -74,7 +78,9 @@ func (w *Window) GetPrimaryGamepad() Gamepad {
 
 // Returns true if the gamepad state is considered active this frame
 func checkGamepadActive(state *glfw.GamepadState) bool {
-	if state == nil { return false }
+	if state == nil {
+		return false
+	}
 
 	for i := range state.Buttons {
 		if state.Buttons[i] == glfw.Press {
@@ -85,7 +91,9 @@ func checkGamepadActive(state *glfw.GamepadState) bool {
 }
 
 func (g Gamepad) getGamepadState() *glfw.GamepadState {
-	if g == GamepadNone { return nil }
+	if g == GamepadNone {
+		return nil
+	}
 
 	var ret *glfw.GamepadState
 	mainthread.Call(func() {
@@ -96,21 +104,27 @@ func (g Gamepad) getGamepadState() *glfw.GamepadState {
 
 // Returns true if the gamepad button is pressed, else returns false
 func (w *Window) GetGamepadPressed(g Gamepad, button GamepadButton) bool {
-	if g == GamepadNone { return false }
+	if g == GamepadNone {
+		return false
+	}
 
 	return w.pressedGamepad[button]
 }
 
 // Returns true if the gamepad button was just pressed this frame, else returns false
 func (w *Window) GetGamepadJustPressed(g Gamepad, button GamepadButton) bool {
-	if g == GamepadNone { return false }
+	if g == GamepadNone {
+		return false
+	}
 
 	return w.justPressedGamepad[button]
 }
 
 // Returns the gamepad axis value, ranging on -1 to +1
 func (w *Window) GetGamepadAxis(g Gamepad, axis GamepadAxis) float64 {
-	if g == GamepadNone { return 0 }
+	if g == GamepadNone {
+		return 0
+	}
 
 	return w.gamepadAxis[axis]
 }

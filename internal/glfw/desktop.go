@@ -42,9 +42,9 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 	}
 
 	window := &Window{
-		Window:            w,
+		Window:             w,
 		connectedJoysticks: make([]Joystick, 0, 16),
-		currentScreenMode: ScreenModeWindowed,
+		currentScreenMode:  ScreenModeWindowed,
 		lastWindow: winRect{
 			// TODO: xpos, ypos - fill from monitor info
 			width:  width,
@@ -79,8 +79,8 @@ type Window struct {
 	*glfw.Window
 
 	connectedJoysticks []Joystick
-	currentScreenMode ScreenModeType
-	lastWindow        winRect
+	currentScreenMode  ScreenModeType
+	lastWindow         winRect
 }
 
 func (w *Window) GetContentScale() (float32, float32) {
@@ -203,7 +203,6 @@ func (w *Window) SetFramebufferSizeCallback(cbfun FramebufferSizeCallback) (prev
 	// TODO: Handle previous.
 	return nil
 }
-
 
 // Note: This works, but wasn't needed immediately
 // type JoystickCallback func(joy Joystick, event PeripheralEvent)
@@ -395,11 +394,11 @@ const (
 )
 
 type PeripheralEvent glfw.PeripheralEvent
+
 const (
 	Connected    PeripheralEvent = PeripheralEvent(glfw.Connected)
 	Disconnected PeripheralEvent = PeripheralEvent(glfw.Disconnected)
 )
-
 
 type Joystick int
 

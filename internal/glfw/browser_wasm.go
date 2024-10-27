@@ -169,9 +169,9 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 	}
 
 	w := &Window{
-		canvas:           canvas,
-		context:          context,
-		devicePixelRatio: devicePixelRatio,
+		canvas:             canvas,
+		context:            context,
+		devicePixelRatio:   devicePixelRatio,
 		connectedJoysticks: make([]Joystick, 0, 16),
 	}
 
@@ -1446,16 +1446,16 @@ type GamepadState struct {
 // - Gamepad Mapping: https://w3c.github.io/gamepad/#remapping
 // TODO: Warning: I'm assuming a standard mapping, which is the only option, other than XR which is for VR motion controllers
 var standardButtonMapping = []GamepadButton{
-	0: ButtonA,
-	1: ButtonB,
-	2: ButtonX,
-	3: ButtonY,
-	4: ButtonLeftBumper,
-	5: ButtonRightBumper,
-	6: -1, // Trigger: -1 indicates no mapping
-	7: -1, // Trigger: -1 indicates no mapping
-	8: ButtonBack,
-	9: ButtonStart,
+	0:  ButtonA,
+	1:  ButtonB,
+	2:  ButtonX,
+	3:  ButtonY,
+	4:  ButtonLeftBumper,
+	5:  ButtonRightBumper,
+	6:  -1, // Trigger: -1 indicates no mapping
+	7:  -1, // Trigger: -1 indicates no mapping
+	8:  ButtonBack,
+	9:  ButtonStart,
 	10: ButtonLeftThumb,
 	11: ButtonRightThumb,
 	12: ButtonDpadUp,
@@ -1491,7 +1491,9 @@ func (j Joystick) GetGamepadState() *GamepadState {
 	}
 
 	gp := gamepads.Index(int(j))
-	if isNilOrUndefined(gp) { return nil }
+	if isNilOrUndefined(gp) {
+		return nil
+	}
 
 	var state GamepadState
 
@@ -1510,7 +1512,9 @@ func (j Joystick) GetGamepadState() *GamepadState {
 		value := axes.Index(i).Float()
 
 		// Exit early: number of axes in javascript is larger than we support
-		if i >= len(state.Axes) { break }
+		if i >= len(state.Axes) {
+			break
+		}
 
 		state.Axes[i] = float32(value)
 	}
@@ -1519,9 +1523,9 @@ func (j Joystick) GetGamepadState() *GamepadState {
 
 	// --- Trigger buttons ---
 	if buttonsLength > 7 {
-		leftTrigger := buttons.Index(6).Get("value").Float() // Left Trigger
-		state.Axes[AxisLeftTrigger] = (2 * float32(leftTrigger)) - 1 // Renormalize from [0, 1] to [-1, 1]
-		rightTrigger := buttons.Index(7).Get("value").Float() // Right Trigger
+		leftTrigger := buttons.Index(6).Get("value").Float()           // Left Trigger
+		state.Axes[AxisLeftTrigger] = (2 * float32(leftTrigger)) - 1   // Renormalize from [0, 1] to [-1, 1]
+		rightTrigger := buttons.Index(7).Get("value").Float()          // Right Trigger
 		state.Axes[AxisRightTrigger] = (2 * float32(rightTrigger)) - 1 // Renormalize from [0, 1] to [-1, 1]
 	}
 

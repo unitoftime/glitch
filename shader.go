@@ -14,13 +14,13 @@ type Shader struct {
 	program         gl.Program
 	uniformLocs     map[string]Uniform
 	uniformsMat4    map[string]glMat4 // All uniforms that are glMat4
-	uniforms        map[string]any // All other uniforms
+	uniforms        map[string]any    // All other uniforms
 	attrFmt         shaders.VertexFormat
 	tmpBuffers      []any
 	tmpFloat32Slice []float32
 	mainthreadBind  func()
 
-	uniformLoc     gl.Uniform
+	uniformLoc gl.Uniform
 
 	// TODO: You may be able to do a memory optimization here. where instead of allocating enough for the entire frame to be rendered through this shader, you can make a ringbuffer of VertexBuffers and cycle through those, drawing as you need to. The downside here is that there may be some performance impact if the ringbuffer is too small causing contention between filling the next VertexBuffer and rendering it on the GPU
 	pool *BufferPool
@@ -39,7 +39,7 @@ func NewShader(cfg shaders.ShaderConfig) (*Shader, error) {
 func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFormat, uniformFmt shaders.UniformFormat) (*Shader, error) {
 	shader := &Shader{
 		uniformLocs:     make(map[string]Uniform),
-		uniformsMat4:   make(map[string]glMat4),
+		uniformsMat4:    make(map[string]glMat4),
 		uniforms:        make(map[string]any),
 		attrFmt:         attrFmt,
 		tmpFloat32Slice: make([]float32, 0),
@@ -301,7 +301,6 @@ func (u *uniformSetterMat4) Func() {
 
 	gl.UniformMatrix4fv(uniform.loc, []float32(u.value[:]))
 }
-
 
 //--------------------------------------------------------------------------------
 

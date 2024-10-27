@@ -61,7 +61,6 @@ func run() {
 			}
 		}
 
-
 		camera.SetOrtho2D(win.Bounds())
 		camera.SetView2D(0, 0, 1, 1)
 		glitch.SetCamera(camera)
@@ -102,8 +101,8 @@ func run() {
 			leftTrigger := win.GetGamepadAxis(primaryGamepad, glitch.AxisLeftTrigger)
 
 			mat := glitch.Mat4Ident
-			mat.Translate(center.X - 400, center.Y, 0)
-			mat.Translate(0, leftTrigger * 100, 0)
+			mat.Translate(center.X-400, center.Y, 0)
+			mat.Translate(0, leftTrigger*100, 0)
 			sprite.Draw(win, mat)
 		}
 
@@ -112,8 +111,8 @@ func run() {
 			rightTrigger := win.GetGamepadAxis(primaryGamepad, glitch.AxisRightTrigger)
 
 			mat := glitch.Mat4Ident
-			mat.Translate(center.X + 400, center.Y, 0)
-			mat.Translate(0, rightTrigger * 100, 0)
+			mat.Translate(center.X+400, center.Y, 0)
+			mat.Translate(0, rightTrigger*100, 0)
 			sprite.Draw(win, mat)
 		}
 
