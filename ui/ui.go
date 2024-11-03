@@ -32,6 +32,7 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 	global.sorter = sorter
 	global.geomDraw = glitch.NewGeomDraw()
 	global.geomDraw.SetColor(glitch.RGBA{1.0, 0, 0, 1.0})
+	global.debugMesh = glitch.NewMesh()
 
 	global.layout = Layout{
 		Type:   CutTop,
@@ -136,6 +137,7 @@ type uiGlobals struct {
 	layout Layout
 
 	geomDraw *glitch.GeomDraw
+	debugMesh *glitch.Mesh
 
 	allBounds               []glitch.Rect
 	unionBoundsSet          bool
@@ -246,6 +248,9 @@ func Clear() {
 
 	mX, mY := MousePosition()
 	global.mousePos = glitch.Vec2{mX, mY}
+
+	global.debugMesh.Draw(global.sorter, glitch.Mat4Ident) // TODO: Its a little weird to draw this on the clear. but it should technically work
+	global.debugMesh.Clear()
 
 	global.currentTextBufferIndex = 0
 	global.currentGraphBufferIndex = 0

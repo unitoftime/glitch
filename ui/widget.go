@@ -427,13 +427,10 @@ func drawDebug(rect glitch.Rect) {
 	}
 
 	lineWidth := 0.4
+	global.geomDraw.Rectangle2(global.debugMesh, rect, lineWidth)
 
-	// TODO: Do something like this
-	// // rect.Draw(global.sorter)
-	// global.geomDraw.DrawRect(rect, lineWidth)
-
-	m := global.geomDraw.Rectangle(rect, lineWidth)
-	m.Draw(global.sorter, glitch.Mat4Ident)
+	// m := global.geomDraw.Rectangle(rect, lineWidth)
+	// m.Draw(global.sorter, glitch.Mat4Ident)
 }
 
 //--------------------------------------------------------------------------------
