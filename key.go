@@ -151,6 +151,7 @@ const (
 	MouseButton3 = Key(glfw.MouseButton3)
 	MouseButton4 = Key(glfw.MouseButton4)
 	MouseButton5 = Key(glfw.MouseButton5)
+	// Note: 6, 7, 8 dont exist in browsers
 	// MouseButton6 = Key(glfw.MouseButton6)
 	// MouseButton7 = Key(glfw.MouseButton7)
 	// MouseButton8 = Key(glfw.MouseButton8)
@@ -332,10 +333,10 @@ var qwertyKeyDescription map[Key]string = map[Key]string{
 	KeyMenu:       "ContextMenu", // ????
 
 	// Mouse Buttons
-	MouseButtonLeft:   "MouseButtonLeft",
-	MouseButtonRight:  "MouseButtonRight",
-	MouseButtonMiddle: "MouseButtonMiddle",
-	MouseButton4:      "MouseButton4",
-	MouseButton5:      "MouseButton5",
+	MouseButtonLeft:   "MouseLeft",
+	MouseButtonRight:  "MouseRight",
+	MouseButtonMiddle: "MouseMiddle",
+	MouseButton4:      "Mouse4",
+	MouseButton5:      "Mouse5",
 	// TODO: Mouse5-8
 }
