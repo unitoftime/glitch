@@ -397,7 +397,7 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 }
 
 // Returns the rectangular bounds of the drawn text
-func measureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
+func MeasureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 	if str == "" {
 		return glitch.Rect{}
 	}
@@ -761,7 +761,7 @@ func TextInput(label string, str *string, rect glitch.Rect, style Style) {
 
 	if isActive {
 		// .Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5})) // TODO: CursorColor? Default to white
-		cursoredTextRect := measureText((*str)[:global.cursorPos], rect, style.Text)
+		cursoredTextRect := MeasureText((*str)[:global.cursorPos], rect, style.Text)
 		// cursoredTextRect := drawText((*str)[:global.cursorPos], rect, textStyle)
 		if global.cursorPos == 0 {
 			cursoredTextRect = glm.R(0, 0, 0, textResp.textRect.H())
@@ -772,6 +772,19 @@ func TextInput(label string, str *string, rect glitch.Rect, style Style) {
 										Moved(glitch.Vec2{textResp.textRect.Min.X + cursoredTextRect.W(), textResp.textRect.Min.Y})
 		drawSprite(cursorRect, gStyle.textCursorStyle.Normal)
 	}
+}
+
+// Returns the cursor rect and the anchor vector for the tooltip
+func DefaultTooltipMount() (glm.Rect, glm.Vec2) {
+	quadrant := Bounds().Center().Sub(global.mousePos).Norm()
+	var movement glitch.Vec2
+	if quadrant.X < 0 {
+		movement.X = 1
+	} else {
+		movement.X = 0
+	}
+	cursorRect := glm.R(0, 0, 0, 0).WithCenter(global.mousePos)
+	return cursorRect, movement
 }
 
 func Tooltip(label string, rect glitch.Rect) {
