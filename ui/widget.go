@@ -396,6 +396,23 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 	return rect
 }
 
+func MeasureTextSize(str string, t TextStyle) glm.Vec2 {
+		if str == "" {
+		return glm.Vec2{}
+	}
+
+	textBounds := global.atlas.Measure(str, 1.0)
+	textBounds = textBounds.Scaled(global.fontScale * t.scale)
+	textSize := glm.Vec2{textBounds.W(), textBounds.H()}
+
+	padSize := glm.Vec2{
+		t.padding.Min.X + t.padding.Max.X,
+		t.padding.Min.Y + t.padding.Max.Y,
+	}
+
+	return textSize.Add(padSize)
+}
+
 // Returns the rectangular bounds of the drawn text
 func MeasureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 	if str == "" {
