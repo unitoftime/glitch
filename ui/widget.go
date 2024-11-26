@@ -401,8 +401,8 @@ func MeasureTextSize(str string, t TextStyle) glm.Vec2 {
 		return glm.Vec2{}
 	}
 
-	textBounds := global.atlas.Measure(str, 1.0)
-	textBounds = textBounds.Scaled(global.fontScale * t.scale)
+	textBounds := global.atlas.Measure(str, global.fontScale)
+	textBounds = textBounds.Scaled(t.scale)
 	textSize := glm.Vec2{textBounds.W(), textBounds.H()}
 
 	padSize := glm.Vec2{
@@ -420,7 +420,13 @@ func MeasureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 	}
 
 	// text := global.getText(str, t)
-	textBounds := global.atlas.Measure(str, 1.0)
+	textBounds := glm.Rect{}
+	if t.wordWrap {
+		wrapRect := rect.Scaled(1.0 / (t.scale)) // TODO: a bit hacky
+		textBounds = global.atlas.MeasureWrapped(str, global.fontScale, wrapRect)
+	} else {
+		textBounds = global.atlas.Measure(str, global.fontScale)
+	}
 
 	rect = rect.Unpad(t.padding)
 	if t.autoFit {
@@ -431,7 +437,7 @@ func MeasureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 			rect = rect.FullAnchor(textBounds.ScaledToFit(rect), t.anchor, t.pivot)
 		}
 	} else {
-		rect = rect.FullAnchor(textBounds.Scaled(global.fontScale*t.scale), t.anchor, t.pivot)
+		rect = rect.FullAnchor(textBounds.Scaled(t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
 

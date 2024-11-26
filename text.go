@@ -417,7 +417,17 @@ func (a *Atlas) Measure(str string, scale float64) Rect {
 		atlas:         a,
 		scale:         scale,
 	}
-	return fakeText.AppendStringVerts(str)
+	return fakeText.AppendStringVerts(str, true)
+}
+func (a *Atlas) MeasureWrapped(str string, scale float64, wrapRect Rect) Rect {
+	fakeText := Text{
+		currentString: str,
+		atlas:         a,
+		scale:         scale,
+		wordWrap: true,
+		wrapRect: wrapRect,
+	}
+	return fakeText.AppendStringVerts(str, true)
 }
 
 type Text struct {
@@ -494,7 +504,7 @@ func (t *Text) Set(str string) {
 
 func (t *Text) regenerate() {
 	t.Clear()
-	t.bounds = t.AppendStringVerts(t.currentString)
+	t.bounds = t.AppendStringVerts(t.currentString, false)
 }
 
 func (t *Text) WriteString(str string) (n int, err error) {
@@ -512,7 +522,7 @@ func (t *Text) Write(p []byte) (n int, err error) {
 	}
 
 	t.currentString = t.currentString + appendedStr
-	newBounds := t.AppendStringVerts(appendedStr)
+	newBounds := t.AppendStringVerts(appendedStr, false)
 	t.bounds = t.bounds.Union(newBounds)
 	return len(p), nil
 }
@@ -552,7 +562,8 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	target.Add(t.mesh, glm4(mat), mask, t.material, true)
 }
 
-func (t *Text) AppendStringVerts(text string) Rect {
+// If measure is set true, dont add them to the text mesh, just measure the bounds of the string
+func (t *Text) AppendStringVerts(text string, measure bool) Rect {
 	// maxAscent := float32(0) // Tracks the maximum y point of the text block
 
 	lineHeight := t.atlas.UngappedLineHeight() * t.scale
@@ -586,11 +597,15 @@ func (t *Text) AppendStringVerts(text string) Rect {
 			continue
 		}
 
-		newDot, _ := t.atlas.RuneVerts(t.mesh, r, t.Dot, t.scale, t.color)
+		var dstMesh *Mesh
+		if !measure {
+			dstMesh = t.mesh
+		}
+		newDot, _ := t.atlas.RuneVerts(dstMesh, r, t.Dot, t.scale, t.color)
 
 		noShadow := Vec2{}
 		if t.shadow != noShadow {
-			_, _ = t.atlas.RuneVerts(t.mesh, r, t.Dot.Add(t.shadow), t.scale, Black)
+			_, _ = t.atlas.RuneVerts(dstMesh, r, t.Dot.Add(t.shadow), t.scale, Black)
 		}
 
 		maxDotX = max(maxDotX, newDot.X)

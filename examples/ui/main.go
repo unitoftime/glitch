@@ -83,6 +83,7 @@ func runGame() {
 	sorter := glitch.NewSorter()
 	ui.Initialize(win, camera, atlas, sorter)
 	// group.Debug = true
+	ui.SetFontScale(0.8)
 
 	// // textStyle := ui.NewTextStyle().Scale(4)// .Autofit(true)
 	// textStyle := ui.NewTextStyle().Autofit(true).Padding(glm.R(5, 5, 5, 5))
@@ -94,6 +95,7 @@ func runGame() {
 	// }
 
 	textStyle := ui.NewTextStyle().Autofit(true).Padding(glm.R(5, 5, 5, 5))
+	wrappedStyle := ui.NewTextStyle().Scale(0.5).WordWrap(true).Padding(glm.R(5, 5, 5, 5))
 	// ui.SetTextStyle(textStyle)
 	// ui.SetButtonStyle(buttonStyle)
 	// ui.SetPanelStyle(buttonStyle)
@@ -331,8 +333,13 @@ func runGame() {
 			}
 		case "text":
 			ui.Panel2("##panel", panelBounds)
+			wrappedText := "Unfinished: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+
 			textAreaBounds := panelBounds // .Unpad(glm.R(10, 10, 10, 10))
-			ui.MultiText("Unfinished: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.", textAreaBounds, textStyle)
+			measured := ui.MeasureText(wrappedText, textAreaBounds, wrappedStyle)
+			actual := ui.MultiText(wrappedText, textAreaBounds, wrappedStyle)
+
+			fmt.Println(measured, actual)
 		}
 
 		ui.Update()

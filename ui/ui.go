@@ -360,7 +360,8 @@ func (g *uiGlobals) getText(str string, style TextStyle, bounds glitch.Rect) *gl
 	// g.textBuffer[idx].Clear()
 	// g.textBuffer[idx].SetScale(style.scale)
 	g.textBuffer[idx].SetShadow(style.shadow)
-	g.textBuffer[idx].SetWordWrap(style.wordWrap, bounds)
+	wrapBounds := bounds.Scaled(1.0 / (style.scale)) // TODO: a bit hacky
+	g.textBuffer[idx].SetWordWrap(style.wordWrap, wrapBounds)
 	g.textBuffer[idx].SetScale(g.fontScale)
 	g.textBuffer[idx].Set(str)
 	return g.textBuffer[idx]
