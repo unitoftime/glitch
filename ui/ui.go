@@ -136,7 +136,7 @@ type uiGlobals struct {
 
 	layout Layout
 
-	geomDraw *glitch.GeomDraw
+	geomDraw  *glitch.GeomDraw
 	debugMesh *glitch.Mesh
 
 	allBounds               []glitch.Rect

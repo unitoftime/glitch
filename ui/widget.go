@@ -397,7 +397,7 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 }
 
 func MeasureTextSize(str string, t TextStyle) glm.Vec2 {
-		if str == "" {
+	if str == "" {
 		return glm.Vec2{}
 	}
 

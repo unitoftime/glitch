@@ -424,8 +424,8 @@ func (a *Atlas) MeasureWrapped(str string, scale float64, wrapRect Rect) Rect {
 		currentString: str,
 		atlas:         a,
 		scale:         scale,
-		wordWrap: true,
-		wrapRect: wrapRect,
+		wordWrap:      true,
+		wrapRect:      wrapRect,
 	}
 	return fakeText.AppendStringVerts(str, true)
 }
