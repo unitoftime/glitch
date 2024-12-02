@@ -309,6 +309,14 @@ func (g *GeomDraw) LineStrip(mesh *Mesh, points []Vec3, width float64) {
 	}
 }
 
+func (g *GeomDraw) Polygon2D(mesh *Mesh, points []Vec2, width float64) {
+	v3Points := make([]Vec3, len(points))
+	for i := range points {
+		v3Points[i] = points[i].Vec3()
+	}
+	g.Polygon(mesh, v3Points, width)
+}
+
 // TODO - remake linestrip but don't have the looping indexes (ie modulo). This is technically for polygons
 func (g *GeomDraw) Polygon(mesh *Mesh, points []Vec3, width float64) {
 	// fmt.Println("Points:", points)
@@ -369,26 +377,26 @@ func (g *GeomDraw) Line(mesh *Mesh, a, b Vec3, lastAngle, nextAngle float64, wid
 	a1 := a.Add(wLineUp)
 	a2 := a.Add(wLineDown)
 
-	// Track the outer and inner a1 and a2
-	if a1.Len() < a2.Len() {
-		// swap a1 and a2
-		tmp := a1
-		a1 = a2
-		a2 = tmp
-	}
+	// // Track the outer and inner a1 and a2
+	// if a1.Len() < a2.Len() {
+	// 	// swap a1 and a2
+	// 	tmp := a1
+	// 	a1 = a2
+	// 	a2 = tmp
+	// }
 
 	wLineUp2 := Vec3{1, 0, 0}.Rotate2D(nextAngle).Scaled(width/2, width/2, width/2)
 	wLineDown2 := wLineUp2.Scaled(-1, -1, 1)
 	b1 := b.Add(wLineUp2)
 	b2 := b.Add(wLineDown2)
 
-	// Track the outer and inner b1 and b2
-	if b1.Len() < b2.Len() {
-		// swap b1 bnd b2
-		tmp := b1
-		b1 = b2
-		b2 = tmp
-	}
+	// // Track the outer and inner b1 and b2
+	// if b1.Len() < b2.Len() {
+	// 	// swap b1 bnd b2
+	// 	tmp := b1
+	// 	b1 = b2
+	// 	b2 = tmp
+	// }
 
 	positions := []glVec3{
 		glv3(b1),
@@ -414,8 +422,10 @@ func (g *GeomDraw) Line(mesh *Mesh, a, b Vec3, lastAngle, nextAngle float64, wid
 	}
 
 	inds := []uint32{
-		0, 1, 2,
-		2, 3, 0,
+		0, 1, 3,
+		1, 2, 3,
+		// 0, 1, 2,
+		// 2, 3, 0,
 	}
 
 	currentElement := uint32(len(mesh.positions))

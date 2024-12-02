@@ -1532,7 +1532,7 @@ func (j Joystick) GetGamepadState() *GamepadState {
 	// --- Normal buttons ---
 
 	for i := range buttonsLength {
-		if i > len(standardButtonMapping) {
+		if i >= len(standardButtonMapping) {
 			break // Exit: There are no more buttons to map too
 		}
 
