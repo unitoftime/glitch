@@ -661,7 +661,25 @@ func Scrollbar(idx *int, total int, rect, hoverRect glitch.Rect) {
 	*idx = int(math.Round(val))
 }
 
-func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
+func ScrollbarReverse(idx *int, total int, rect, hoverRect glitch.Rect) {
+	val := -float64(*idx)
+	SliderV(&val, -float64(total), 0, 1, rect, hoverRect)
+	*idx = -int(math.Round(val))
+}
+
+type SliderStyle struct {
+	Background Style
+	Handle Style
+	Up, Down Style
+}
+
+func (s SliderStyle) ScrollbarReverse(idx *int, total int, rect, hoverRect glitch.Rect) {
+	val := -float64(*idx)
+	s.Vertical(&val, -float64(total), 0, 1, rect, hoverRect)
+	*idx = -int(math.Round(val))
+}
+
+func (s SliderStyle) Vertical(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
 	square := rect.SubSquare()
 
 	buttonTop := rect.CutTop(square.H())
@@ -675,23 +693,23 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	// yPos := (ratio * deltaY) + rect.Max.Y - (square.H() / 2)
 
 	yPos := -(ratio * height) + rect.Max.Y - (square.H() / 2)
-	PanelExt("##vscrollbarbg", rect, gStyle.scrollbarBgStyle)
+	PanelExt("##vscrollbarbg", rect, s.Background)
 
 	numSteps := (delta / step)
 	floatStep := height / numSteps
 	draggerRect := square.WithCenter(glitch.Vec2{rect.Center().X, yPos})
-	if SmoothDragButton("##vscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) {
+	if SmoothDragButton("##vscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, s.Handle) {
 		y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
 
 		ratio := y / height
-		*val = ratio*float64(max) + min
+		*val = ratio*float64(max-min) + min
 	}
 
-	topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle)
+	topResp := ButtonFull("##vscrolltop", buttonTop, s.Up)
 	if topResp.Released || topResp.Repeated {
 		*val -= step
 	}
-	botResp := ButtonFull("##vscrollbot", buttonBot, gStyle.scrollbarBotStyle)
+	botResp := ButtonFull("##vscrollbot", buttonBot, s.Down)
 	if botResp.Released || botResp.Repeated {
 		*val += step
 	}
@@ -702,6 +720,56 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	}
 
 	*val = clamp(min, max, *val)
+}
+
+func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
+	slider := SliderStyle{
+		Background: gStyle.scrollbarBgStyle,
+		Handle: gStyle.scrollbarHandleStyle,
+		Up: gStyle.scrollbarTopStyle,
+		Down: gStyle.scrollbarBotStyle,
+	}
+	slider.Vertical(val, min, max, step, rect, hoverRect)
+	// square := rect.SubSquare()
+
+	// buttonTop := rect.CutTop(square.H())
+	// buttonBot := rect.CutBottom(square.H())
+
+	// delta := max - min
+	// ratio := (*val - min) / delta
+	// height := rect.H() - square.H()
+
+	// // deltaY := rect.Min.Y - rect.Max.Y + square.H()
+	// // yPos := (ratio * deltaY) + rect.Max.Y - (square.H() / 2)
+
+	// yPos := -(ratio * height) + rect.Max.Y - (square.H() / 2)
+	// PanelExt("##vscrollbarbg", rect, gStyle.scrollbarBgStyle)
+
+	// numSteps := (delta / step)
+	// floatStep := height / numSteps
+	// draggerRect := square.WithCenter(glitch.Vec2{rect.Center().X, yPos})
+	// if SmoothDragButton("##vscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) {
+	// 	y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
+
+	// 	ratio := y / height
+	// 	*val = ratio*float64(max-min) + min
+	// }
+
+	// topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle)
+	// if topResp.Released || topResp.Repeated {
+	// 	*val -= step
+	// }
+	// botResp := ButtonFull("##vscrollbot", buttonBot, gStyle.scrollbarBotStyle)
+	// if botResp.Released || botResp.Repeated {
+	// 	*val += step
+	// }
+
+	// if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
+	// 	_, scrollY := global.win.MouseScroll()
+	// 	*val -= (scrollY * step)
+	// }
+
+	// *val = clamp(min, max, *val)
 }
 
 func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
