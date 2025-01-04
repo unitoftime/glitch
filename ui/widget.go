@@ -669,8 +669,8 @@ func ScrollbarReverse(idx *int, total int, rect, hoverRect glitch.Rect) {
 
 type SliderStyle struct {
 	Background Style
-	Handle Style
-	Up, Down Style
+	Handle     Style
+	Up, Down   Style
 }
 
 func (s SliderStyle) ScrollbarReverse(idx *int, total int, rect, hoverRect glitch.Rect) {
@@ -725,9 +725,9 @@ func (s SliderStyle) Vertical(val *float64, min, max, step float64, rect, hoverR
 func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
 	slider := SliderStyle{
 		Background: gStyle.scrollbarBgStyle,
-		Handle: gStyle.scrollbarHandleStyle,
-		Up: gStyle.scrollbarTopStyle,
-		Down: gStyle.scrollbarBotStyle,
+		Handle:     gStyle.scrollbarHandleStyle,
+		Up:         gStyle.scrollbarTopStyle,
+		Down:       gStyle.scrollbarBotStyle,
 	}
 	slider.Vertical(val, min, max, step, rect, hoverRect)
 	// square := rect.SubSquare()
