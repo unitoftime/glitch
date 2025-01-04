@@ -859,12 +859,17 @@ func (c *CameraOrtho) Project(point Vec3) Vec3 {
 	return p
 }
 
-func (c *CameraOrtho) Unproject(point Vec3) Vec3 {
+func (c *CameraOrtho) GetInverseMat4() Mat4 {
 	// TODO - This logic breaks down if someone modifies camera internals. Ie I need better protection. for private members
-	if c.dirtyViewInv == true {
+	if c.dirtyViewInv {
 		c.ViewInv = *c.View.Inv()
 		c.dirtyViewInv = false
 	}
+	return c.ViewInv
+}
+
+func (c *CameraOrtho) Unproject(point Vec3) Vec3 {
+	c.ViewInv = c.GetInverseMat4()
 	return c.ViewInv.Apply(point)
 
 	// p := c.View.Inv().Apply(point)

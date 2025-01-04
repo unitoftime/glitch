@@ -228,7 +228,6 @@ type globalBatcher struct {
 	camera     CameraMaterial
 	lastBuffer *VertexBuffer
 	target     Target
-	texture    *Texture
 	blend      BlendMode
 
 	material Material
@@ -264,14 +263,15 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 		return
 	}
 
-	global.flush() // TODO: You technically only need to do this if it will change the uniform
-	global.camera = camMaterial
 	if global.shader != nil {
+		global.flush() // TODO: You technically only need to do this if it will change the uniform
+		global.camera = camMaterial
+
 		global.shader.setUniformMat4("projection", global.camera.Projection)
 		global.shader.setUniformMat4("view", global.camera.View)
-	}
 
-	global.metric.setCamera++
+		global.metric.setCamera++
+	}
 }
 
 func SetCamera(camera *CameraOrtho) {
