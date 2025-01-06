@@ -90,16 +90,29 @@ func checkGamepadActive(state *glfw.GamepadState) bool {
 	return false
 }
 
-func (g Gamepad) getGamepadState() *glfw.GamepadState {
+func (w *Window) getGamepadState(g Gamepad) *glfw.GamepadState {
 	if g == GamepadNone {
 		return nil
 	}
 
-	var ret *glfw.GamepadState
+
 	mainthread.Call(func() {
-		ret = glfw.Joystick(g).GetGamepadState()
+		ptr := w.cachedGamepadStates[g]
+		if ptr == nil {
+			ptr = glfw.Joystick(g).GetGamepadState()
+		} else {
+			newPtr := glfw.Joystick(g).GetGamepadState()
+			if newPtr != nil {
+				*ptr = *newPtr
+			}
+		}
+		w.cachedGamepadStates[g] = ptr
+
+		// ret = glfw.Joystick(g).GetGamepadState()
 	})
-	return ret
+	ptr := w.cachedGamepadStates[g]
+	return ptr
+	// return ret
 }
 
 // Returns true if the gamepad button is pressed, else returns false

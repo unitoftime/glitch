@@ -36,6 +36,9 @@ type Window struct {
 		}
 	}
 
+	// TODO: Could use an array? I think gamepad indexes have restrictions in glfw and browser
+	cachedGamepadStates map[Gamepad]*glfw.GamepadState
+
 	mousePosition         Vec2
 	currentPrimaryGamepad Gamepad              // Tracks the current primarily used gamepad
 	justPressedGamepad    [ButtonLast + 1]bool // Tracks buttons that were just pressed this frame
@@ -76,6 +79,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		scrollCallbacks:      make([]glfw.ScrollCallback, 0),
 		keyCallbacks:         make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
+		cachedGamepadStates: make(map[Gamepad]*glfw.GamepadState),
 
 		repeatTracker: []repeatData{
 			{key: MouseButtonLeft},
@@ -315,48 +319,49 @@ func (w *Window) Update() {
 		w.typedFront = backBuf
 	}
 
-	// --- Gamepad ---
-	// Recalculate all active gamepads
-	mainthread.Call(w.mainthreadUpdateConnectedGamepads)
+	// Note: Disabled this logic because the wasm performance is really bad
+	// // --- Gamepad ---
+	// // Recalculate all active gamepads
+	// mainthread.Call(w.mainthreadUpdateConnectedGamepads)
 
-	// 1. I need to decide the current active gamepad
-	primaryGamepadState := w.currentPrimaryGamepad.getGamepadState()
-	primaryStillActive := checkGamepadActive(primaryGamepadState)
-	if !primaryStillActive {
-		newActiveGamepad := w.findNewActiveGamepad()
-		if newActiveGamepad != GamepadNone {
-			w.currentPrimaryGamepad = newActiveGamepad
-			primaryGamepadState = w.currentPrimaryGamepad.getGamepadState()
-		}
-	}
+	// // 1. I need to decide the current active gamepad
+	// primaryGamepadState := w.getGamepadState(w.currentPrimaryGamepad)
+	// primaryStillActive := checkGamepadActive(primaryGamepadState)
+	// if !primaryStillActive {
+	// 	newActiveGamepad := w.findNewActiveGamepad()
+	// 	if newActiveGamepad != GamepadNone {
+	// 		w.currentPrimaryGamepad = newActiveGamepad
+	// 		primaryGamepadState = w.getGamepadState(w.currentPrimaryGamepad)
+	// 	}
+	// }
 
-	// 2. I need to track their input for JustPressed
-	// Note: Here we calculate the *newly* pressed buttons.
-	// - buttons that arent pressed in the last frame, but are pressed in this new gamepad state
-	if primaryGamepadState == nil {
-		// If the primary gamepad is nil, then set everything to false, it maybe got disconnected
-		w.pressedGamepad = [ButtonLast + 1]bool{}
-		w.justPressedGamepad = [ButtonLast + 1]bool{}
-		w.gamepadAxis = [AxisLast + 1]float64{}
-	} else {
-		for i := range primaryGamepadState.Buttons {
-			if w.pressedGamepad[i] {
-				// If currently pressed, then you couldn't possibly have just pressed it
-				w.justPressedGamepad[i] = false
-			} else {
-				// Else, If the new gamepad state has this button pressed, it means this is the first frame it was pressed
-				w.justPressedGamepad[i] = (primaryGamepadState.Buttons[i] == glfw.Press)
-			}
+	// // 2. I need to track their input for JustPressed
+	// // Note: Here we calculate the *newly* pressed buttons.
+	// // - buttons that arent pressed in the last frame, but are pressed in this new gamepad state
+	// if primaryGamepadState == nil {
+	// 	// If the primary gamepad is nil, then set everything to false, it maybe got disconnected
+	// 	w.pressedGamepad = [ButtonLast + 1]bool{}
+	// 	w.justPressedGamepad = [ButtonLast + 1]bool{}
+	// 	w.gamepadAxis = [AxisLast + 1]float64{}
+	// } else {
+	// 	for i := range primaryGamepadState.Buttons {
+	// 		if w.pressedGamepad[i] {
+	// 			// If currently pressed, then you couldn't possibly have just pressed it
+	// 			w.justPressedGamepad[i] = false
+	// 		} else {
+	// 			// Else, If the new gamepad state has this button pressed, it means this is the first frame it was pressed
+	// 			w.justPressedGamepad[i] = (primaryGamepadState.Buttons[i] == glfw.Press)
+	// 		}
 
-			// Finally, set the current button state
-			w.pressedGamepad[i] = (primaryGamepadState.Buttons[i] == glfw.Press)
-		}
+	// 		// Finally, set the current button state
+	// 		w.pressedGamepad[i] = (primaryGamepadState.Buttons[i] == glfw.Press)
+	// 	}
 
-		// And set the current axis state
-		for i := range primaryGamepadState.Axes {
-			w.gamepadAxis[i] = float64(primaryGamepadState.Axes[i])
-		}
-	}
+	// 	// And set the current axis state
+	// 	for i := range primaryGamepadState.Axes {
+	// 		w.gamepadAxis[i] = float64(primaryGamepadState.Axes[i])
+	// 	}
+	// }
 }
 
 func (w *Window) Closed() bool {
@@ -574,7 +579,7 @@ func (w *Window) findNewActiveGamepad() Gamepad {
 	gamepads := w.GetConnectedGamepads()
 
 	for _, gp := range gamepads {
-		state := gp.getGamepadState()
+		state := w.getGamepadState(gp)
 		if checkGamepadActive(state) {
 			return gp
 		}

@@ -94,15 +94,6 @@ func resolveIframeEmbedding() bool {
 	return !self.Equal(top)
 }
 
-// TODO: Should this get cached somewhere?
-func getGamepads() js.Value {
-	if navigator.IsNull() {
-		return js.Null()
-	}
-	gamepads := navigator.Call("getGamepads")
-	return gamepads
-}
-
 func getDevicePixelRatio() float64 {
 	// // TODO: This is obviously not right, but I'd like to consolidate the contentscale with this and glfw at the same time. Right now the game just scales based on resolution which seems good enough
 	// return 1.0
@@ -118,7 +109,13 @@ func getDevicePixelRatio() float64 {
 	// return devicePixelRatio
 }
 
+var (
+	fnGetGamepads js.Value
+)
+
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
+	fnGetGamepads = navigator.Get("getGamepads").Call("bind", navigator)
+
 	// Find a canvas, preferably one with an id of glfw
 	canvas := resolveCanvas()
 
@@ -671,6 +668,8 @@ func GetPrimaryMonitor() *Monitor {
 }
 
 func PollEvents() error {
+	updateGamepadCache()
+
 	return nil
 }
 
@@ -789,6 +788,8 @@ func (w *Window) SetShouldClose(value bool) {
 	//        Perhaps https://developer.mozilla.org/en-US/docs/Web/API/Window.close is relevant.
 }
 
+const rafFallbackTime = 100 * time.Millisecond
+var rafFallbackTimer = time.NewTimer(rafFallbackTime)
 func (w *Window) SwapBuffers() error {
 	// How this works (because its kind of complicated):
 	// 1. RAF is invoked once, and once the raf is consumed (by reading from aimationFrameChan), the w.rafOnce object is reset so it can be invoked again
@@ -799,10 +800,12 @@ func (w *Window) SwapBuffers() error {
 		raf.Invoke(animationFrameCallback)
 	})
 
+	rafFallbackTimer.Reset(rafFallbackTime)
 	select {
 	case <-animationFrameChan:
 		w.rafOnce = sync.Once{} // Reset rafOnce
-	case <-time.After(100 * time.Millisecond): // TODO: would be nice to make this timeout configurable
+	// case <-time.After(100 * time.Millisecond): // TODO: would be nice to make this timeout configurable
+	case <-rafFallbackTimer.C:
 	}
 
 	return nil
@@ -1465,9 +1468,29 @@ var standardButtonMapping = []GamepadButton{
 	16: ButtonGuide,
 }
 
+// Gamepad note: Ideally you'd track ongamepadconnect/disconnect events I think
+
+// If you need a relatively accurate, cached version
+var gamepadCache js.Value
+func updateGamepadCache() {
+	gamepadCache = getGamepads()
+}
+
+// If you need the exact set of gamepads
+func getGamepads() js.Value {
+	if navigator.IsNull() {
+		return js.Null()
+	}
+	// gamepads := navigator.Call("getGamepads")
+	gamepads := fnGetGamepads.Invoke()
+	return gamepads
+}
+
 // TODO: This could be optimized by tracking ongamepadconnect/disconnect events
 func (w *Window) GetConnectedGamepads() []Joystick {
-	gamepads := getGamepads()
+	// gamepads := getGamepads()
+	gamepads := gamepadCache
+
 	if isNilOrUndefined(gamepads) {
 		return nil
 	}
@@ -1485,7 +1508,9 @@ func (w *Window) GetConnectedGamepads() []Joystick {
 }
 
 func (j Joystick) GetGamepadState() *GamepadState {
-	gamepads := getGamepads()
+	// gamepads := getGamepads()
+	gamepads := gamepadCache
+
 	if isNilOrUndefined(gamepads) {
 		return nil
 	}
