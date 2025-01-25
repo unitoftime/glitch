@@ -655,6 +655,12 @@ func DragSlot(label string, rect glitch.Rect, style Style) bool {
 	return (resp.droppedId != invalidId)
 }
 
+func Scrollzone(idx *int, total int, hoverRect glitch.Rect) {
+	val := float64(*idx)
+	scrollZone(&val, 0, float64(total), 1, hoverRect)
+	*idx = int(math.Round(val))
+}
+
 func Scrollbar(idx *int, total int, rect, hoverRect glitch.Rect) {
 	val := float64(*idx)
 	SliderV(&val, 0, float64(total), 1, rect, hoverRect)
@@ -810,6 +816,15 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	// 	_, scrollY := global.win.MouseScroll()
 	// 	*val += (scrollY * step)
 	// }
+
+	*val = clamp(min, max, *val)
+}
+
+func scrollZone(val *float64, min, max, step float64, rect glm.Rect) {
+	if HoveredNoBlock(rect) {
+		_, scrollY := global.win.MouseScroll()
+		*val -= (scrollY * step)
+	}
 
 	*val = clamp(min, max, *val)
 }
