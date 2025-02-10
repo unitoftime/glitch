@@ -148,6 +148,7 @@ type uiGlobals struct {
 	graphBuffer             []*graph.Graph
 	currentGraphBufferIndex int
 
+	drawDraggedDrawers bool // Indicates that we should internally draw dragged objects on the mouse
 	dragItemLayer int8
 
 	// lastRect glitch.Rect
@@ -180,6 +181,8 @@ var global = uiGlobals{
 	hudScale:  1.0,
 	fontScale: 1.0,
 
+	drawDraggedDrawers: true,
+
 	unionBoundsSet: false,
 	allBounds:      make([]glitch.Rect, 0),
 	debug:          false,
@@ -200,6 +203,10 @@ func SetHudScale(scale float64) {
 
 func SetFontScale(scale float64) {
 	global.fontScale = scale
+}
+
+func DrawDraggedObjects(val bool) {
+	global.drawDraggedDrawers = val
 }
 
 func SetDragItemLayer(layer int8) {
@@ -299,6 +306,7 @@ func Contains(point glitch.Vec2) bool {
 
 // Returns true if the mouse is captured by a group
 func MouseCaptured() bool {
+	// TODO: Would this be better if I just check the hot/active eid's and see if they are set? if they are set then clearly we are interacting or hovering something?
 	return global.mouseCaught
 }
 

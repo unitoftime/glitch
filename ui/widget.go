@@ -313,38 +313,49 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 		if mask.Get(wmHoverable) {
 			resp.hoverable(id, rect)
 		}
+	} else {
+		// Because we are draging we want to mark the mouse as captured
+		global.mouseCaught = true
 	}
 
-	// -- Drawing Panels ---
 	if resp.Dragging {
-		rect = rect.WithCenter(global.mousePos)
-		lastLayer := global.sorter.Layer()
-		global.sorter.SetLayer(global.dragItemLayer)
-		defer global.sorter.SetLayer(lastLayer)
-	}
+		if global.drawDraggedDrawers {
+			rect = rect.WithCenter(global.mousePos)
+			lastLayer := global.sorter.Layer()
+			global.sorter.SetLayer(global.dragItemLayer)
+			defer global.sorter.SetLayer(lastLayer)
 
-	if mask.Get(wmDrawPanel) {
-		if global.activeId == id {
-			if resp.Dragging {
+			// -- Drawing Panels ---
+			if mask.Get(wmDrawPanel) {
+				// TODO: Do I need to differentiate for dragged item? Or just use pressed style
+				// drawSprite(rect, style.Pressed)
 				drawSprite(rect, style.Normal.Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5}))
-			} else {
-				drawSprite(rect, style.Pressed)
 			}
 
-			// TODO: Do I need to differentiate for dragged item? Or just use pressed style
-			// drawSprite(rect, style.Pressed)
-		} else if global.downId == id {
-			drawSprite(rect, style.Pressed) // Note: This is for wmDragItem
-		} else if global.hotId == id {
-			drawSprite(rect, style.Hovered)
-		} else {
-			drawSprite(rect, style.Normal)
+			// -- Drawing Text ---
+			if mask.Get(wmDrawText) {
+				resp.textRect = drawText(text, rect, style.Text)
+			}
 		}
-	}
+	} else {
 
-	// -- Drawing Text ---
-	if mask.Get(wmDrawText) {
-		resp.textRect = drawText(text, rect, style.Text)
+		// -- Drawing Panels ---
+		if mask.Get(wmDrawPanel) {
+			if global.activeId == id {
+				drawSprite(rect, style.Pressed)
+			} else if global.downId == id {
+				drawSprite(rect, style.Pressed) // Note: This is for wmDragItem
+			} else if global.hotId == id {
+				drawSprite(rect, style.Hovered)
+			} else {
+				drawSprite(rect, style.Normal)
+			}
+		}
+
+		// -- Drawing Text ---
+		if mask.Get(wmDrawText) {
+			resp.textRect = drawText(text, rect, style.Text)
+		}
 	}
 
 	return resp
