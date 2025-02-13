@@ -666,6 +666,21 @@ func DragSlot(label string, rect glitch.Rect, style Style) bool {
 	return (resp.droppedId != invalidId)
 }
 
+// Clicked, Dropped
+func DragSlotClickable(label string, rect glitch.Rect, style Style) (bool, bool) {
+	// style := gStyle.dragSlotStyle
+	mask := wmHoverable | wmDrawPanel | wmDropSlot | wmClickable
+
+	id := getId(label)
+	text := removeDedup(label)
+
+	resp := doWidget(id, text, mask, style, rect)
+
+	clicked := resp.Released
+	dropped := (resp.droppedId != invalidId)
+	return clicked, dropped
+}
+
 func Scrollzone(idx *int, total int, hoverRect glitch.Rect) {
 	val := float64(*idx)
 	scrollZone(&val, 0, float64(total), 1, hoverRect)
