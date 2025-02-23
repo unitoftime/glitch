@@ -92,6 +92,8 @@ type Atlas struct {
 	defaultKerning float64
 
 	defaultMaterial Material
+
+	tmpMeasurementText *Text
 }
 
 func fixedToFloat(val fixed.Int26_6) float64 {
@@ -412,12 +414,23 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 
 // TODO: This could be improved by just calling specialized measurement functions
 func (a *Atlas) Measure(str string, scale float64) Rect {
-	fakeText := Text{
-		currentString: str,
-		atlas:         a,
-		scale:         scale,
+	if a.tmpMeasurementText == nil {
+		a.tmpMeasurementText = a.Text("", scale)
 	}
-	return fakeText.AppendStringVerts(str, true)
+
+	a.tmpMeasurementText.Clear()
+
+	a.tmpMeasurementText.currentString = str
+	a.tmpMeasurementText.scale = scale
+	return a.tmpMeasurementText.AppendStringVerts(str, true)
+
+
+	// fakeText := Text{
+	// 	currentString: str,
+	// 	atlas:         a,
+	// 	scale:         scale,
+	// }
+	// return fakeText.AppendStringVerts(str, true)
 }
 func (a *Atlas) MeasureWrapped(str string, scale float64, wrapRect Rect) Rect {
 	fakeText := Text{
