@@ -70,7 +70,6 @@ func toRgba(img image.Image) *image.RGBA {
 }
 
 func NewEmptyTexture(width, height int, smooth bool) *Texture {
-	// We can only use RGBA images right now.
 	t := &Texture{
 		width:  width,
 		height: height,

@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	"image"
 	"runtime"
 
 	"github.com/unitoftime/flow/glm"
@@ -11,7 +10,6 @@ import (
 
 type Frame struct {
 	fbo gl.Framebuffer
-	// *Batcher
 	tex      *Texture
 	depth    gl.Texture
 	mesh     *Mesh
@@ -23,24 +21,16 @@ type Frame struct {
 func NewFrame(bounds Rect, smooth bool) *Frame {
 	var frame = &Frame{
 		bounds: bounds,
-		// Batcher: NewBatcher(),
 	}
-	// frame.Batcher.target = frame
 
 	// Create texture
-	// TODO - Note: I'm passing actual data to the texture object, rather than null. That might be suboptimal. This fills the GPU memory, whereas if I pass null I can just allocate it.
-	img := image.NewRGBA(image.Rect(int(bounds.Min.X), int(bounds.Min.Y), int(bounds.Max.X), int(bounds.Max.Y)))
-	frame.tex = NewTexture(img, smooth)
-	// frame.tex = NewEmptyTexture(int(bounds.W()), int(bounds.H()), smooth)
+	frame.tex = NewEmptyTexture(int(bounds.W()), int(bounds.H()), smooth)
 
 	// Create mesh (in case we want to draw the fbo to another target)
-	// frame.mesh = NewQuadMesh(R(-1, -1, 1, 1), R(0, 1, 1, 0))
 	frame.mesh = NewQuadMesh(bounds, glm.R(0, 1, 1, 0))
-	// frame.material = NewSpriteMaterial(frame.tex)
 	frame.material = NewMaterial(GetDefaultSpriteShader())
 	frame.material.texture = frame.tex
 
-	// frame.tex.Bind(0)///??????
 	mainthread.Call(func() {
 		frame.fbo = gl.CreateFramebuffer()
 		gl.BindFramebuffer(gl.FRAMEBUFFER, frame.fbo)
