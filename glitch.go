@@ -311,7 +311,7 @@ func setShader(shader *Shader) {
 }
 
 func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
-	if filler == nil {
+	if filler.empty() {
 		return
 	} // Skip nil meshes
 

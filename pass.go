@@ -12,14 +12,58 @@ import "github.com/unitoftime/flow/glm"
 // 2. Things that are changed infrequently: SetBlah()
 // 3. Things that change frequently: include in draw command
 
-// TODO: I kindof want to implement one or the other
-type GeometryFiller interface {
-	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
+// // TODO: I kindof want to implement one or the other
+// type GeometryFiller interface {
+// 	GetBuffer() *VertexBuffer // Returns a prebuild VertexBuffer
 
+// 	// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
+// 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
+// 	Fill(*BufferPool, glMat4, RGBA) *VertexBuffer
+// 	Bounds() glm.Box
+// }
+
+type ProgrammaticGeom interface {
 	// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
 	Fill(*BufferPool, glMat4, RGBA) *VertexBuffer
 	Bounds() glm.Box
+}
+
+type GeometryFiller struct {
+	mesh *Mesh
+	prog ProgrammaticGeom
+}
+
+// returns true if the filler is blank for some reason
+func (g GeometryFiller) empty() bool {
+	return g.mesh == nil && g.prog == nil
+}
+
+// Returns a prebuild VertexBuffer, or nil if does not exist
+func (g GeometryFiller) GetBuffer() *VertexBuffer {
+	if g.mesh == nil { return nil }
+
+	return g.mesh.GetBuffer()
+}
+
+// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
+// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
+func (g GeometryFiller) Fill(pool *BufferPool, mat glMat4, col RGBA) *VertexBuffer {
+	if g.mesh != nil {
+		return g.mesh.Fill(pool, mat, col)
+	}
+
+	if g.prog == nil {
+		return nil
+	}
+	return g.prog.Fill(pool, mat, col)
+}
+
+func (g GeometryFiller) Bounds() glm.Box {
+	if g.mesh != nil {
+		return g.mesh.Bounds()
+	}
+	return g.prog.Bounds()
 }
 
 type BatchTarget interface {

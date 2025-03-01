@@ -63,7 +63,7 @@ func (f *Frame) Draw(target BatchTarget, matrix Mat4) {
 }
 func (f *Frame) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	target.Add(f.mesh, glm4(matrix), mask, f.material, false)
+	target.Add(f.mesh.g(), glm4(matrix), mask, f.material, false)
 }
 
 func (f *Frame) RectDraw(target BatchTarget, bounds Rect) {

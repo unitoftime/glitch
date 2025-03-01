@@ -37,6 +37,12 @@ func (m *Mesh) Buffer(shader *Shader, translucent bool) *Mesh {
 	}
 }
 
+func (m *Mesh) g() GeometryFiller {
+	return GeometryFiller{
+		mesh: m,
+	}
+}
+
 // TODO - clear function? Should append be more like draw?
 func (m *Mesh) Clear() {
 	m.positions = m.positions[:0]
@@ -57,7 +63,7 @@ func (m *Mesh) Draw(target BatchTarget, matrix Mat4) {
 
 // TODO - This should accept image/color and call RGBA(). Would that be slower?
 func (m *Mesh) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(m, glm4(matrix), mask, DefaultMaterial(WhiteTexture()), false)
+	target.Add(m.g(), glm4(matrix), mask, DefaultMaterial(WhiteTexture()), false)
 }
 
 func (m *Mesh) Bounds() Box {

@@ -202,25 +202,27 @@ func (b *DrawBatch) Bounds() Box {
 // For batching multiple meshes into one mesh
 type Batch struct {
 	mesh        *Mesh
-	material    *Material
+	material    Material
+	materialSet bool
 	Translucent bool
 }
 
 func NewBatch() *Batch {
 	return &Batch{
 		mesh:     NewMesh(),
-		material: nil,
+		materialSet: false,
 	}
 }
 
 func (b *Batch) Buffer() *Batch {
-	if b.material == nil {
+	if !b.materialSet {
 		return NewBatch() // Nothing was ever set, just return a new blank batch
 	}
 
 	shader := b.material.shader
 	return &Batch{
 		mesh:        b.mesh.Buffer(shader, b.Translucent),
+		materialSet: true,
 		material:    b.material,
 		Translucent: b.Translucent,
 	}
@@ -230,12 +232,14 @@ func (b *Batch) Buffer() *Batch {
 // TODO: should I maintain a translucent and non-translucent batch mesh?
 // TODO: Fix the interface here to only allow meshes to be drawn to batches
 func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
-	mesh := filler.(*Mesh) // TODO: Hack
+	// mesh := filler.(*Mesh) // TODO: Hack
+	mesh := filler.mesh // TODO: Is this safe? Assumes everything added has a mesh
 
-	if b.material == nil {
-		b.material = &material
+	if !b.materialSet {
+		b.materialSet = true
+		b.material = material
 	} else {
-		if *b.material != material {
+		if b.material != material {
 			fmt.Printf("setmaterial (old -> new):\n%+v\n%+v\n", b.material, material)
 			panic("Materials must match inside a batch!")
 		}
@@ -406,27 +410,28 @@ func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Ma
 
 func (b *Batch) Clear() {
 	b.mesh.Clear()
-	b.material = nil
+	b.materialSet = false
+	b.material = Material{}
 	b.Translucent = false
 }
 
 func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
-	if b.material == nil {
+	if !b.materialSet {
 		return
 	}
-	target.Add(b.mesh, glm4(matrix), RGBA{1.0, 1.0, 1.0, 1.0}, *b.material, b.Translucent)
+	target.Add(b.mesh.g(), glm4(matrix), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
 }
 
 func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
-	if b.material == nil {
+	if !b.materialSet {
 		return
 	}
-	target.Add(b.mesh, glm4(matrix), color, *b.material, b.Translucent)
+	target.Add(b.mesh.g(), glm4(matrix), color, b.material, b.Translucent)
 }
 
 func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
-	if b.material == nil {
+	if !b.materialSet {
 		return
 	}
 	b.RectDrawColorMask(target, bounds, RGBA{1, 1, 1, 1})
@@ -434,7 +439,7 @@ func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
 
 // TODO: Generalize this rectdraw logic. Copy paseted from Sprite
 func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
-	if b.material == nil {
+	if !b.materialSet {
 		return
 	}
 	// pass.SetTexture(0, s.texture)
@@ -443,7 +448,7 @@ func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
-	target.Add(b.mesh, glm4(matrix), mask, *b.material, false)
+	target.Add(b.mesh.g(), glm4(matrix), mask, b.material, false)
 }
 
 func (b *Batch) Bounds() Box {

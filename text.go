@@ -549,7 +549,7 @@ func (t *Text) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	// mat2.Translate(0, -0.5, 0)
 	// target.Add(t.mesh, mat2, Black, t.material, false)
 
-	target.Add(t.mesh, glm4(matrix), color, t.material, true)
+	target.Add(t.mesh.g(), glm4(matrix), color, t.material, true)
 }
 
 func (t *Text) RectDraw(target BatchTarget, rect Rect) {
@@ -560,7 +560,7 @@ func (t *Text) DrawRect(target BatchTarget, rect Rect, color RGBA) {
 	mat := Mat4Ident
 
 	mat.Scale(1.0, 1.0, 1.0).Translate(rect.Min.X, rect.Min.Y, 0)
-	target.Add(t.mesh, glm4(mat), color, t.material, true)
+	target.Add(t.mesh.g(), glm4(mat), color, t.material, true)
 }
 
 func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
@@ -572,7 +572,7 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	// TODO!!! - There's something wrong with this
 	mat.Scale(bounds.W()/t.bounds.W(), bounds.H()/t.bounds.H(), 1).Translate(bounds.Min.X, bounds.Min.Y, 0)
 
-	target.Add(t.mesh, glm4(mat), mask, t.material, true)
+	target.Add(t.mesh.g(), glm4(mat), mask, t.material, true)
 }
 
 // If measure is set true, dont add them to the text mesh, just measure the bounds of the string

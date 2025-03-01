@@ -59,7 +59,7 @@ func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
 	s.DrawColorMask(target, matrix, White)
 }
 func (s *Sprite) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(s.mesh, glm4(matrix), mask, s.material, s.Translucent)
+	target.Add(s.mesh.g(), glm4(matrix), mask, s.material, s.Translucent)
 }
 
 func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
