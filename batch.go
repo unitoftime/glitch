@@ -1,6 +1,10 @@
 package glitch
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/unitoftime/flow/ds"
+)
 
 type meshDraw struct {
 	filler      GeometryFiller
@@ -12,15 +16,15 @@ type meshDraw struct {
 
 // For batching multiple sprites into one
 type DrawBatch struct {
-	draws []meshDraw
-
+	// draws []meshDraw
+	draws ds.MiniSlice[[2]meshDraw, meshDraw]
 	boundsSet bool
 	bounds    Box
 }
 
-func NewDrawBatch() *DrawBatch {
-	return &DrawBatch{
-		draws: make([]meshDraw, 0),
+func NewDrawBatch() DrawBatch {
+	return DrawBatch{
+		// draws: make([]meshDraw, 0),
 	}
 }
 
@@ -33,7 +37,8 @@ func NewDrawBatch() *DrawBatch {
 // }
 
 func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
-	b.draws = append(b.draws, meshDraw{
+	// b.draws = append(b.draws, meshDraw{
+	b.draws.Append(meshDraw{
 		filler:      filler,
 		matrix:      matrix,
 		mask:        mask,
@@ -55,29 +60,44 @@ func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, materia
 }
 
 func (b *DrawBatch) Clear() {
-	b.draws = b.draws[:0]
+	// b.draws = b.draws[:0]
+	b.draws.Clear()
 	b.boundsSet = false
 	b.bounds = Box{}
 }
 
 func (b *DrawBatch) Draw(target BatchTarget, matrix Mat4) {
-	for i := range b.draws {
+	// for i := range b.draws {
+	// 	mat := glm4(matrix)
+	// 	mat.Mul(&b.draws[i].matrix)
+	// 	target.Add(b.draws[i].filler, mat, b.draws[i].mask, b.draws[i].material, b.draws[i].translucent)
+	// }
+
+	for _, draw := range b.draws.All() {
 		mat := glm4(matrix)
-		mat.Mul(&b.draws[i].matrix)
-		target.Add(b.draws[i].filler, mat, b.draws[i].mask, b.draws[i].material, b.draws[i].translucent)
+		mat.Mul(&draw.matrix)
+		target.Add(draw.filler, mat, draw.mask, draw.material, draw.translucent)
 	}
 	// target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
 }
 
 func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
-	for i := range b.draws {
-		mat := glm4(matrix)
-		mat.Mul(&b.draws[i].matrix)
+	// for i := range b.draws {
+	// 	mat := glm4(matrix)
+	// 	mat.Mul(&b.draws[i].matrix)
 
-		mask := b.draws[i].mask.Mult(color)
-		target.Add(b.draws[i].filler, mat, mask, b.draws[i].material, b.draws[i].translucent)
+	// 	mask := b.draws[i].mask.Mult(color)
+	// 	target.Add(b.draws[i].filler, mat, mask, b.draws[i].material, b.draws[i].translucent)
+	// }
+	for _, draw := range b.draws.All() {
+		mat := glm4(matrix)
+		mat.Mul(&draw.matrix)
+
+		mask := draw.mask.Mult(color)
+		target.Add(draw.filler, mat, mask, draw.material, draw.translucent)
 	}
+
 
 	// target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
 	// for i := range b.draws {
