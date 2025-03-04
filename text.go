@@ -424,7 +424,6 @@ func (a *Atlas) Measure(str string, scale float64) Rect {
 	a.tmpMeasurementText.scale = scale
 	return a.tmpMeasurementText.AppendStringVerts(str, true)
 
-
 	// fakeText := Text{
 	// 	currentString: str,
 	// 	atlas:         a,

@@ -95,7 +95,6 @@ func (w *Window) getGamepadState(g Gamepad) *glfw.GamepadState {
 		return nil
 	}
 
-
 	mainthread.Call(func() {
 		ptr := w.cachedGamepadStates[g]
 		if ptr == nil {

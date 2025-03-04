@@ -9,7 +9,7 @@ import (
 )
 
 type Frame struct {
-	fbo gl.Framebuffer
+	fbo      gl.Framebuffer
 	tex      *Texture
 	depth    gl.Texture
 	mesh     *Mesh

@@ -474,6 +474,20 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 		}
 	}
 
+	// TODO: Could use copy funcs if you want to restrict buffer types
+	// for bufIdx, attr := range pass.shader.attrFmt {
+	// 	switch attr.Swizzle {
+	// 	case PositionXYZ:
+	// 		buffer.buffers[bufIdx].SetData(mesh.positions)
+	// 	case ColorRGBA:
+	// 		buffer.buffers[bufIdx].SetData(mesh.colors)
+	// 	case TexCoordXY:
+	// 		buffer.buffers[bufIdx].SetData(mesh.texCoords)
+	// 	default:
+	// 		panic("unsupported")
+	// 	}
+	// }
+
 	//================================================================================
 	// TODO The hardcoding is a bit slower. Keeping it around in case I want to do some performance analysis
 	// Notes: Ran gophermark with 1000000 gophers.

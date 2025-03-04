@@ -17,7 +17,7 @@ type meshDraw struct {
 // For batching multiple sprites into one
 type DrawBatch struct {
 	// draws []meshDraw
-	draws ds.MiniSlice[[2]meshDraw, meshDraw]
+	draws     ds.MiniSlice[[2]meshDraw, meshDraw]
 	boundsSet bool
 	bounds    Box
 }
@@ -97,7 +97,6 @@ func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 		mask := draw.mask.Mult(color)
 		target.Add(draw.filler, mat, mask, draw.material, draw.translucent)
 	}
-
 
 	// target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
 	// for i := range b.draws {
@@ -229,7 +228,7 @@ type Batch struct {
 
 func NewBatch() *Batch {
 	return &Batch{
-		mesh:     NewMesh(),
+		mesh:        NewMesh(),
 		materialSet: false,
 	}
 }

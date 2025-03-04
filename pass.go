@@ -41,7 +41,9 @@ func (g GeometryFiller) empty() bool {
 
 // Returns a prebuild VertexBuffer, or nil if does not exist
 func (g GeometryFiller) GetBuffer() *VertexBuffer {
-	if g.mesh == nil { return nil }
+	if g.mesh == nil {
+		return nil
+	}
 
 	return g.mesh.GetBuffer()
 }

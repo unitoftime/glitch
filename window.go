@@ -79,7 +79,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		scrollCallbacks:      make([]glfw.ScrollCallback, 0),
 		keyCallbacks:         make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
-		cachedGamepadStates: make(map[Gamepad]*glfw.GamepadState),
+		cachedGamepadStates:  make(map[Gamepad]*glfw.GamepadState),
 
 		repeatTracker: []repeatData{
 			{key: MouseButtonLeft},

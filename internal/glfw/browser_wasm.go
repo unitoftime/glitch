@@ -789,7 +789,9 @@ func (w *Window) SetShouldClose(value bool) {
 }
 
 const rafFallbackTime = 100 * time.Millisecond
+
 var rafFallbackTimer = time.NewTimer(rafFallbackTime)
+
 func (w *Window) SwapBuffers() error {
 	// How this works (because its kind of complicated):
 	// 1. RAF is invoked once, and once the raf is consumed (by reading from aimationFrameChan), the w.rafOnce object is reset so it can be invoked again
@@ -1472,6 +1474,7 @@ var standardButtonMapping = []GamepadButton{
 
 // If you need a relatively accurate, cached version
 var gamepadCache js.Value
+
 func updateGamepadCache() {
 	gamepadCache = getGamepads()
 }

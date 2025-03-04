@@ -149,7 +149,7 @@ type uiGlobals struct {
 	currentGraphBufferIndex int
 
 	drawDraggedDrawers bool // Indicates that we should internally draw dragged objects on the mouse
-	dragItemLayer int8
+	dragItemLayer      int8
 
 	// lastRect glitch.Rect
 

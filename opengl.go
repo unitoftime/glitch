@@ -16,7 +16,6 @@ const sof int = 4 // SizeOf(Float)
 // TODO - rename
 type ISubBuffer interface {
 	Clear()
-	// VertexCount() uint32
 	Buffer() []byte
 	Offset() int
 	Len() int
@@ -102,16 +101,20 @@ func (b *SubBuffer[T]) Reserve(count int) []T {
 	return b.buffer[start:end]
 }
 
+type bufferData struct {
+	format   shaders.VertexFormat
+	stride   int
+	numVerts int // The maximum number of verts we can buffer
+
+	buffers []ISubBuffer
+	indices []uint32
+}
+
 type VertexBuffer struct {
 	vao, vbo, ebo gl.Buffer
 
-	// materialSet bool
-	// state BufferState
-	format shaders.VertexFormat
-	stride int
+	data bufferData
 
-	buffers            []ISubBuffer
-	indices            []uint32
 	numVerts           uint32 // The number of vertices we currently have buffered
 	numIndicesToDraw   int    // The number of indices we are currently drawing
 	bufferedToGPU      bool   // Tracks whether the data has been written to the GPU
@@ -119,12 +122,13 @@ type VertexBuffer struct {
 	deleted            bool   // If true, we've already deleted this
 }
 
-func NewVertexBuffer(shader *Shader, numVerts, numIndices int) *VertexBuffer {
-	format := shader.attrFmt // TODO - cleanup this variable
-	b := &VertexBuffer{
-		format:  format,
-		buffers: make([]ISubBuffer, len(format)),
-		indices: make([]uint32, numIndices),
+func NewSubBuffers(shader *Shader, numVerts, numIndices int) bufferData {
+	format := shader.attrFmt
+	b := bufferData{
+		format:   format,
+		numVerts: numVerts,
+		buffers:  make([]ISubBuffer, len(format)),
+		indices:  make([]uint32, numIndices),
 	}
 
 	b.stride = 0
@@ -175,6 +179,14 @@ func NewVertexBuffer(shader *Shader, numVerts, numIndices int) *VertexBuffer {
 		offset += sof * int(format[i].Size()) * numVerts
 	}
 
+	return b
+}
+
+func NewVertexBuffer2(shader *Shader, data bufferData) *VertexBuffer {
+	b := &VertexBuffer{
+		data: data,
+	}
+
 	mainthread.Call(func() {
 		b.vao = gl.GenVertexArrays()
 		b.vbo = gl.GenBuffers()
@@ -183,14 +195,14 @@ func NewVertexBuffer(shader *Shader, numVerts, numIndices int) *VertexBuffer {
 		gl.BindVertexArray(b.vao)
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, sof*numVerts*b.stride, nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, sof*data.numVerts*data.stride, nil, gl.DYNAMIC_DRAW)
 
 		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize*len(b.indices), nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize*len(b.data.indices), nil, gl.DYNAMIC_DRAW)
 
-		for i := range b.buffers {
-			switch subBuffer := b.buffers[i].(type) {
+		for i := range b.data.buffers {
+			switch subBuffer := b.data.buffers[i].(type) {
 			case *SubBuffer[float32]:
 				loc := gl.GetAttribLocation(shader.program, subBuffer.attr.Name)
 				size := int(subBuffer.attr.Size())
@@ -225,6 +237,11 @@ func NewVertexBuffer(shader *Shader, numVerts, numIndices int) *VertexBuffer {
 	return b
 }
 
+func NewVertexBuffer(shader *Shader, numVerts, numIndices int) *VertexBuffer {
+	data := NewSubBuffers(shader, numVerts, numIndices)
+	return NewVertexBuffer2(shader, data)
+}
+
 func (v *VertexBuffer) delete() {
 	if v.deleted {
 		return
@@ -238,18 +255,14 @@ func (v *VertexBuffer) delete() {
 }
 
 func (v *VertexBuffer) deallocCPUBuffers() {
-	v.indices = nil
-	for i := range v.buffers {
-		v.buffers[i] = nil
-	}
-	v.buffers = nil
+	v.data = bufferData{}
 }
 
 func (v *VertexBuffer) Clear() {
-	for i := range v.buffers {
-		v.buffers[i].Clear()
+	for i := range v.data.buffers {
+		v.data.buffers[i].Clear()
 	}
-	v.indices = v.indices[:0]
+	v.data.indices = v.data.indices[:0]
 	v.numIndicesToDraw = 0
 	v.numVerts = 0
 	// v.materialSet = false
@@ -262,11 +275,11 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	// 	// fmt.Println("VertexBuffer.Reserve - Material Doesn't match")
 	// 	return false
 	// }
-	if len(v.indices)+len(indices) > cap(v.indices) {
+	if len(v.data.indices)+len(indices) > cap(v.data.indices) {
 		// fmt.Println("VertexBuffer.Reserve - Not enough index capacity")
 		return false
 	}
-	if v.buffers[0].Len()+numVerts > v.buffers[0].Cap() {
+	if v.data.buffers[0].Len()+numVerts > v.data.buffers[0].Cap() {
 		// fmt.Println("VertexBuffer.Reserve - Not enough vertex capacity")
 		return false
 	}
@@ -279,13 +292,13 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	// currentElement := v.buffers[0].VertexCount()
 	currentElement := v.numVerts
 	for i := range indices {
-		v.indices = append(v.indices, currentElement+indices[i])
+		v.data.indices = append(v.data.indices, currentElement+indices[i])
 	}
 	v.numVerts += uint32(numVerts)
-	v.numIndicesToDraw = len(v.indices)
+	v.numIndicesToDraw = len(v.data.indices)
 
-	for i := range v.buffers {
-		switch subBuffer := v.buffers[i].(type) {
+	for i := range v.data.buffers {
+		switch subBuffer := v.data.buffers[i].(type) {
 		case *SubBuffer[float32]:
 			d := dests[i].(*[]float32)
 			*d = subBuffer.Reserve(numVerts)
@@ -305,28 +318,33 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	return true
 }
 
+// Buffers the entire vertex buffer
+// This function returns with the Element array buffer bound, so it is ready to be drawn
+func (v *VertexBuffer) mainthreadBufferData() {
+	gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
+	offset := 0
+	var buf []byte
+	for i := range v.data.buffers {
+		buf = v.data.buffers[i].Buffer()
+		gl.BufferSubDataByte(gl.ARRAY_BUFFER, offset, buf)
+		offset += v.data.buffers[i].Offset()
+	}
+
+	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+	gl.BufferSubDataUint32(gl.ELEMENT_ARRAY_BUFFER, 0, v.data.indices)
+
+	if v.deallocAfterBuffer {
+		v.deallocCPUBuffers()
+	}
+	v.bufferedToGPU = true
+}
+
 func (v *VertexBuffer) mainthreadDraw() {
 	gl.BindVertexArray(v.vao)
 
 	if !v.bufferedToGPU {
-		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
-		offset := 0
-		var buf []byte
-		for i := range v.buffers {
-			buf = v.buffers[i].Buffer()
-			gl.BufferSubDataByte(gl.ARRAY_BUFFER, offset, buf)
-			offset += v.buffers[i].Offset()
-		}
-
-		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-		gl.BufferSubDataUint32(gl.ELEMENT_ARRAY_BUFFER, 0, v.indices)
-
+		v.mainthreadBufferData()
 		gl.DrawElements(gl.TRIANGLES, v.numIndicesToDraw, gl.UNSIGNED_INT, 0)
-
-		if v.deallocAfterBuffer {
-			v.deallocCPUBuffers()
-		}
-		v.bufferedToGPU = true
 	} else {
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
 		gl.DrawElements(gl.TRIANGLES, v.numIndicesToDraw, gl.UNSIGNED_INT, 0)
