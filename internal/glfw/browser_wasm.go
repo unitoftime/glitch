@@ -324,8 +324,9 @@ func SetupEventListeners(w *Window) {
 			go w.mouseButtonCallback(w, MouseButton(button), Press, 0)
 		}
 
-		// Note: I commented out the preventDefault here, because if you are running your game inside an iframe, when the user clicks the canvas, I guess this preventDefault will cause the focus to never get set on the canvas. And that will cause keyboard events to not register properly. You might rethink how this works in the future though.
-		// me.Call("preventDefault")
+		// Note: You used to have this commented out to fix iframes for itchio, but decided to rever because you think it broke shift-rightclick/shift-click on a user's mac/firefox
+		// // Note: I commented out the preventDefault here, because if you are running your game inside an iframe, when the user clicks the canvas, I guess this preventDefault will cause the focus to never get set on the canvas. And that will cause keyboard events to not register properly. You might rethink how this works in the future though.
+		me.Call("preventDefault")
 
 		return nil
 	}))
