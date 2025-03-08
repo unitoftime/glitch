@@ -308,7 +308,7 @@ func (u *uniformSetterMat4) Func() {
 //--------------------------------------------------------------------------------
 
 // TODO: This would be much better if VertexBuffer was more of just a pointer to all of the GPU objects, and the cached data was maintained separately
-func (shader *Shader) BufferMesh(mesh *Mesh, translucent bool) *VertexBuffer {
+func (shader *Shader) BufferMesh(mesh *Mesh) *VertexBuffer {
 	// bufferState := BufferState{material, BlendModeNormal} // TODO: Blendmode used to come from renderpass
 
 	if len(mesh.indices)%3 != 0 {

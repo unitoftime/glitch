@@ -6,7 +6,8 @@ import "github.com/unitoftime/glitch/internal/gl"
 type BlendMode uint8
 
 const (
-	BlendModeNormal BlendMode = iota
+	BlendModeNone BlendMode = iota
+	BlendModeNormal
 	BlendModeMultiply
 )
 

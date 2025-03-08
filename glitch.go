@@ -78,7 +78,7 @@ type Material struct {
 func NewMaterial(shader *Shader) Material {
 	return Material{
 		shader:   shader,
-		blend:    BlendModeNormal,
+		blend:    BlendModeNone,
 		uniforms: nil,
 	}
 }
@@ -310,7 +310,7 @@ func setShader(shader *Shader) {
 	global.metric.setShader++
 }
 
-func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material) {
 	if filler.empty() {
 		return
 	} // Skip nil meshes

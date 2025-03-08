@@ -80,6 +80,7 @@ func GetDefaultMsdfShader() *Shader {
 
 func DefaultMsdfMaterial(texture *Texture) Material {
 	material := NewMaterial(GetDefaultMsdfShader())
+	material.SetBlendMode(BlendModeNormal)
 	material.texture = texture
 	material.
 		SetUniform("u_threshold", 0.5).

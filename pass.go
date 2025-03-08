@@ -69,7 +69,7 @@ func (g GeometryFiller) Bounds() glm.Box {
 }
 
 type BatchTarget interface {
-	Add(GeometryFiller, glMat4, RGBA, Material, bool)
+	Add(GeometryFiller, glMat4, RGBA, Material)
 	// Add(*Mesh, glMat4, RGBA, Material, bool)
 	// SetShader(*Shader)
 }

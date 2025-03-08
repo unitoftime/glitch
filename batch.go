@@ -11,7 +11,6 @@ type meshDraw struct {
 	matrix      glMat4
 	mask        RGBA
 	material    Material
-	translucent bool
 }
 
 // For batching multiple sprites into one
@@ -36,14 +35,13 @@ func NewDrawBatch() DrawBatch {
 // 	}
 // }
 
-func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
+func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material) {
 	// b.draws = append(b.draws, meshDraw{
 	b.draws.Append(meshDraw{
 		filler:      filler,
 		matrix:      matrix,
 		mask:        mask,
 		material:    material,
-		translucent: translucent,
 	})
 
 	newBounds := filler.Bounds().Apply(matrix.Mat4())
@@ -76,7 +74,7 @@ func (b *DrawBatch) Draw(target BatchTarget, matrix Mat4) {
 	for _, draw := range b.draws.All() {
 		mat := glm4(matrix)
 		mat.Mul(&draw.matrix)
-		target.Add(draw.filler, mat, draw.mask, draw.material, draw.translucent)
+		target.Add(draw.filler, mat, draw.mask, draw.material)
 	}
 	// target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
 	// b.DrawColorMask(target, matrix, White)
@@ -95,7 +93,7 @@ func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 		mat.Mul(&draw.matrix)
 
 		mask := draw.mask.Mult(color)
-		target.Add(draw.filler, mat, mask, draw.material, draw.translucent)
+		target.Add(draw.filler, mat, mask, draw.material)
 	}
 
 	// target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
@@ -223,7 +221,6 @@ type Batch struct {
 	mesh        *Mesh
 	material    Material
 	materialSet bool
-	Translucent bool
 }
 
 func NewBatch() *Batch {
@@ -240,17 +237,16 @@ func (b *Batch) Buffer() *Batch {
 
 	shader := b.material.shader
 	return &Batch{
-		mesh:        b.mesh.Buffer(shader, b.Translucent),
+		mesh:        b.mesh.Buffer(shader),
 		materialSet: true,
 		material:    b.material,
-		Translucent: b.Translucent,
 	}
 }
 
 // TODO - It may be faster to copy all the bufs to the destination and then operate on them there. that might save you a copy
 // TODO: should I maintain a translucent and non-translucent batch mesh?
 // TODO: Fix the interface here to only allow meshes to be drawn to batches
-func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material, translucent bool) {
+func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material) {
 	// mesh := filler.(*Mesh) // TODO: Hack
 	mesh := filler.mesh // TODO: Is this safe? Assumes everything added has a mesh
 
@@ -263,9 +259,6 @@ func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Ma
 			panic("Materials must match inside a batch!")
 		}
 	}
-
-	// If anything translucent is added to the batch, then we will consider the entire thing translucent
-	b.Translucent = b.Translucent || translucent
 
 	// mat := matrix.gl()
 
@@ -431,14 +424,13 @@ func (b *Batch) Clear() {
 	b.mesh.Clear()
 	b.materialSet = false
 	b.material = Material{}
-	b.Translucent = false
 }
 
 func (b *Batch) Draw(target BatchTarget, matrix Mat4) {
 	if !b.materialSet {
 		return
 	}
-	target.Add(b.mesh.g(), glm4(matrix), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
+	target.Add(b.mesh.g(), glm4(matrix), RGBA{1.0, 1.0, 1.0, 1.0}, b.material)
 	// b.DrawColorMask(target, matrix, White)
 }
 
@@ -446,7 +438,7 @@ func (b *Batch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 	if !b.materialSet {
 		return
 	}
-	target.Add(b.mesh.g(), glm4(matrix), color, b.material, b.Translucent)
+	target.Add(b.mesh.g(), glm4(matrix), color, b.material)
 }
 
 func (b *Batch) RectDraw(target BatchTarget, bounds Rect) {
@@ -467,7 +459,7 @@ func (b *Batch) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	batchBounds := b.Bounds().Rect()
 	matrix := Mat4Ident
 	matrix.Scale(bounds.W()/batchBounds.W(), bounds.H()/batchBounds.H(), 1).Translate(bounds.W()/2+bounds.Min.X, bounds.H()/2+bounds.Min.Y, 0)
-	target.Add(b.mesh.g(), glm4(matrix), mask, b.material, false)
+	target.Add(b.mesh.g(), glm4(matrix), mask, b.material)
 }
 
 func (b *Batch) Bounds() Box {

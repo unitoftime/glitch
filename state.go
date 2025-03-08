@@ -61,6 +61,13 @@ func init() {
 	}
 
 	state.blendModeBinder = func() {
+		if state.blendMode == BlendModeNone {
+			gl.Disable(gl.BLEND)
+			return
+		}
+
+		gl.Enable(gl.BLEND) // TODO: This only needs to run if it was disabled previously
+
 		data := blendModeLut[state.blendMode]
 		gl.BlendFunc(data.src, data.dst)
 	}

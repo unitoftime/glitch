@@ -141,9 +141,9 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// gl.CullFace(gl.BACK)
 		// gl.FrontFace(gl.CCW) // Default
 
-		gl.Enable(gl.BLEND) // TODO: Will this ever need to be disabled?
-		// gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Non premult
-		gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA) // Premult
+		// gl.Enable(gl.BLEND) // TODO: Will this ever need to be disabled?
+		// // gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Non premult
+		// gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA) // Premult
 
 		if config.Vsync {
 			glfw.SwapInterval(1)
@@ -566,9 +566,9 @@ func (w *Window) EmbeddedIframe() bool {
 	return w.window.EmbeddedIframe()
 }
 
-func (w *Window) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+func (w *Window) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material) {
 	setTarget(w)
-	global.Add(filler, mat, mask, material, translucent)
+	global.Add(filler, mat, mask, material)
 }
 
 func (w *Window) GetConnectedGamepads() []Gamepad {

@@ -95,15 +95,25 @@ func (s *Sorter) Draw(target BatchTarget) {
 }
 
 func (s *Sorter) applyDrawCommand(target BatchTarget, c drawCommand) {
-	target.Add(c.filler, c.matrix, c.mask, c.material, true)
+	target.Add(c.filler, c.matrix, c.mask, c.material)
 }
 
-func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material) {
 	if mask.A == 0 {
 		return
 	} // discard b/c its completely transparent
 
+	// TODO: Slightly hacky but basically if the sprite expects to blend then we want to sort it as if it translucent
+	translucent := false
 	if mask.A != 1 {
+		translucent = true
+		if material.blend == BlendModeNone {
+			// TODO: Hacky, correct the blend mode if its translucent
+			material.SetBlendMode(BlendModeNormal)
+		}
+	}
+
+	if material.blend != BlendModeNone {
 		translucent = true
 	}
 

@@ -8,7 +8,6 @@ type Sprite struct {
 	frame       Rect // Represents the bounds inside the spritesheet
 	texture     *Texture
 	material    Material
-	Translucent bool
 	uvBounds    Rect
 }
 
@@ -59,7 +58,7 @@ func (s *Sprite) Draw(target BatchTarget, matrix Mat4) {
 	s.DrawColorMask(target, matrix, White)
 }
 func (s *Sprite) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
-	target.Add(s.mesh.g(), glm4(matrix), mask, s.material, s.Translucent)
+	target.Add(s.mesh.g(), glm4(matrix), mask, s.material)
 }
 
 func (s *Sprite) RectDraw(target BatchTarget, bounds Rect) {
@@ -217,7 +216,7 @@ func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSp
 
 func (s *NinePanelSprite) SetTranslucent(translucent bool) {
 	for i := range s.sprites {
-		s.sprites[i].Translucent = translucent
+		s.sprites[i].material.SetBlendMode(BlendModeNormal)
 	}
 }
 

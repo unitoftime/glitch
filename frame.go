@@ -63,7 +63,7 @@ func (f *Frame) Draw(target BatchTarget, matrix Mat4) {
 }
 func (f *Frame) DrawColorMask(target BatchTarget, matrix Mat4, mask RGBA) {
 	// pass.SetTexture(0, s.texture)
-	target.Add(f.mesh.g(), glm4(matrix), mask, f.material, false)
+	target.Add(f.mesh.g(), glm4(matrix), mask, f.material)
 }
 
 func (f *Frame) RectDraw(target BatchTarget, bounds Rect) {
@@ -93,7 +93,7 @@ func (f *Frame) Material() *Material {
 	return &f.material
 }
 
-func (f *Frame) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material, translucent bool) {
+func (f *Frame) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Material) {
 	setTarget(f)
-	global.Add(filler, mat, mask, material, translucent)
+	global.Add(filler, mat, mask, material)
 }
