@@ -123,6 +123,7 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 
 type uiGlobals struct {
 	mouseCaught bool
+	mouseCaughtLastFrame bool
 	hudScale    float64
 	fontScale   float64
 
@@ -251,6 +252,7 @@ func CursorPos() int {
 // Must be called every frame before any UI draws happen
 // TODO - This is hard to remember to do
 func Clear() {
+	global.mouseCaughtLastFrame = global.mouseCaught
 	global.mouseCaught = false
 
 	mX, mY := MousePosition()
@@ -307,7 +309,8 @@ func Contains(point glitch.Vec2) bool {
 // Returns true if the mouse is captured by a group
 func MouseCaptured() bool {
 	// TODO: Would this be better if I just check the hot/active eid's and see if they are set? if they are set then clearly we are interacting or hovering something?
-	return global.mouseCaught
+	// return global.mouseCaught
+	return global.mouseCaughtLastFrame
 }
 
 func (g *uiGlobals) trackHoverOnly(id eid, rect glitch.Rect) {
