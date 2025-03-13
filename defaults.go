@@ -47,8 +47,11 @@ func GetDefaultSpriteShader() *Shader {
 		return defaultSpriteShader
 	}
 
-	// Note: We snuff the error here. If the user wants they can pre-supply a defaultspriteshader so this one never loads
-	defaultSpriteShader, _ = NewShader(shaders.SpriteShader)
+	var err error
+	defaultSpriteShader, err = NewShader(shaders.SpriteShader)
+	if err != nil {
+		panic(err)
+	}
 	return defaultSpriteShader
 }
 
@@ -69,7 +72,6 @@ func GetDefaultMsdfShader() *Shader {
 		return defaultMsdfShader
 	}
 
-	// Note: We snuff the error here. If the user wants they can pre-supply a defaultmsdfshader so this one never loads
 	var err error
 	defaultMsdfShader, err = NewShader(shaders.MSDFShader)
 	if err != nil {
