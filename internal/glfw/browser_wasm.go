@@ -1477,11 +1477,20 @@ var standardButtonMapping = []GamepadButton{
 var gamepadCache js.Value
 
 func updateGamepadCache() {
-	gamepadCache = getGamepads()
+	// gamepadCache = getGamepads()
 }
 
 // If you need the exact set of gamepads
 func getGamepads() js.Value {
+	// TODO: This has a bug where if the browser blocks access to gamepads API it will crash
+	// defer func() {
+	// 	// Warning: Defer can only set named return parameters
+	// 	if r := recover(); r != nil {
+	// Add an error recovery here
+	// 		err = extractError(r)
+	// 	}
+	// }()
+
 	if navigator.IsNull() {
 		return js.Null()
 	}
