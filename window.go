@@ -395,11 +395,15 @@ func (w *Window) Closed() bool {
 	return w.closed
 }
 
-func (w *Window) Close() {
-	w.closed = true
+func (w *Window) SetClose(close bool) {
+	w.closed = close
 	mainthread.Call(func() {
-		w.window.SetShouldClose(true)
+		w.window.SetShouldClose(close)
 	})
+}
+
+func (w *Window) Close() {
+	w.SetClose(true)
 }
 
 func (w *Window) Bounds() Rect {
