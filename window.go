@@ -564,6 +564,11 @@ func (w *Window) SetVSync(enable bool) {
 	})
 }
 
+// Returns true if vsync is enabled
+func (w *Window) VSync() bool {
+	return w.vsync
+}
+
 type ScreenModeType glfw.ScreenModeType
 
 const (
