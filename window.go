@@ -2,6 +2,7 @@ package glitch
 
 import (
 	"fmt"
+	"image"
 	"time"
 
 	"github.com/unitoftime/flow/glm"
@@ -17,6 +18,7 @@ type WindowConfig struct {
 	Vsync       bool
 	// Resizable bool
 	Samples int
+	Icons []image.Image
 }
 
 type Window struct {
@@ -134,6 +136,10 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 
 		// log.Printf("OpenGL: %s %s %s; %v samples.\n", gl.GetString(gl.VENDOR), gl.GetString(gl.RENDERER), gl.GetString(gl.VERSION), gl.GetInteger(gl.SAMPLES))
 		// log.Printf("GLSL: %s.\n", gl.GetString(gl.SHADING_LANGUAGE_VERSION))
+
+		if len(config.Icons) > 0 {
+			win.window.SetIcon(config.Icons)
+		}
 
 		if config.Samples > 0 {
 			// TODO - But how to work with wasm (which enables multisample in the context?)
@@ -610,6 +616,14 @@ func (w *Window) findNewActiveGamepad() Gamepad {
 		}
 	}
 	return GamepadNone
+}
+
+// Sets the icon of the window
+// Note: Currently in browser, this does nothing
+func (w *Window) SetIcon(images []image.Image) {
+	mainthread.Call(func() {
+		w.window.SetIcon(images)
+	})
 }
 
 // --- Dear Imgui required ---

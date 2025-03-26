@@ -6,6 +6,7 @@ package glfw
 import (
 	"errors"
 	"fmt"
+	"image"
 	"log"
 	"runtime"
 	"sync"
@@ -642,6 +643,10 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 			w.fullscreen = false
 		}
 	}
+}
+
+func (w *Window) SetIcon(images []image.Image) {
+	// Note: Currently a no op. In browser, icons are usually set in html
 }
 
 func (w *Window) EmbeddedIframe() bool {
