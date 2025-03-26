@@ -22,6 +22,7 @@ type WindowConfig struct {
 type Window struct {
 	window *glfw.Window
 
+	vsync bool
 	closed bool
 
 	width, height int
@@ -110,6 +111,9 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True) // Compatibility - For Mac only?
 
+		// Disables the ability to minimze a fullscreen window
+		// glfw.WindowHint(glfw.AutoIconify, glfw.False)
+
 		var monitor *glfw.Monitor
 		if config.Fullscreen {
 			monitor = glfw.GetPrimaryMonitor()
@@ -145,6 +149,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// // gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Non premult
 		// gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA) // Premult
 
+		win.vsync = config.Vsync
 		if config.Vsync {
 			glfw.SwapInterval(1)
 		} else {
@@ -224,6 +229,15 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 			}
 		})
 
+		// win.window.SetIconifyCallback(func(w *glfw.Window, iconified bool) {
+		// 	if iconified {
+		// 		// Window was iconified (ie minimized)
+		// 	} else {
+		// 		// Window was restored
+		// 		gl.Viewport(0, 0, win.width, win.height)
+		// 	}
+		// })
+
 		// TODO - other callbacks?
 
 		// TODO - A hack for wasm - where the framebuffer doesn't trigger until the view gets resized once, we just set the size based on what the browser window says
@@ -238,7 +252,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("Failed CreateWindow: %w", err)
+		return nil, fmt.Errorf("failed to create window: %w", err)
 	}
 
 	win.mainthreadUpdate = func() {
@@ -535,8 +549,10 @@ func (w *Window) BrowserHidden() bool {
 func (w *Window) SetVSync(enable bool) {
 	mainthread.Call(func() {
 		if enable {
+			w.vsync = true
 			glfw.SwapInterval(1)
 		} else {
+			w.vsync = false
 			glfw.SwapInterval(0)
 		}
 	})
@@ -553,6 +569,15 @@ const (
 func (w *Window) SetScreenMode(smt ScreenModeType) {
 	mainthread.Call(func() {
 		w.window.SetScreenMode(glfw.ScreenModeType(smt))
+
+		// Note: In windows, when going to fullscreen, it looks like vsync data gets lost during SetMonitor, So I will manually reset swapinterval here
+		// GLFW Issue: https://github.com/glfw/glfw/issues/1072
+
+		if w.vsync {
+			glfw.SwapInterval(1)
+		} else {
+			glfw.SwapInterval(0)
+		}
 	})
 }
 
