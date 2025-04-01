@@ -635,6 +635,12 @@ func (w *Window) SetIcon(images []image.Image) {
 	})
 }
 
+// By default, when running in browser. If the page unloads (ctrl-w or exit) an alert box will appear "Are you sure you want to leave?"
+// If you pass a true to this function the alert box will not be shown
+func (w *Window) SetSkipWarningOnBrowserClose(value bool) {
+	w.window.SetSkipWarningOnBrowserClose(value)
+}
+
 // --- Dear Imgui required ---
 func (w *Window) GetMouse() (x, y float64) {
 	return w.window.GetCursorPos()

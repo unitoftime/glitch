@@ -527,6 +527,10 @@ func (w *Window) GetClipboardString() string {
 	return glfw.GetClipboardString()
 }
 
+func (w *Window) SetSkipWarningOnBrowserClose(value bool) {
+	//Noop
+}
+
 func (w *Window) ScreenMode() ScreenModeType {
 	return w.currentScreenMode
 }

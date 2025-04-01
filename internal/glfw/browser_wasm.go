@@ -171,6 +171,8 @@ func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Win
 		context:            context,
 		devicePixelRatio:   devicePixelRatio,
 		connectedJoysticks: make([]Joystick, 0, 16),
+
+		skipAlertOnBrowserClose: true,
 	}
 
 	resolveNavigatorKeyboard()
@@ -470,14 +472,29 @@ func SetupEventListeners(w *Window) {
 		return nil
 	}))
 
-	// TODO: Maybe in the future I'll allow people to set this. It kinda doesn't work well b/c it freezes the window. so the game locks up
-	// htmlWindow.Call("addEventListener", "beforeunload", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-	// 	fmt.Println("Catching BeforeUnload!")
+	// Note: Didn't work. I dont think you can prevent this event
+	// fsHandler := js.FuncOf(func(this js.Value, args []js.Value) any {
 	// 	we := args[0]
 	// 	we.Call("preventDefault")
+	// 	return nil
+	// })
+	// document.Call("addEventListener", "fullscreenchange", fsHandler)
+	// document.Call("addEventListener", "webkitfullscreenchange", fsHandler)
+	// document.Call("addEventListener", "mozfullscreenchange", fsHandler)
+	// document.Call("addEventListener", "MSFullscreenChange", fsHandler)
 
-	// 	return js.ValueOf("Sure?")
-	// }))
+
+	// TODO: Maybe in the future I'll allow people to set this. It kinda doesn't work well b/c it freezes the window. so the game locks up
+	htmlWindow.Call("addEventListener", "beforeunload", js.FuncOf(func(this js.Value, args []js.Value) any {
+		if w.skipAlertOnBrowserClose {
+			return js.ValueOf("")
+		}
+
+		we := args[0]
+		we.Call("preventDefault")
+
+		return js.ValueOf("Sure?")
+	}))
 
 	/*
 		// Hacky mouse-emulation-via-touch.
@@ -592,6 +609,7 @@ type Window struct {
 	sizeCallback            SizeCallback
 	focusCallback           FocusCallback
 
+	skipAlertOnBrowserClose bool
 	hidden  bool // Used to track if the window is hidden or visible
 	rafOnce sync.Once
 
@@ -604,6 +622,10 @@ func (w *Window) SetPos(xpos, ypos int) {
 
 func (w *Window) SetSize(width, height int) {
 	fmt.Println("not implemented: SetSize:", width, height)
+}
+
+func (w *Window) SetSkipWarningOnBrowserClose(value bool) {
+	w.skipAlertOnBrowserClose = value
 }
 
 func (w *Window) BrowserHidden() bool {
