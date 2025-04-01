@@ -484,7 +484,6 @@ func SetupEventListeners(w *Window) {
 	// document.Call("addEventListener", "MSFullscreenChange", fsHandler)
 
 
-	// TODO: Maybe in the future I'll allow people to set this. It kinda doesn't work well b/c it freezes the window. so the game locks up
 	htmlWindow.Call("addEventListener", "beforeunload", js.FuncOf(func(this js.Value, args []js.Value) any {
 		if w.skipAlertOnBrowserClose {
 			return js.ValueOf("")
