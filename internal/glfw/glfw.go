@@ -29,6 +29,7 @@ type VidMode struct {
 type ScreenModeType uint8
 
 const (
-	ScreenModeFull ScreenModeType = iota
-	ScreenModeWindowed
+	ScreenModeWindowed ScreenModeType = iota
+	ScreenModeFull
+	ScreenModeBorderlessFull
 )

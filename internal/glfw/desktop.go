@@ -537,7 +537,8 @@ func (w *Window) ScreenMode() ScreenModeType {
 
 func (w *Window) SetScreenMode(smt ScreenModeType) {
 
-	if smt == ScreenModeFull {
+	switch smt {
+	case ScreenModeFull:
 		if w.currentScreenMode == ScreenModeWindowed {
 			w.lastWindow.xpos, w.lastWindow.ypos = w.GetPos()
 			w.lastWindow.width, w.lastWindow.height = w.GetSize()
@@ -554,7 +555,10 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 			mode.Height,
 			mode.RefreshRate,
 		)
-	} else if smt == ScreenModeWindowed {
+	case ScreenModeWindowed:
+		// Add Decorations
+		w.SetAttrib(glfw.Decorated, glfw.True)
+
 		monitor := GetPrimaryMonitor() // TODO: Should this be like: GetCurrentMonitor, getwindowmonitor? https://www.glfw.org/docs/3.3/monitor_guide.html
 		mode := monitor.GetVideoMode()
 
@@ -564,6 +568,26 @@ func (w *Window) SetScreenMode(smt ScreenModeType) {
 			w.lastWindow.ypos,
 			w.lastWindow.width,
 			w.lastWindow.height,
+			mode.RefreshRate,
+		)
+	case ScreenModeBorderlessFull:
+		// Remove Decorations
+		w.SetAttrib(glfw.Decorated, glfw.False)
+
+		if w.currentScreenMode == ScreenModeWindowed {
+			w.lastWindow.xpos, w.lastWindow.ypos = w.GetPos()
+			w.lastWindow.width, w.lastWindow.height = w.GetSize()
+		}
+
+		monitor := GetPrimaryMonitor()
+		mode := monitor.GetVideoMode()
+
+		w.SetMonitor(
+			nil,
+			0,
+			0,
+			mode.Width,
+			mode.Height,
 			mode.RefreshRate,
 		)
 	}

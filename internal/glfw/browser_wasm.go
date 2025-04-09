@@ -655,7 +655,7 @@ func (w *Window) ScreenMode() ScreenModeType {
 }
 
 func (w *Window) SetScreenMode(smt ScreenModeType) {
-	if smt == ScreenModeFull {
+	if smt == ScreenModeFull || smt == ScreenModeBorderlessFull {
 		w.requestFullscreen = true
 	} else if smt == ScreenModeWindowed {
 		current := w.ScreenMode()

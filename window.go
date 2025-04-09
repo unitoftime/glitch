@@ -576,8 +576,9 @@ func (w *Window) VSync() bool {
 type ScreenModeType glfw.ScreenModeType
 
 const (
-	ScreenModeFull     = ScreenModeType(glfw.ScreenModeFull)
 	ScreenModeWindowed = ScreenModeType(glfw.ScreenModeWindowed)
+	ScreenModeFull     = ScreenModeType(glfw.ScreenModeFull)
+	ScreenModeBorderlessFull = ScreenModeType(glfw.ScreenModeBorderlessFull)
 )
 
 // TODO - rename. also maybe do modes - window, borderless, full, etc.
