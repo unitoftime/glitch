@@ -389,13 +389,13 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 	if t.autoFit {
 		if t.fitInteger {
 			intFitScale := math.Floor(text.Bounds().FitScale(rect))
-			rect = rect.FullAnchor(text.Bounds().Scaled(intFitScale), t.anchor, t.pivot)
+			rect = rect.FullAnchorOLD(text.Bounds().Scaled(intFitScale), t.anchor, t.pivot)
 		} else {
-			rect = rect.FullAnchor(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
+			rect = rect.FullAnchorOLD(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
 		}
 	} else {
 		// rect = rect.FullAnchor(text.Bounds().Scaled(global.fontScale * t.scale), t.anchor, t.pivot)
-		rect = rect.FullAnchor(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
+		rect = rect.FullAnchorOLD(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
 
@@ -443,12 +443,12 @@ func MeasureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 	if t.autoFit {
 		if t.fitInteger {
 			intFitScale := math.Floor(textBounds.FitScale(rect))
-			rect = rect.FullAnchor(textBounds.Scaled(intFitScale), t.anchor, t.pivot)
+			rect = rect.FullAnchorOLD(textBounds.Scaled(intFitScale), t.anchor, t.pivot)
 		} else {
-			rect = rect.FullAnchor(textBounds.ScaledToFit(rect), t.anchor, t.pivot)
+			rect = rect.FullAnchorOLD(textBounds.ScaledToFit(rect), t.anchor, t.pivot)
 		}
 	} else {
-		rect = rect.FullAnchor(textBounds.Scaled(t.scale), t.anchor, t.pivot)
+		rect = rect.FullAnchorOLD(textBounds.Scaled(t.scale), t.anchor, t.pivot)
 		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
 	}
 

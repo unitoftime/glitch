@@ -3,12 +3,12 @@ package glitch
 import "github.com/unitoftime/flow/glm"
 
 type Sprite struct {
-	mesh        *Mesh
-	bounds      Rect // Represents the bounds centered on (0, 0)
-	frame       Rect // Represents the bounds inside the spritesheet
-	texture     *Texture
-	material    Material
-	uvBounds    Rect
+	mesh     *Mesh
+	bounds   Rect // Represents the bounds centered on (0, 0)
+	frame    Rect // Represents the bounds inside the spritesheet
+	texture  *Texture
+	material Material
+	uvBounds Rect
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {

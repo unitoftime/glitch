@@ -122,10 +122,10 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 }
 
 type uiGlobals struct {
-	mouseCaught bool
+	mouseCaught          bool
 	mouseCaughtLastFrame bool
-	hudScale    float64
-	fontScale   float64
+	hudScale             float64
+	fontScale            float64
 
 	// For global interface
 	win    *glitch.Window

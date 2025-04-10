@@ -18,13 +18,13 @@ type WindowConfig struct {
 	Vsync       bool
 	// Resizable bool
 	Samples int
-	Icons []image.Image
+	Icons   []image.Image
 }
 
 type Window struct {
 	window *glfw.Window
 
-	vsync bool
+	vsync  bool
 	closed bool
 
 	width, height int
@@ -576,8 +576,8 @@ func (w *Window) VSync() bool {
 type ScreenModeType glfw.ScreenModeType
 
 const (
-	ScreenModeWindowed = ScreenModeType(glfw.ScreenModeWindowed)
-	ScreenModeFull     = ScreenModeType(glfw.ScreenModeFull)
+	ScreenModeWindowed       = ScreenModeType(glfw.ScreenModeWindowed)
+	ScreenModeFull           = ScreenModeType(glfw.ScreenModeFull)
 	ScreenModeBorderlessFull = ScreenModeType(glfw.ScreenModeBorderlessFull)
 )
 

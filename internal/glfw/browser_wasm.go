@@ -483,7 +483,6 @@ func SetupEventListeners(w *Window) {
 	// document.Call("addEventListener", "mozfullscreenchange", fsHandler)
 	// document.Call("addEventListener", "MSFullscreenChange", fsHandler)
 
-
 	htmlWindow.Call("addEventListener", "beforeunload", js.FuncOf(func(this js.Value, args []js.Value) any {
 		if w.skipAlertOnBrowserClose {
 			return js.ValueOf("")
@@ -609,8 +608,8 @@ type Window struct {
 	focusCallback           FocusCallback
 
 	skipAlertOnBrowserClose bool
-	hidden  bool // Used to track if the window is hidden or visible
-	rafOnce sync.Once
+	hidden                  bool // Used to track if the window is hidden or visible
+	rafOnce                 sync.Once
 
 	touches js.Value // Hacky mouse-emulation-via-touch.
 }

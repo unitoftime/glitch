@@ -7,10 +7,10 @@ import (
 )
 
 type meshDraw struct {
-	filler      GeometryFiller
-	matrix      glMat4
-	mask        RGBA
-	material    Material
+	filler   GeometryFiller
+	matrix   glMat4
+	mask     RGBA
+	material Material
 }
 
 // For batching multiple sprites into one
@@ -38,10 +38,10 @@ func NewDrawBatch() DrawBatch {
 func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material) {
 	// b.draws = append(b.draws, meshDraw{
 	b.draws.Append(meshDraw{
-		filler:      filler,
-		matrix:      matrix,
-		mask:        mask,
-		material:    material,
+		filler:   filler,
+		matrix:   matrix,
+		mask:     mask,
+		material: material,
 	})
 
 	newBounds := filler.Bounds().Apply(matrix.Mat4())
