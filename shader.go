@@ -110,7 +110,7 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFor
 func createProgram(vertexSrc, fragmentSrc string) (gl.Program, error) {
 	program := gl.CreateProgram()
 	if !program.Valid() {
-		return gl.Program{}, fmt.Errorf("Could not CreateProgram")
+		return gl.Program{}, fmt.Errorf("failed createProgram")
 	}
 
 	vertexShader, err := loadShader(gl.VERTEX_SHADER, vertexSrc)
@@ -141,13 +141,15 @@ func createProgram(vertexSrc, fragmentSrc string) (gl.Program, error) {
 func loadShader(shaderType gl.Enum, src string) (gl.Shader, error) {
 	shader := gl.CreateShader(shaderType)
 	if !shader.Valid() {
-		return gl.Shader{}, fmt.Errorf("loadShader could not create shader (type %v)", shaderType)
+		return gl.Shader{}, fmt.Errorf("loadShader: invalid shader type (type %v)", shaderType)
 	}
 	gl.ShaderSource(shader, src)
 	gl.CompileShader(shader)
 	if gl.GetShaderi(shader, gl.COMPILE_STATUS) == gl.FALSE {
 		defer gl.DeleteShader(shader)
-		return gl.Shader{}, fmt.Errorf("loadShader: %s", gl.GetShaderInfoLog(shader))
+		shaderLog := gl.GetShaderInfoLog(shader)
+		versionString := gl.GetString(gl.VERSION) + " ||| " + gl.GetString(gl.SHADING_LANGUAGE_VERSION)
+		return gl.Shader{}, fmt.Errorf("loadShader: %s (Version: %s)", shaderLog, versionString)
 	}
 	return shader, nil
 }

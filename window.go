@@ -327,7 +327,16 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 
 	win.Update()
 
+	// win.DumpInfo()
+
 	return win, nil
+}
+
+func (w *Window) DumpInfo() {
+	mainthread.Call(func() {
+		fmt.Println("GL Version:", gl.GetString(gl.VERSION))
+		fmt.Println("GLSL Version:", gl.GetString(gl.SHADING_LANGUAGE_VERSION))
+	})
 }
 
 // func checkOpenGLError() {
