@@ -44,12 +44,6 @@ func CreateWindow(width, height int, title string, monitor *Monitor, share *Wind
 	window := &Window{
 		Window:             w,
 		connectedJoysticks: make([]Joystick, 0, 16),
-		currentScreenMode:  ScreenModeWindowed,
-		lastWindow: winRect{
-			// TODO: xpos, ypos - fill from monitor info
-			width:  width,
-			height: height,
-		},
 	}
 
 	return window, err
@@ -79,8 +73,6 @@ type Window struct {
 	*glfw.Window
 
 	connectedJoysticks []Joystick
-	currentScreenMode  ScreenModeType
-	lastWindow         winRect
 }
 
 func (w *Window) GetContentScale() (float32, float32) {
@@ -531,69 +523,64 @@ func (w *Window) SetSkipWarningOnBrowserClose(value bool) {
 	//Noop
 }
 
-func (w *Window) ScreenMode() ScreenModeType {
-	return w.currentScreenMode
+// func (w *Window) isFullscreen() bool {
+// 	return (w.GetMonitor() != nil)
+// }
+
+func (w *Window) Maximize() {
+	w.Window.Maximize()
+}
+func (w *Window) Restore() {
+	w.Window.Restore()
 }
 
-func (w *Window) SetScreenMode(smt ScreenModeType) {
 
-	switch smt {
-	case ScreenModeFull:
-		if w.currentScreenMode == ScreenModeWindowed {
-			w.lastWindow.xpos, w.lastWindow.ypos = w.GetPos()
-			w.lastWindow.width, w.lastWindow.height = w.GetSize()
-		}
+func (w *Window) SetFullscreen() {
+	monitor := GetPrimaryMonitor()
+	mode := monitor.GetVideoMode()
 
-		monitor := GetPrimaryMonitor()
-		mode := monitor.GetVideoMode()
+	w.SetMonitor(
+		monitor,
+		0,
+		0,
+		mode.Width,
+		mode.Height,
+		mode.RefreshRate,
+	)
+}
 
-		w.SetMonitor(
-			monitor,
-			0,
-			0,
-			mode.Width,
-			mode.Height,
-			mode.RefreshRate,
-		)
-	case ScreenModeWindowed:
-		monitor := GetPrimaryMonitor() // TODO: Should this be like: GetCurrentMonitor, getwindowmonitor? https://www.glfw.org/docs/3.3/monitor_guide.html
-		mode := monitor.GetVideoMode()
+func (w *Window) SetWindowed(x, y, width, height int) {
+	// Restore the last non fullscreen state
+	w.SetMonitor(
+		nil,
+		x, y, width, height,
+		// mode.RefreshRate, // TODO: Should this be DONT_CARE?
+		glfw.DontCare,
+	)
+}
 
-		w.SetMonitor(
-			nil,
-			w.lastWindow.xpos,
-			w.lastWindow.ypos,
-			w.lastWindow.width,
-			w.lastWindow.height,
-			mode.RefreshRate,
-		)
+// Sets the window to fill the entire screen
+func (w *Window) SetWindowToFillScreen() {
+	monitor := GetPrimaryMonitor()
+	mode := monitor.GetVideoMode()
 
-		// Add Decorations
+	w.SetMonitor(
+		nil,
+		0,
+		0,
+		mode.Width,
+		mode.Height,
+		// mode.RefreshRate, // TODO: Should this be DONT_CARE?
+		glfw.DontCare,
+	)
+}
+
+func (w *Window) SetDecorations(value bool) {
+	if value {
 		w.SetAttrib(glfw.Decorated, glfw.True)
-
-	case ScreenModeBorderlessFull:
-		// Remove Decorations
+	} else {
 		w.SetAttrib(glfw.Decorated, glfw.False)
-
-		if w.currentScreenMode == ScreenModeWindowed {
-			w.lastWindow.xpos, w.lastWindow.ypos = w.GetPos()
-			w.lastWindow.width, w.lastWindow.height = w.GetSize()
-		}
-
-		monitor := GetPrimaryMonitor()
-		mode := monitor.GetVideoMode()
-
-		w.SetMonitor(
-			nil,
-			0,
-			0,
-			mode.Width,
-			mode.Height,
-			mode.RefreshRate,
-		)
 	}
-
-	w.currentScreenMode = smt
 }
 
 func (w *Window) EmbeddedIframe() bool {

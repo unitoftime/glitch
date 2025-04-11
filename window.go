@@ -12,10 +12,11 @@ import (
 )
 
 type WindowConfig struct {
-	Fullscreen  bool
-	Undecorated bool
-	Maximized   bool
-	Vsync       bool
+	Fullscreen  bool // Indicates the window should be in fullscreen
+	Undecorated bool // Indicates the window should be undecorated
+	FillMonitor bool // Indicates the window should fill the primary monitor. This will override provided width and height
+	Maximized   bool // Indicates the window should be maximized
+	Vsync       bool // Indicates the window should use vsync
 	// Resizable bool
 	Samples int
 	Icons   []image.Image
@@ -24,7 +25,8 @@ type WindowConfig struct {
 type Window struct {
 	window *glfw.Window
 
-	vsync  bool
+	config WindowConfig
+
 	closed bool
 
 	width, height int
@@ -70,6 +72,9 @@ type Window struct {
 	mouseRepeatPeriod time.Duration // amount of time in between consecutive repeats after a repeat has started
 
 	lastUpdateTime time.Time
+
+	lastWinPos glm.IVec2
+	lastWinSize glm.IVec2
 }
 
 type repeatData struct {
@@ -77,8 +82,10 @@ type repeatData struct {
 	dur time.Duration
 }
 
-func NewWindow(width, height int, title string, config WindowConfig) (*Window, error) {
+func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Window, error) {
 	win := &Window{
+		config: inputConfig,
+
 		scrollCallbacks:      make([]glfw.ScrollCallback, 0),
 		keyCallbacks:         make([]glfw.KeyCallback, 0),
 		mouseButtonCallbacks: make([]glfw.MouseButtonCallback, 0),
@@ -96,6 +103,9 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		mouseRepeatPeriod: 150 * time.Millisecond,
 
 		lastUpdateTime: time.Now(),
+
+		lastWinPos: glm.IVec2{},
+		lastWinSize: glm.IVec2{width, height},
 	}
 
 	err := mainthread.CallErr(func() error {
@@ -107,8 +117,8 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		glfw.WindowHint(glfw.ContextVersionMajor, 3)
 		glfw.WindowHint(glfw.ContextVersionMinor, 3)
 		// glfw.WindowHint(glfw.Resizable, config.Resizable)
-		if config.Samples > 0 {
-			glfw.WindowHint(glfw.Samples, config.Samples)
+		if win.config.Samples > 0 {
+			glfw.WindowHint(glfw.Samples, win.config.Samples)
 		}
 		glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 		glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True) // Compatibility - For Mac only?
@@ -116,18 +126,48 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// Disables the ability to minimze a fullscreen window
 		// glfw.WindowHint(glfw.AutoIconify, glfw.False)
 
-		var monitor *glfw.Monitor
-		if config.Fullscreen {
-			monitor = glfw.GetPrimaryMonitor()
+		var fullscreenMonitor *glfw.Monitor
+		if win.config.Fullscreen {
+			fullscreenMonitor = glfw.GetPrimaryMonitor()
+
+			// Note: These settings are for a fullscreen mode with faster alt tabs (alt tabs dont require mode switch).
+			// glfw.WindowHint(glfw.RedBits, mode.RedBits)
+			// glfw.WindowHint(glfw.GreenBits, mode.GreenBits)
+			// glfw.WindowHint(glfw.BlueBits, mode.BlueBits)
+			// glfw.WindowHint(glfw.RefreshRate, mode.RefreshRate)
+
+			// Set a restore point since we are starting fullscreened
+			{
+				r := glm.R(0, 0, float64(width), float64(height)).CenterScaled(0.8)
+				win.lastWinPos = glm.IVec2{int(r.Min.X), int(r.Min.Y)}
+				win.lastWinSize = glm.IVec2{int(r.W()), int(r.H())}
+			}
+		} else if win.config.FillMonitor {
+			monitor := glfw.GetPrimaryMonitor()
+			mode := monitor.GetVideoMode()
+
+			width = mode.Width
+			height = mode.Height
+
+			// Maximized must be set false because we are going to Fill the monitor manually
+			win.config.Maximized = false
+
+			// Set a restore point since we are starting borderless windowed
+			{
+				r := glm.R(0, 0, float64(width), float64(height)).CenterScaled(0.8)
+				win.lastWinPos = glm.IVec2{int(r.Min.X), int(r.Min.Y)}
+				win.lastWinSize = glm.IVec2{int(r.W()), int(r.H())}
+			}
 		}
-		if config.Undecorated {
+
+		if win.config.Undecorated {
 			glfw.WindowHint(glfw.Decorated, glfw.False)
 		}
-		if config.Maximized {
+		if win.config.Maximized {
 			glfw.WindowHint(glfw.Maximized, glfw.True)
 		}
 
-		win.window, err = glfw.CreateWindow(width, height, title, monitor, nil)
+		win.window, err = glfw.CreateWindow(width, height, title, fullscreenMonitor, nil)
 		if err != nil {
 			return err
 		}
@@ -137,11 +177,11 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// log.Printf("OpenGL: %s %s %s; %v samples.\n", gl.GetString(gl.VENDOR), gl.GetString(gl.RENDERER), gl.GetString(gl.VERSION), gl.GetInteger(gl.SAMPLES))
 		// log.Printf("GLSL: %s.\n", gl.GetString(gl.SHADING_LANGUAGE_VERSION))
 
-		if len(config.Icons) > 0 {
-			win.window.SetIcon(config.Icons)
+		if len(win.config.Icons) > 0 {
+			win.window.SetIcon(win.config.Icons)
 		}
 
-		if config.Samples > 0 {
+		if win.config.Samples > 0 {
 			// TODO - But how to work with wasm (which enables multisample in the context?)
 			gl.Enable(gl.MULTISAMPLE)
 		}
@@ -155,8 +195,7 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		// // gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA); // Non premult
 		// gl.BlendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA) // Premult
 
-		win.vsync = config.Vsync
-		if config.Vsync {
+		if win.config.Vsync {
 			glfw.SwapInterval(1)
 		} else {
 			glfw.SwapInterval(0)
@@ -269,12 +308,6 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 		win.window.SwapBuffers()
 		glfw.PollEvents()
 
-		// errorEnum := gl.GetError()
-		// if errorEnum != 0 {
-		// 	fmt.Println("GL ERROR: ", errorEnum)
-		// 	panic("GL ERROR")
-		// }
-
 		win.mainthreadCacheMousePosition()
 	}
 
@@ -296,6 +329,14 @@ func NewWindow(width, height int, title string, config WindowConfig) (*Window, e
 
 	return win, nil
 }
+
+// func checkOpenGLError() {
+// 	errorEnum := gl.GetError()
+// 	if errorEnum != 0 {
+// 		fmt.Println("GL ERROR: ", errorEnum)
+// 		panic("GL ERROR")
+// 	}
+// }
 
 func (w *Window) Update() {
 	// Track frame times
@@ -558,47 +599,112 @@ func (w *Window) BrowserHidden() bool {
 // TODO - rename. Also potentially allow for multiple swaps?
 func (w *Window) SetVSync(enable bool) {
 	mainthread.Call(func() {
-		if enable {
-			w.vsync = true
-			glfw.SwapInterval(1)
-		} else {
-			w.vsync = false
-			glfw.SwapInterval(0)
-		}
+		w.config.Vsync = enable
+		w.setSwap()
 	})
 }
 
 // Returns true if vsync is enabled
 func (w *Window) VSync() bool {
-	return w.vsync
+	return w.config.Vsync
 }
 
-type ScreenModeType glfw.ScreenModeType
+func (w *Window) Fullscreen() bool {
+	return w.config.Fullscreen
+}
+func (w *Window) SetFullscreen() {
+	w.setFullscreen(true)
+}
 
-const (
-	ScreenModeWindowed       = ScreenModeType(glfw.ScreenModeWindowed)
-	ScreenModeFull           = ScreenModeType(glfw.ScreenModeFull)
-	ScreenModeBorderlessFull = ScreenModeType(glfw.ScreenModeBorderlessFull)
-)
-
-// TODO - rename. also maybe do modes - window, borderless, full, etc.
-func (w *Window) SetScreenMode(smt ScreenModeType) {
+// Sets windowed mode, but sets the window to fill the entire screen
+// This is basically to setting a borderless windowed fullscreen mode
+// This is similar to Maximize, except is more appropriate for ensuring the screen is filled
+func (w *Window) SetWindowedFullscreen() {
 	mainthread.Call(func() {
-		w.window.SetScreenMode(glfw.ScreenModeType(smt))
+		w.saveLastWindow()
+		w.window.SetWindowToFillScreen()
 
 		// Note: In windows, when going to fullscreen, it looks like vsync data gets lost during SetMonitor, So I will manually reset swapinterval here
 		// GLFW Issue: https://github.com/glfw/glfw/issues/1072
+		w.setSwap()
 
-		if w.vsync {
-			glfw.SwapInterval(1)
-		} else {
-			glfw.SwapInterval(0)
-		}
+		// Update the config value
+		w.config.Fullscreen = false
 	})
 }
 
-func (w *Window) ScreenMode() ScreenModeType {
-	return ScreenModeType(w.window.ScreenMode())
+// Restores the window to the last windowed state. Effectively removing exclusive fullscreen or windowed fullscreen
+func (w *Window) RestoreWindowed() {
+	if w.config.Fullscreen {
+		w.setFullscreen(false)
+	} else {
+		mainthread.Call(func() {
+			w.restoreLastWindow()
+		})
+	}
+}
+
+func (w *Window) Decorated() bool {
+	return !w.config.Undecorated
+}
+func (w *Window) SetDecorations(value bool) {
+	w.config.Undecorated = !value
+	mainthread.Call(func() {
+		w.window.SetDecorations(value)
+	})
+}
+
+// func (w *Window) Maximize() {
+// 	w.config.Maximized = true
+// 	mainthread.Call(func() {
+// 		w.window.Maximize()
+// 	})
+// }
+// func (w *Window) Restore() {
+// 	w.config.Maximized = false
+// 	mainthread.Call(func() {
+// 		w.window.Restore()
+// 	})
+// }
+
+func (w *Window) setFullscreen(value bool) {
+	mainthread.Call(func() {
+		if value && !w.config.Fullscreen {
+			// If going fullscreen, and not currently fullscreen
+			w.saveLastWindow()
+
+			w.window.SetFullscreen()
+		} else if !value && w.config.Fullscreen {
+			// If going windowed and not currently windowed
+			w.restoreLastWindow()
+		}
+
+		// Note: In windows, when going to fullscreen, it looks like vsync data gets lost during SetMonitor, So I will manually reset swapinterval here
+		// GLFW Issue: https://github.com/glfw/glfw/issues/1072
+		w.setSwap()
+
+		// Update the config value
+		w.config.Fullscreen = value
+	})
+}
+
+func (w *Window) setSwap() {
+	if w.config.Vsync {
+		glfw.SwapInterval(1)
+	} else {
+		glfw.SwapInterval(0)
+	}
+}
+
+func (w *Window) saveLastWindow() {
+	x, y := w.window.GetPos()
+	w.lastWinPos = glm.IVec2{x, y}
+	width, height := w.window.GetSize()
+	w.lastWinSize = glm.IVec2{width, height}
+}
+
+func (w *Window) restoreLastWindow() {
+	w.window.SetWindowed(w.lastWinPos.X, w.lastWinPos.Y, w.lastWinSize.X, w.lastWinSize.Y)
 }
 
 // Returns true if the window is embedded in an iframe, else returns false.

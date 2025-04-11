@@ -569,9 +569,8 @@ func SetupEventListeners(w *Window) {
 	// 	map[string]any{"passive": false}) // Note: Lets us preventDefault on event
 }
 
-func SwapInterval(interval int) error {
+func SwapInterval(interval int) {
 	// TODO: Implement.
-	return nil
 }
 
 type Window struct {
@@ -642,27 +641,32 @@ func (w *Window) goFullscreenIfRequested() {
 	w.fullscreen = true
 }
 
-func (w *Window) ScreenMode() ScreenModeType {
-	fullscreenElem := document.Get("fullscreenElement")
-	canvasIsFull := fullscreenElem.Equal(w.canvas)
-
-	if canvasIsFull {
-		return ScreenModeFull
-	} else {
-		return ScreenModeWindowed
+func (w *Window) SetFullscreen() {
+	w.requestFullscreen = true
+}
+func (w *Window) SetWindowed(x, y, width, height int) {
+	if w.canvasIsFullscreen() {
+		document.Call("exitFullscreen")
+		w.fullscreen = false
 	}
 }
 
-func (w *Window) SetScreenMode(smt ScreenModeType) {
-	if smt == ScreenModeFull || smt == ScreenModeBorderlessFull {
-		w.requestFullscreen = true
-	} else if smt == ScreenModeWindowed {
-		current := w.ScreenMode()
-		if current != ScreenModeWindowed {
-			document.Call("exitFullscreen")
-			w.fullscreen = false
-		}
-	}
+func (w *Window) SetDecorations(value bool) {
+	// Note: Currently a no op. In browser, I'm not really sure. can we hide the titlebar? Even worth?
+}
+
+func (w *Window) SetWindowToFillScreen() {
+}
+
+func (w *Window) Maximize() {
+}
+func (w *Window) Restore() {
+}
+
+func (w *Window) canvasIsFullscreen() bool {
+	fullscreenElem := document.Get("fullscreenElement")
+	canvasIsFull := fullscreenElem.Equal(w.canvas)
+	return canvasIsFull
 }
 
 func (w *Window) SetIcon(images []image.Image) {

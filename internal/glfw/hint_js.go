@@ -37,6 +37,11 @@ const (
 	TransparentFramebuffer // TODO
 	Maximized              // TODO
 	Visible                // TODO
+
+	RedBits
+	GreenBits
+	BlueBits
+	RefreshRate
 )
 
 func WindowHint(target Hint, hint int) {
