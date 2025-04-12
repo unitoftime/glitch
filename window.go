@@ -73,7 +73,7 @@ type Window struct {
 
 	lastUpdateTime time.Time
 
-	lastWinPos glm.IVec2
+	lastWinPos  glm.IVec2
 	lastWinSize glm.IVec2
 }
 
@@ -104,7 +104,7 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 
 		lastUpdateTime: time.Now(),
 
-		lastWinPos: glm.IVec2{},
+		lastWinPos:  glm.IVec2{},
 		lastWinSize: glm.IVec2{width, height},
 	}
 

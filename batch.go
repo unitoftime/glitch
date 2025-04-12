@@ -250,8 +250,12 @@ func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Ma
 	// mesh := filler.(*Mesh) // TODO: Hack
 	mesh := filler.mesh // TODO: Is this safe? Assumes everything added has a mesh
 
-	if len(mesh.indices) == 0 { return } // Skip: Blank mesh
-	if len(mesh.positions) == 0 { return } // Skip: Blank mesh
+	if len(mesh.indices) == 0 {
+		return
+	} // Skip: Blank mesh
+	if len(mesh.positions) == 0 {
+		return
+	} // Skip: Blank mesh
 
 	if !b.materialSet {
 		b.materialSet = true

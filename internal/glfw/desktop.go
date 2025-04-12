@@ -534,7 +534,6 @@ func (w *Window) Restore() {
 	w.Window.Restore()
 }
 
-
 func (w *Window) SetFullscreen() {
 	monitor := GetPrimaryMonitor()
 	mode := monitor.GetVideoMode()

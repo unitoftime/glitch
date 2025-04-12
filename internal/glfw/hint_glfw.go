@@ -41,9 +41,9 @@ const (
 	Maximized              = Hint(glfw.Maximized)
 	Visible                = Hint(glfw.Visible)
 
-	RedBits = Hint(glfw.RedBits)
-	GreenBits = Hint(glfw.GreenBits)
-	BlueBits = Hint(glfw.BlueBits)
+	RedBits     = Hint(glfw.RedBits)
+	GreenBits   = Hint(glfw.GreenBits)
+	BlueBits    = Hint(glfw.BlueBits)
 	RefreshRate = Hint(glfw.RefreshRate)
 )
 
