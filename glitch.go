@@ -1,11 +1,21 @@
 package glitch
 
 import (
+	"github.com/unitoftime/glitch/internal/glfw"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
 func Run(function func()) {
-	mainthread.Run(function)
+	f := func() {
+		function()
+
+		// Perform any cleanup operations
+		mainthread.Call(func() {
+			glfw.Terminate()
+		})
+	}
+
+	mainthread.Run(f)
 }
 
 // type Material interface {
