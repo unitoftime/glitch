@@ -343,15 +343,9 @@ func (a *Atlas) UngappedLineHeight() float64 {
 	return (a.ascent + a.descent)
 }
 
-func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
-	// multiplying by texture sizes converts from UV to pixel coords
-	scaleX := scale * float64(a.texture.width)
-	scaleY := scale * float64(a.texture.height)
-
+func (a *Atlas) getRuneGlyph(r rune) Glyph {
 	glyph, ok := a.mapping[r]
-	// if !ok { panic(fmt.Sprintf("Missing Rune: %v", r)) }
 	if !ok {
-		// fmt.Printf("Missing Rune: %v", r)
 		// Replace rune with '?'
 		oldR := r
 		r = '?' // TODO - Pick some other rune. TODO - require this rune to be in the atlas!
@@ -360,8 +354,45 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 			panic(fmt.Sprintf("Missing Rune: %v and replacement%v", oldR, r))
 		}
 	}
+	return glyph
+}
 
-	//	log.Println(glyph.Bearing)
+// Gets the total size of the rune plus advance and kerning
+func (a *Atlas) runeSize(r rune, scale float64) (glm.Vec2) {
+	// multiplying by texture sizes converts from UV to pixel coords
+	scaleX := scale * float64(a.texture.width)
+	scaleY := scale * float64(a.texture.height)
+
+	glyph := a.getRuneGlyph(r)
+
+	// UV coordinates of the quad
+	u1 := glyph.BoundsUV.Min.X
+	u2 := glyph.BoundsUV.Max.X
+	v1 := glyph.BoundsUV.Min.Y
+	v2 := glyph.BoundsUV.Max.Y
+
+	// Pixel coordinates of the quad (scaled by scale)
+	x1 := 0.0
+	x2 := x1 + (scaleX * (u2 - u1))
+
+	// Note: Commented out the downard shift here, and I'm doing it in the above func
+	y1 := 0.0
+	y2 := y1 + (scaleY * (v2 - v1))
+
+	// Also add the advance and kerning
+	x2 += (scaleX * glyph.Advance) + (a.defaultKerning * scale) // TODO: Kerning should come from text, not atlas
+	return glm.Vec2{
+		X: x2 - x1,
+		Y: y2 - y1,
+	}
+}
+
+func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGBA) (Vec2, float64) {
+	// multiplying by texture sizes converts from UV to pixel coords
+	scaleX := scale * float64(a.texture.width)
+	scaleY := scale * float64(a.texture.height)
+
+	glyph := a.getRuneGlyph(r)
 
 	// UV coordinates of the quad
 	u1 := glyph.BoundsUV.Min.X
@@ -383,7 +414,8 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	}
 
 	if mesh != nil {
-		mesh.AppendQuadMesh(destRect, glm.R(u1, v1, u2, v2), color)
+		mesh.AppendQuadMesh(destRect, glyph.BoundsUV, color)
+		// mesh.AppendQuadMesh(destRect, glm.R(u1, v1, u2, v2), color)
 		// mesh := NewQuadMesh(R(x1, y1, x2, y2), R(u1, v1, u2, v2))
 	}
 
@@ -584,6 +616,16 @@ func (t *Text) AppendStringVerts(text string, measure bool) Rect {
 
 	numLines := 1.0
 	for i, r := range text {
+		// On tab, go to the next tabwidth position
+		tab := r == '\t'
+		if tab {
+			spaceSize := t.atlas.runeSize(' ', t.scale)
+			tabWidth := 4.0 * spaceSize.X
+			currentTabSection := (t.Dot.X - t.Orig.X) / tabWidth
+			t.Dot.X = t.Orig.X + math.Floor(currentTabSection + 1.0) * tabWidth
+			continue
+		}
+
 		// If the rune is a newline, then we need to reset the dot for the next line
 		newline := r == '\n'
 		// If we wordwraping and are on a space, check to see if we should go to the next line
