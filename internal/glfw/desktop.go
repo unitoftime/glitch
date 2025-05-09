@@ -76,7 +76,9 @@ type Window struct {
 }
 
 func (w *Window) GetContentScale() (float32, float32) {
-	return w.Window.GetContentScale()
+	return 1.0, 1.0
+	// TODO: You kindof have an ununified content scale between how browsers and desktops work. These need to be connected
+	// return w.Window.GetContentScale()
 }
 
 type Monitor struct {
