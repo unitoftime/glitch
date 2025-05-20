@@ -282,3 +282,46 @@ var DiffuseShader = ShaderConfig{
 		Attr{"dirLight.specular", AttrVec3},
 	},
 }
+
+//go:embed sprite-repeat.fs
+var SpriteRepeatFragmentShader string
+
+var SpriteRepeatShader = ShaderConfig{
+	VertexShader:   SpriteVertexShader,
+	FragmentShader: SpriteRepeatFragmentShader,
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
+	},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
+		Attr{"iTime", AttrFloat},
+		Attr{"zoom", AttrVec2},
+		Attr{"repeatRect", AttrVec4},
+	},
+}
+
+
+//go:embed sprite-water.fs
+var SpriteWaterFragmentShader string
+
+var SpriteWaterShader = ShaderConfig{
+	VertexShader:   SpriteVertexShader,
+	FragmentShader: SpriteWaterFragmentShader,
+	VertexFormat: VertexFormat{
+		VertexAttribute("positionIn", AttrVec3, PositionXYZ),
+		VertexAttribute("colorIn", AttrVec4, ColorRGBA),
+		VertexAttribute("texCoordIn", AttrVec2, TexCoordXY),
+	},
+	UniformFormat: UniformFormat{
+		Attr{"model", AttrMat4},
+		Attr{"projection", AttrMat4},
+		Attr{"view", AttrMat4},
+		Attr{"iTime", AttrFloat},
+		Attr{"zoom", AttrVec2},
+		Attr{"repeatRect", AttrVec4},
+	},
+}

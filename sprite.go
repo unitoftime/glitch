@@ -77,6 +77,9 @@ func (s *Sprite) Bounds() Rect {
 func (s *Sprite) Frame() Rect {
 	return s.frame
 }
+func (s *Sprite) UVBounds() Rect {
+	return s.uvBounds
+}
 
 func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds

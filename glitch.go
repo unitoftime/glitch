@@ -1,6 +1,8 @@
 package glitch
 
 import (
+	"fmt"
+
 	"github.com/unitoftime/glitch/internal/glfw"
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
@@ -91,6 +93,11 @@ func NewMaterial(shader *Shader) Material {
 		blend:    BlendModeNone,
 		uniforms: nil,
 	}
+}
+
+func (m *Material) Print() {
+	fmt.Println("--- Material ---")
+	fmt.Printf("%+v\n", m.shader.uniformLocs)
 }
 
 // TODO: Implement

@@ -252,6 +252,9 @@ func (u *uniformSetter) Func() {
 	case glMat4:
 		gl.UniformMatrix4fv(uniform.loc, []float32(val[:]))
 
+	case Vec2:
+		vec := glv2(val)
+		gl.Uniform2fv(uniform.loc, vec[:])
 	case Vec3:
 		vec := glv3(val)
 		gl.Uniform3fv(uniform.loc, vec[:])

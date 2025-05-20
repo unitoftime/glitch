@@ -97,6 +97,7 @@ var (
 
 	fnBindFramebuffer  js.Value
 	fnUniform1fv       js.Value
+	fnUniform2fv       js.Value
 	fnUniform3fv       js.Value
 	fnUniform4fv       js.Value
 	fnUniformMatrix4fv js.Value
@@ -165,6 +166,7 @@ func (contextWatcher) OnMakeCurrent(context interface{}) {
 	fnCullFace = c.Get("cullFace").Call("bind", c)
 	fnFrontFace = c.Get("frontFace").Call("bind", c)
 	fnUniform1fv = c.Get("uniform1fv").Call("bind", c)
+	fnUniform2fv = c.Get("uniform2fv").Call("bind", c)
 	fnUniform3fv = c.Get("uniform3fv").Call("bind", c)
 	fnUniform4fv = c.Get("uniform4fv").Call("bind", c)
 	fnUniformMatrix4fv = c.Get("uniformMatrix4fv").Call("bind", c)
@@ -1123,12 +1125,16 @@ func Uniform1fv(dst Uniform, src []float32) {
 // 	c.Call("uniform2f", dst.Value, v0, v1)
 // }
 
-// func Uniform2fv(dst Uniform, src []float32) {
-// 	// c.Call("uniform2fv", dst.Value, src)
+func Uniform2fv(dst Uniform, src []float32) {
+	array, length := SliceToTypedArray(src)
+	subarray := array.Call("subarray", 0, length)
+	fnUniform2fv.Invoke(dst.Value, subarray)
 
-// 	SliceToTypedArray(src)
-// 	c.Call("uniform3fv", dst.Value, jsMemoryBufferVec2)
-// }
+	// // c.Call("uniform2fv", dst.Value, src)
+
+	// SliceToTypedArray(src)
+	// c.Call("uniform3fv", dst.Value, jsMemoryBufferVec2)
+}
 
 // func Uniform2i(dst Uniform, v0, v1 int) {
 // 	c.Call("uniform2i", dst.Value, v0, v1)
