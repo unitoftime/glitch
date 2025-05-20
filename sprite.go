@@ -81,6 +81,12 @@ func (s *Sprite) UVBounds() Rect {
 	return s.uvBounds
 }
 
+func (s *Sprite) Clone() *Sprite {
+	clone := *s
+	clone.mesh = s.mesh.Clone()
+	return &clone
+}
+
 func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds
 	s.bounds = bounds.Moved(bounds.Center().Scaled(-1))

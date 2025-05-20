@@ -85,6 +85,13 @@ func (m *Mesh) Append(m2 *Mesh) {
 	m.bounds = m.bounds.Union(m2.bounds)
 }
 
+func (m *Mesh) Clone() *Mesh {
+	clone := NewMesh()
+	clone.Append(m)
+
+	return clone
+}
+
 // Changes the origin point of the mesh by translating all the geometry to the new origin. This shouldn't be called frequently
 // Returns a newly allocated mesh and does not modify the original
 func (originalMesh *Mesh) WithSetOrigin(newOrigin Vec3) *Mesh {
