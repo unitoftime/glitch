@@ -323,5 +323,9 @@ var SpriteWaterShader = ShaderConfig{
 		Attr{"iTime", AttrFloat},
 		Attr{"zoom", AttrVec2},
 		Attr{"repeatRect", AttrVec4},
+		Attr{"scaleVal", AttrFloat},
+		Attr{"scaleFreq", AttrFloat},
+		Attr{"noiseMoveBias", AttrFloat},
+		Attr{"moveBias", AttrFloat},
 	},
 }

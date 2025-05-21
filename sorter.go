@@ -144,7 +144,6 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	}
 
 	// state := BufferState{materialGroup{s.material, material}, s.blendMode}
-
 	// // if s.camera != nil {
 	// // 	material.camera = s.camera
 	// // }

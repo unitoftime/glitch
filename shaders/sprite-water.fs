@@ -13,6 +13,10 @@ in vec2 TexCoord;
 uniform float iTime;
 uniform vec2 zoom;
 uniform vec4 repeatRect; // Note: This is in UV space
+uniform float scaleVal;
+uniform float scaleFreq;
+uniform float moveBias;
+uniform float noiseMoveBias;
 
 //texture samplers
 uniform sampler2D texture1;
@@ -48,15 +52,17 @@ float snoise(vec2 v){
 
 void main()
 {
-  /* float sv = 1.0; */
-  float sv = 0.001;
-  float sf = 40.0;
-  float moveBias = 0.005;
+  /* float scaleVal = 1.0; */
+  /* float scaleVal = 0.001; */
+  /* float scaleFreq = 40.0; */
+  /* float noiseMoveBias = 0.005; */
 
-  vec2 tc = TexCoord + (vec2(moveBias, moveBias) * iTime); // Add Movement
-  float v = (snoise(tc * sf) * sv); // Sample noise value
+  vec2 tc = TexCoord + (vec2(noiseMoveBias, noiseMoveBias) * iTime); // Add Movement
+  float v = (snoise(tc * scaleFreq) * scaleVal); // Sample noise value
 
-  vec2 tCoord = TexCoord + (v - (sv / 2.0));
+  vec2 texOffset = vec2(moveBias * iTime, moveBias * iTime);
+
+  vec2 tCoord = TexCoord + (v - (scaleVal / 2.0)) + texOffset;
 
   // Repeat
   vec2 rMin = vec2(repeatRect.x, repeatRect.y);
@@ -74,7 +80,7 @@ void main()
 
   // --------------------------------------------------------------------------------
 
-  /* vec2 tc = TexCoord + (vec2(moveBias, moveBias) * iTime); */
-  /* float v = (snoise(tc * sf) * sv); */
+  /* vec2 tc = TexCoord + (vec2(noiseMoveBias, noiseMoveBias) * iTime); */
+  /* float v = (snoise(tc * scaleFreq) * scaleVal); */
   /* FragColor = vec4(v, v, v, 1.0); */
 }
