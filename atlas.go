@@ -123,5 +123,7 @@ func AtlasFromSdf(sdf SdfAtlas, sdfImg image.Image, kerning float64) (*Atlas, er
 		atlas.mapping[rune(g.Unicode)] = glyph
 	}
 
+	atlas.tmpText = atlas.Text("", 1.0)
+
 	return atlas, nil
 }

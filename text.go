@@ -93,7 +93,8 @@ type Atlas struct {
 
 	defaultMaterial Material
 
-	tmpMeasurementText *Text
+	// TODO: Kind of a hack, but lets me reuse code more easily. Used for measure and for drawText
+	tmpText *Text
 }
 
 func fixedToFloat(val fixed.Int26_6) float64 {
@@ -321,6 +322,8 @@ func NewAtlas(face font.Face, runes []rune, config AtlasConfig) *Atlas {
 	atlas.texture = NewTexture(img, config.Smooth)
 	atlas.defaultMaterial = DefaultMaterial(atlas.texture)
 
+	atlas.tmpText = atlas.Text("", 1.0)
+
 	// fmt.Println("TextAtlas: ", atlas.texture.width, atlas.texture.height)
 	return atlas
 }
@@ -424,6 +427,48 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 	return dot, y2
 }
 
+func (a *Atlas) NewText(text string, scale float64) textDraw {
+	t := textDraw{
+		atlas: a,
+		text: text,
+		scale: scale,
+	}
+	return t
+}
+
+type textDraw struct {
+	atlas *Atlas
+	text string
+	scale float64
+}
+
+func (t textDraw) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
+	// TODO: Adds an additional buffer copy for all of the verts
+	tt := t.atlas.tmpText
+
+	tt.SetScale(t.scale)
+	tt.Set(t.text)
+	tt.currentString = t.text
+	tt.Clear()
+	tt.bounds = tt.AppendStringVerts(tt.currentString, false)
+
+	return tt.mesh.Fill(pool, mat, mask)
+}
+func (t textDraw) Bounds() glm.Box {
+	return t.atlas.Measure(t.text, t.scale).Box()
+}
+
+func (t textDraw) Draw(target BatchTarget, matrix Mat4) {
+	t.DrawColorMask(target, matrix, glm.White)
+}
+
+func (t textDraw) DrawColorMask(target BatchTarget, matrix Mat4, mask glm.RGBA) {
+	geom := GeometryFiller{
+		prog: t,
+	}
+	target.Add(geom, glm4(matrix), mask, t.atlas.defaultMaterial)
+}
+
 func (a *Atlas) Text(str string, scale float64) *Text {
 	t := &Text{
 		currentString: "",
@@ -446,15 +491,11 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 
 // TODO: This could be improved by just calling specialized measurement functions
 func (a *Atlas) Measure(str string, scale float64) Rect {
-	if a.tmpMeasurementText == nil {
-		a.tmpMeasurementText = a.Text("", scale)
-	}
+	a.tmpText.Clear()
 
-	a.tmpMeasurementText.Clear()
-
-	a.tmpMeasurementText.currentString = str
-	a.tmpMeasurementText.scale = scale
-	return a.tmpMeasurementText.AppendStringVerts(str, true)
+	a.tmpText.currentString = str
+	a.tmpText.scale = scale
+	return a.tmpText.AppendStringVerts(str, true)
 
 	// fakeText := Text{
 	// 	currentString: str,
