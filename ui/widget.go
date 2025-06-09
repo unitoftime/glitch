@@ -625,6 +625,11 @@ func SpritePanel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) bool {
 	return PanelExt(label, rect, style)
 }
 
+// Like a sprite but doens't hover
+func Image(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
+	drawSprite(rect, SpriteStyle{sprite, color})
+}
+
 func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	// style := Style{
 	// 	Normal: NewSpriteStyle(sprite, color),
