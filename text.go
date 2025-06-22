@@ -489,21 +489,20 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 	return t
 }
 
-// TODO: This could be improved by just calling specialized measurement functions
+func (a *Atlas) MeasureRune(r rune, scale float64) Rect {
+	// TODO: This could be improved by just calling specialized measurement functions
+	return a.Measure(string(r), scale)
+}
+
 func (a *Atlas) Measure(str string, scale float64) Rect {
+	// TODO: This could be improved by just calling specialized measurement functions
 	a.tmpText.Clear()
 
 	a.tmpText.currentString = str
 	a.tmpText.scale = scale
 	return a.tmpText.AppendStringVerts(str, true)
-
-	// fakeText := Text{
-	// 	currentString: str,
-	// 	atlas:         a,
-	// 	scale:         scale,
-	// }
-	// return fakeText.AppendStringVerts(str, true)
 }
+
 func (a *Atlas) MeasureWrapped(str string, scale float64, wrapRect Rect) Rect {
 	fakeText := Text{
 		currentString: str,
