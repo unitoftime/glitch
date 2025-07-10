@@ -31,6 +31,10 @@ func (g *Graph) Clear() {
 	g.mesh.Clear()
 }
 
+func (g *Graph) Bounds() glm.Rect {
+	return g.bounds
+}
+
 func (g *Graph) SetBounds(bounds glitch.Rect) {
 	g.bounds = bounds
 }

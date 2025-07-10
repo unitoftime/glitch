@@ -9,6 +9,8 @@ import (
 type Drawer interface {
 	RectDraw(glitch.BatchTarget, glitch.Rect)
 	RectDrawColorMask(glitch.BatchTarget, glitch.Rect, glitch.RGBA)
+	DrawColorMask(glitch.BatchTarget, glm.Mat4, glitch.RGBA)
+	Bounds() glm.Rect
 }
 
 func Bounds() glitch.Rect {

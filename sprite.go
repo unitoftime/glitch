@@ -1,6 +1,8 @@
 package glitch
 
-import "github.com/unitoftime/flow/glm"
+import (
+	"github.com/unitoftime/flow/glm"
+)
 
 type Sprite struct {
 	mesh     *Mesh
@@ -42,11 +44,17 @@ func (s *Sprite) Material() *Material {
 	return &s.material
 }
 
+// TODO: DEPRECATE!!!
 // Changes the origin point of the sprite by translating all the geometry to the new origin. This shouldn't be called frequently. The default origin is around the center of the sprite
 // Returns a newly allocated mesh and does not modify the original
 func (s Sprite) WithSetOrigin(origin Vec3) Sprite {
 	s.mesh = s.mesh.WithSetOrigin(origin)
 	return s
+}
+
+// TODO: DEPRECATE!!!
+func (s Sprite) WithResetOrigin() Sprite {
+	return s.WithSetOrigin(s.mesh.origin.Scaled(-1, -1, -1))
 }
 
 // func (s *Sprite) DrawToBatch(target *Batch, matrix Mat4) {
@@ -233,6 +241,16 @@ func (s *NinePanelSprite) SetTranslucent(translucent bool) {
 // func (s *NinePanelSprite) Draw(pass *RenderPass, bounds Rect, matrix Mat4) {
 // 	s.DrawColorMask(pass, bounds, matrix, RGBA{1.0, 1.0, 1.0, 1.0})
 // }
+
+func (s *NinePanelSprite) DrawColorMask(pass BatchTarget, mat Mat4, mask RGBA) {
+	// TODO: THIS DOESN"T WORK. This doesn't handle rotations.
+
+	r := s.bounds
+	r.Min = mat.Apply(r.Min.Vec3()).Vec2()
+	r.Min = mat.Apply(r.Max.Vec3()).Vec2()
+
+	s.RectDrawColorMask(pass, r, mask)
+}
 
 func (s *NinePanelSprite) RectDraw(pass BatchTarget, bounds Rect) {
 	s.RectDrawColorMask(pass, bounds, White)

@@ -365,7 +365,16 @@ func drawSprite(rect glitch.Rect, style SpriteStyle) {
 	if style.sprite == nil {
 		return
 	}
-	style.sprite.RectDrawColorMask(global.sorter, rect, style.color)
+	if style.rot != 0 {
+		matrix := glitch.Mat4Ident
+		matrix.
+			Scale(rect.W()/style.sprite.Bounds().W(), rect.H()/style.sprite.Bounds().H(), 1).
+			RotateZ(style.rot).
+			Translate(rect.W()/2+rect.Min.X, rect.H()/2+rect.Min.Y, 0)
+		style.sprite.DrawColorMask(global.sorter, matrix, style.color)
+	} else {
+		style.sprite.RectDrawColorMask(global.sorter, rect, style.color)
+	}
 
 	// TODO: add back
 	// g.appendUnionBounds(rect)
@@ -627,7 +636,11 @@ func SpritePanel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) bool {
 
 // Like a sprite but doens't hover
 func Image(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
-	drawSprite(rect, SpriteStyle{sprite, color})
+	drawSprite(rect, SpriteStyle{sprite, color, 0})
+}
+
+func RotatedImage(sprite Drawer, rect glitch.Rect, rot float64, color glitch.RGBA) {
+	drawSprite(rect, SpriteStyle{sprite, color, rot})
 }
 
 func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
@@ -637,7 +650,7 @@ func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 	// 	Pressed: NewSpriteStyle(sprite, color),
 	// }
 	// PanelExt("##_panelsprite", rect, style)
-	drawSprite(rect, SpriteStyle{sprite, color})
+	drawSprite(rect, SpriteStyle{sprite, color, 0})
 	Hovered("##_h", rect) // Just a discarded hover
 }
 
