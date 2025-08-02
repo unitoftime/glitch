@@ -4,13 +4,24 @@ import (
 	"github.com/unitoftime/flow/glm"
 )
 
+// type Sprite2 struct {
+// 	bounds Rect
+// 	frame Rect
+// 	// uvBounds Rect // TODO: Calculate these dynamically
+// 	material Material // Note: Texture is in here
+// }
+
+// func NewSprite2(texture *Texture, bounds Rect) Sprite2 {
+
+// }
+
 type Sprite struct {
 	mesh     *Mesh
 	bounds   Rect // Represents the bounds centered on (0, 0)
 	frame    Rect // Represents the bounds inside the spritesheet
-	texture  *Texture
-	material Material
-	uvBounds Rect
+	uvBounds Rect // Represents the UV bounds inside the texture
+	// texture  *Texture
+	material Material // Note: Texture is in the material
 }
 
 func NewSprite(texture *Texture, bounds Rect) *Sprite {
@@ -30,7 +41,7 @@ func NewSprite(texture *Texture, bounds Rect) *Sprite {
 		frame:  bounds,
 		bounds: bounds.Moved(bounds.Center().Scaled(-1)),
 		// bounds: mesh.Bounds().Rect(),
-		texture: texture,
+		// texture: texture,
 		// material: NewSpriteMaterial(texture),
 		material: material,
 		uvBounds: uvBounds,
@@ -98,11 +109,13 @@ func (s *Sprite) Clone() *Sprite {
 func (s *Sprite) SetTextureBounds(bounds Rect) {
 	s.frame = bounds
 	s.bounds = bounds.Moved(bounds.Center().Scaled(-1))
+
+	tex := s.material.texture
 	s.uvBounds = glm.R(
-		bounds.Min.X/float64(s.texture.width),
-		bounds.Min.Y/float64(s.texture.height),
-		bounds.Max.X/float64(s.texture.width),
-		bounds.Max.Y/float64(s.texture.height),
+		bounds.Min.X/float64(tex.width),
+		bounds.Min.Y/float64(tex.height),
+		bounds.Max.X/float64(tex.width),
+		bounds.Max.Y/float64(tex.height),
 	)
 
 	w := bounds.W()
@@ -185,7 +198,7 @@ type NinePanelSprite struct {
 }
 
 func SpriteToNinePanel(sprite *Sprite, border Rect) *NinePanelSprite {
-	return NewNinePanelSprite(sprite.texture, sprite.frame, border)
+	return NewNinePanelSprite(sprite.material.texture, sprite.frame, border)
 }
 
 func NewNinePanelSprite(texture *Texture, bounds Rect, border Rect) *NinePanelSprite {

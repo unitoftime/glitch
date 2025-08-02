@@ -147,6 +147,7 @@ var SpriteShader = ShaderConfig{
 		Attr{"model", AttrMat4},
 		Attr{"projection", AttrMat4},
 		Attr{"view", AttrMat4},
+		// Attr{"silhouetteMix", AttrFloat},
 	},
 }
 
