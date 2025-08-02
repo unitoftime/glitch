@@ -13,10 +13,10 @@ in vec2 TexCoord;
 //texture samplers
 uniform sampler2D texture1;
 
-// 0 -> texture * color
-// Linear interp in between
-// 1 -> color
-// uniform float silhouetteMix;
+/* // 0 -> texture * color */
+/* // Linear interp in between */
+/* // 1 -> color */
+/* uniform float silhouetteMix; */
 
 void main()
 {
@@ -25,14 +25,21 @@ void main()
     discard;
   }
 
-  // linearly interpolate between both textures (80% container, 20% awesomeface)
-  //FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2);
-  FragColor = ourColor * tex;
-  //  FragColor = vec4(ourColor, 1.0) * texture(texture1, TexCoord);
-  //  FragColor = vec4(ourColor, 1.0);
+  /* // linearly interpolate between both textures (80% container, 20% awesomeface) */
+  /* //FragColor = mix(texture(texture1, TexCoord), texture(texture2, TexCoord), 0.2); */
+  /* FragColor = ourColor * tex; */
+  /* //  FragColor = vec4(ourColor, 1.0) * texture(texture1, TexCoord); */
+  /* //  FragColor = vec4(ourColor, 1.0); */
 
   /* vec4 spriteColor = ourColor * tex; */
   /* vec4 silhouetteColor = ourColor; */
   /* FragColor = mix(spriteColor, silhouetteColor, silhouetteMix); */
 
+
+  // If alpha > 1.1 then switch to silhuette mode
+  if (ourColor.a > 1.1) {
+    FragColor = ourColor;
+  } else {
+    FragColor = ourColor * tex;
+  }
 }

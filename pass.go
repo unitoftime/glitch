@@ -22,6 +22,11 @@ import "github.com/unitoftime/flow/glm"
 // 	Bounds() glm.Box
 // }
 
+type spriteDraw struct {
+	bounds Rect
+	uvBounds Rect
+}
+
 type ProgrammaticGeom interface {
 	// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
@@ -29,18 +34,31 @@ type ProgrammaticGeom interface {
 	Bounds() glm.Box
 }
 
+type fillType uint8
+const (
+	fillTypeNone fillType = iota
+	fillTypeMesh
+	fillTypeProgrammatic
+	// fillTypeSprite
+)
+
 type GeometryFiller struct {
+	fillType fillType
 	mesh *Mesh
 	prog ProgrammaticGeom
+	// sprite spriteDraw
 }
 
 // returns true if the filler is blank for some reason
 func (g GeometryFiller) empty() bool {
-	return g.mesh == nil && g.prog == nil
+	return g.fillType == fillTypeNone
 }
 
 // Returns a prebuild VertexBuffer, or nil if does not exist
 func (g GeometryFiller) GetBuffer() *VertexBuffer {
+	if g.fillType != fillTypeMesh {
+		return nil
+	}
 	if g.mesh == nil {
 		return nil
 	}
@@ -51,21 +69,28 @@ func (g GeometryFiller) GetBuffer() *VertexBuffer {
 // TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
 // TODO: I think you can simplify all of the draw options into one struct and pass it by pointer
 func (g GeometryFiller) Fill(pool *BufferPool, mat glMat4, col RGBA) *VertexBuffer {
-	if g.mesh != nil {
+	switch g.fillType {
+	case fillTypeMesh:
 		return g.mesh.Fill(pool, mat, col)
+	case fillTypeProgrammatic:
+		return g.prog.Fill(pool, mat, col)
+	// case fillTypeSprite:
+	// 	return g.sprite.Fill(pool, mat, col)
 	}
 
-	if g.prog == nil {
-		return nil
-	}
-	return g.prog.Fill(pool, mat, col)
+	return nil
 }
 
 func (g GeometryFiller) Bounds() glm.Box {
-	if g.mesh != nil {
+	switch g.fillType {
+	case fillTypeMesh:
 		return g.mesh.Bounds()
+	case fillTypeProgrammatic:
+		return g.prog.Bounds()
+	// case fillTypeSprite:
+	// 	return g.sprite.Bounds()
 	}
-	return g.prog.Bounds()
+	return glm.Box{}
 }
 
 type BatchTarget interface {

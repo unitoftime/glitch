@@ -65,29 +65,14 @@ func (b *DrawBatch) Clear() {
 }
 
 func (b *DrawBatch) Draw(target BatchTarget, matrix Mat4) {
-	// for i := range b.draws {
-	// 	mat := glm4(matrix)
-	// 	mat.Mul(&b.draws[i].matrix)
-	// 	target.Add(b.draws[i].filler, mat, b.draws[i].mask, b.draws[i].material, b.draws[i].translucent)
-	// }
-
 	for _, draw := range b.draws.All() {
 		mat := glm4(matrix)
 		mat.Mul(&draw.matrix)
 		target.Add(draw.filler, mat, draw.mask, draw.material)
 	}
-	// target.Add(b.mesh, matrix.gl(), RGBA{1.0, 1.0, 1.0, 1.0}, b.material, b.Translucent)
-	// b.DrawColorMask(target, matrix, White)
 }
 
 func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
-	// for i := range b.draws {
-	// 	mat := glm4(matrix)
-	// 	mat.Mul(&b.draws[i].matrix)
-
-	// 	mask := b.draws[i].mask.Mult(color)
-	// 	target.Add(b.draws[i].filler, mat, mask, b.draws[i].material, b.draws[i].translucent)
-	// }
 	for _, draw := range b.draws.All() {
 		mat := glm4(matrix)
 		mat.Mul(&draw.matrix)
@@ -95,11 +80,6 @@ func (b *DrawBatch) DrawColorMask(target BatchTarget, matrix Mat4, color RGBA) {
 		mask := draw.mask.Mult(color)
 		target.Add(draw.filler, mat, mask, draw.material)
 	}
-
-	// target.Add(b.mesh, matrix.gl(), color, b.material, b.Translucent)
-	// for i := range b.draws {
-	// 	target.Add(b.draws[i].mesh, b.draws[i].matrix, b.draws[i].color, b.draws[i].material, b.draws[i].translucent)
-	// }
 }
 
 func (b *DrawBatch) RectDraw(target BatchTarget, bounds Rect) {
