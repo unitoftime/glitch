@@ -22,11 +22,6 @@ import "github.com/unitoftime/flow/glm"
 // 	Bounds() glm.Box
 // }
 
-type spriteDraw struct {
-	bounds Rect
-	uvBounds Rect
-}
-
 type ProgrammaticGeom interface {
 	// TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
 	// TODO: I think you can simplify all of the draw options into one struct and pass it by pointer

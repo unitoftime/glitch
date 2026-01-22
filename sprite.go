@@ -4,17 +4,6 @@ import (
 	"github.com/unitoftime/flow/glm"
 )
 
-// type Sprite2 struct {
-// 	bounds Rect
-// 	frame Rect
-// 	// uvBounds Rect // TODO: Calculate these dynamically
-// 	material Material // Note: Texture is in here
-// }
-
-// func NewSprite2(texture *Texture, bounds Rect) Sprite2 {
-
-// }
-
 type Sprite struct {
 	mesh     *Mesh
 	bounds   Rect // Represents the bounds centered on (0, 0)
