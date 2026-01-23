@@ -6,14 +6,14 @@ import (
 )
 
 type Quad struct {
-	Frame Rect // The bounds inside the spritesheet in the material
-	Origin glm.Vec3 // TODO: Hack to allow for offsets in the frame other than (0, 0)
+	Frame    Rect     // The bounds inside the spritesheet in the material
+	Origin   glm.Vec3 // TODO: Hack to allow for offsets in the frame other than (0, 0)
 	material Material // Note: Texture is in here
 }
 
 func NewSpriteQuad(texture *Texture, frame Rect) Quad {
 	return Quad{
-		Frame: frame,
+		Frame:    frame,
 		material: DefaultMaterial(texture),
 	}
 }
@@ -21,8 +21,8 @@ func NewSpriteQuad(texture *Texture, frame Rect) Quad {
 // Convert a sprite to a quad
 func (s *Sprite) ToQuad() Quad {
 	return Quad{
-		Frame: s.frame,
-		Origin: s.mesh.origin,
+		Frame:    s.frame,
+		Origin:   s.mesh.origin,
 		material: s.material,
 	}
 }
@@ -34,7 +34,7 @@ func (s Quad) Bounds() glm.Box {
 func (s Quad) g() GeometryFiller {
 	return GeometryFiller{
 		fillType: fillTypeProgrammatic,
-		prog: s,
+		prog:     s,
 	}
 }
 
@@ -70,10 +70,10 @@ var quadIndices = []uint32{
 	0, 1, 3,
 	1, 2, 3,
 }
+
 func (s Quad) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	numVerts := 4
 	vertexBuffer := pool.Reserve(quadIndices, numVerts, pool.shader.tmpBuffers)
-
 
 	destBuffs := pool.shader.tmpBuffers
 	for bufIdx, attr := range pool.shader.attrFmt {

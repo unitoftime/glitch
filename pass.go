@@ -30,6 +30,7 @@ type ProgrammaticGeom interface {
 }
 
 type fillType uint8
+
 const (
 	fillTypeNone fillType = iota
 	fillTypeMesh
@@ -39,8 +40,8 @@ const (
 
 type GeometryFiller struct {
 	fillType fillType
-	mesh *Mesh
-	prog ProgrammaticGeom
+	mesh     *Mesh
+	prog     ProgrammaticGeom
 	// sprite spriteDraw
 }
 
@@ -69,8 +70,8 @@ func (g GeometryFiller) Fill(pool *BufferPool, mat glMat4, col RGBA) *VertexBuff
 		return g.mesh.Fill(pool, mat, col)
 	case fillTypeProgrammatic:
 		return g.prog.Fill(pool, mat, col)
-	// case fillTypeSprite:
-	// 	return g.sprite.Fill(pool, mat, col)
+		// case fillTypeSprite:
+		// 	return g.sprite.Fill(pool, mat, col)
 	}
 
 	return nil
@@ -82,8 +83,8 @@ func (g GeometryFiller) Bounds() glm.Box {
 		return g.mesh.Bounds()
 	case fillTypeProgrammatic:
 		return g.prog.Bounds()
-	// case fillTypeSprite:
-	// 	return g.sprite.Bounds()
+		// case fillTypeSprite:
+		// 	return g.sprite.Bounds()
 	}
 	return glm.Box{}
 }

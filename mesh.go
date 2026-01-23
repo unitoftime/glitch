@@ -40,7 +40,7 @@ func (m *Mesh) Buffer(shader *Shader) *Mesh {
 func (m *Mesh) g() GeometryFiller {
 	return GeometryFiller{
 		fillType: fillTypeMesh,
-		mesh: m,
+		mesh:     m,
 	}
 }
 

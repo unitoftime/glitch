@@ -361,7 +361,7 @@ func (a *Atlas) getRuneGlyph(r rune) Glyph {
 }
 
 // Gets the total size of the rune plus advance and kerning
-func (a *Atlas) runeSize(r rune, scale float64) (glm.Vec2) {
+func (a *Atlas) runeSize(r rune, scale float64) glm.Vec2 {
 	// multiplying by texture sizes converts from UV to pixel coords
 	scaleX := scale * float64(a.texture.width)
 	scaleY := scale * float64(a.texture.height)
@@ -430,7 +430,7 @@ func (a *Atlas) RuneVerts(mesh *Mesh, r rune, dot Vec2, scale float64, color RGB
 func (a *Atlas) NewText(text string, scale float64) textDraw {
 	t := textDraw{
 		atlas: a,
-		text: text,
+		text:  text,
 		scale: scale,
 	}
 	return t
@@ -438,7 +438,7 @@ func (a *Atlas) NewText(text string, scale float64) textDraw {
 
 type textDraw struct {
 	atlas *Atlas
-	text string
+	text  string
 	scale float64
 }
 
@@ -465,7 +465,7 @@ func (t textDraw) Draw(target BatchTarget, matrix Mat4) {
 func (t textDraw) DrawColorMask(target BatchTarget, matrix Mat4, mask glm.RGBA) {
 	geom := GeometryFiller{
 		fillType: fillTypeProgrammatic,
-		prog: t,
+		prog:     t,
 	}
 	target.Add(geom, glm4(matrix), mask, t.atlas.defaultMaterial)
 }
@@ -663,7 +663,7 @@ func (t *Text) AppendStringVerts(text string, measure bool) Rect {
 			spaceSize := t.atlas.runeSize(' ', t.scale)
 			tabWidth := 4.0 * spaceSize.X
 			currentTabSection := (t.Dot.X - t.Orig.X) / tabWidth
-			t.Dot.X = t.Orig.X + math.Floor(currentTabSection + 1.0) * tabWidth
+			t.Dot.X = t.Orig.X + math.Floor(currentTabSection+1.0)*tabWidth
 			continue
 		}
 

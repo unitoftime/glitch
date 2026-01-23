@@ -80,7 +80,7 @@ func SetScrollbarHandleStyle(style Style) {
 type SpriteStyle struct {
 	sprite Drawer
 	color  glitch.RGBA
-	rot float64
+	rot    float64
 }
 
 func NewSpriteStyle(sprite Drawer, color glitch.RGBA) SpriteStyle {
@@ -100,7 +100,6 @@ func (s SpriteStyle) Rotation(rot float64) SpriteStyle {
 	s.rot = rot
 	return s
 }
-
 
 type Style struct {
 	Normal, Hovered, Pressed SpriteStyle // These are kind of like button states

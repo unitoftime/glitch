@@ -305,7 +305,6 @@ var SpriteRepeatShader = ShaderConfig{
 	},
 }
 
-
 //go:embed sprite-water.fs
 var SpriteWaterFragmentShader string
 
