@@ -35,6 +35,15 @@ func NewDrawBatch() DrawBatch {
 // 	}
 // }
 
+func (b *DrawBatch) Clone() DrawBatch {
+	ret := *b
+	ret.draws = ds.MiniSlice[[2]meshDraw, meshDraw]{}
+	for _, d := range b.draws.All() {
+		ret.draws.Append(d)
+	}
+	return ret
+}
+
 func (b *DrawBatch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material) {
 	// b.draws = append(b.draws, meshDraw{
 	b.draws.Append(meshDraw{
