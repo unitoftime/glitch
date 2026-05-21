@@ -252,7 +252,6 @@ func BufferSubData(target Enum, offset int, data interface{}) {
 	default:
 		panic("Invalid data type!")
 	}
-	gl.BufferSubData(uint32(target), offset, size, gl.Ptr(data))
 }
 
 func GetBufferSubData(target Enum, offset int, data interface{}) {

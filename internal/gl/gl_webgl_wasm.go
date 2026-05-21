@@ -11,7 +11,6 @@ import (
 	// "encoding/binary"
 	"fmt"
 	"math"
-	"reflect"
 	"runtime"
 	"strings"
 	"syscall/js"
@@ -209,50 +208,52 @@ var webgl1Mode bool
 func sliceToByteSlice(s any) []byte {
 	switch s := s.(type) {
 	case []int8:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s))
 	case []int16:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 2
-		h.Cap *= 2
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*2)
 	case []int32:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 4
-		h.Cap *= 4
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*4)
 	case []int64:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 8
-		h.Cap *= 8
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*8)
 	case []uint8:
 		return s
 	case []uint16:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 2
-		h.Cap *= 2
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*2)
 	case []uint32:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 4
-		h.Cap *= 4
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*4)
 	case []uint64:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 8
-		h.Cap *= 8
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*8)
 	case []float32:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 4
-		h.Cap *= 4
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*4)
 	case []float64:
-		h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-		h.Len *= 8
-		h.Cap *= 8
-		return *(*[]byte)(unsafe.Pointer(h))
+		if len(s) == 0 {
+			return nil
+		}
+		return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*8)
 	default:
 		panic(fmt.Sprintf("jsutil: unexpected value at sliceToBytesSlice: %T", s))
 	}
@@ -340,10 +341,10 @@ func SliceToTypedArray(s interface{}) (js.Value, int) {
 // -----
 
 func float32SliceToByteSlice(s []float32) []byte {
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	h.Len *= 4
-	h.Cap *= 4
-	return *(*[]byte)(unsafe.Pointer(h))
+	if len(s) == 0 {
+		return nil
+	}
+	return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*4)
 }
 
 func float32SliceToTypedArray(s []float32) (js.Value, int) {
@@ -360,10 +361,10 @@ func float32SliceToTypedArray(s []float32) (js.Value, int) {
 // -----
 
 func uint32SliceToByteSlice(s []uint32) []byte {
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&s))
-	h.Len *= 4
-	h.Cap *= 4
-	return *(*[]byte)(unsafe.Pointer(h))
+	if len(s) == 0 {
+		return nil
+	}
+	return unsafe.Slice((*byte)(unsafe.Pointer(&s[0])), len(s)*4)
 }
 
 func uint32SliceToTypedArray(s []uint32) (js.Value, int) {

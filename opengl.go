@@ -2,7 +2,6 @@ package glitch
 
 import (
 	"fmt"
-	"reflect"
 	"runtime"
 	"unsafe"
 
@@ -59,19 +58,11 @@ func (b *SubBuffer[T]) Cap() int {
 // }
 
 func (b *SubBuffer[T]) Buffer() []byte {
-	copiedHeader := b.buffer
-	h := (*reflect.SliceHeader)(unsafe.Pointer(&copiedHeader))
-	h.Len = h.Len * b.sliceScale
-	h.Cap = h.Len * b.sliceScale
-
-	b.byteBuffer = *(*[]byte)(unsafe.Pointer(h))
+	if len(b.buffer) == 0 {
+		return nil
+	}
+	b.byteBuffer = unsafe.Slice((*byte)(unsafe.Pointer(&b.buffer[0])), len(b.buffer)*b.sliceScale)
 	return b.byteBuffer
-
-	// copiedHeader := b.buffer
-	// h := (*reflect.SliceHeader)(unsafe.Pointer(&copiedHeader))
-	// h.Len *= b.sliceScale
-	// h.Cap *= b.sliceScale
-	// return *(*[]byte)(unsafe.Pointer(h))
 }
 
 // func (b *SubBuffer[T]) BufferSubData(offset int) {
