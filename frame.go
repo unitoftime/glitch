@@ -86,7 +86,7 @@ func (f *Frame) delete() {
 }
 
 func (f *Frame) Bind() {
-	state.bindFramebuffer(f.fbo, f.bounds)
+	state.bindFramebuffer(f, f.fbo, f.bounds)
 }
 
 func (f *Frame) Material() *Material {

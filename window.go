@@ -515,7 +515,7 @@ func (w *Window) Repeated(key Key) bool {
 
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
-	state.bindFramebuffer(gl.NoFramebuffer, w.Bounds())
+	state.bindFramebuffer(nil, gl.NoFramebuffer, w.Bounds())
 }
 
 // Reads a rectangle of the window's frame as a collection of bytes

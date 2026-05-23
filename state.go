@@ -13,6 +13,7 @@ type stateTracker struct {
 	fbo       gl.Framebuffer
 	fboBounds Rect
 	fboBinder func()
+	fboFrame  *Frame
 
 	// Depth Test
 	// depthTest       bool
@@ -145,12 +146,13 @@ func (s *stateTracker) bindTexture(texture *Texture) {
 	mainthread.Call(state.textureBinder)
 }
 
-func (s *stateTracker) bindFramebuffer(fbo gl.Framebuffer, bounds Rect) {
+func (s *stateTracker) bindFramebuffer(f *Frame, fbo gl.Framebuffer, bounds Rect) {
 	if s.fbo.Equal(fbo) && s.fboBounds == bounds {
 		return
 	}
-	state.fbo = fbo
-	state.fboBounds = bounds
+	s.fbo = fbo
+	s.fboBounds = bounds
+	s.fboFrame = f
 
 	mainthread.Call(s.fboBinder)
 }
