@@ -169,6 +169,8 @@ type uiGlobals struct {
 	stopDragging bool
 	dragData     any
 
+	// cachedId eid
+
 	cursorPos int
 
 	idCounter eid
@@ -198,6 +200,7 @@ var global = uiGlobals{
 	elements:  make(map[uint64]eid),
 	// elementsRev: make(map[eid]string),
 	dedup: make(map[uint64]uint32),
+
 }
 
 func SetHudScale(scale float64) {

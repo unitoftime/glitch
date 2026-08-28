@@ -822,12 +822,13 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	// *val = clamp(min, max, *val)
 }
 
-func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
+func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) bool {
 	square := rect.SubSquare()
 
 	buttonLeft := rect.CutLeft(square.W())
 	buttonRight := rect.CutRight(square.W())
 
+	oldVal := *val
 	delta := max - min
 	ratio := (*val - min) / delta
 	width := rect.W() - square.W()
@@ -862,6 +863,9 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	// }
 
 	*val = clamp(min, max, *val)
+
+	changed := (oldVal != *val)
+	return changed
 }
 
 func scrollZone(val *float64, min, max, step float64, rect glm.Rect) {
@@ -941,6 +945,16 @@ func Tooltip(label string, rect glitch.Rect) {
 	TooltipExt(label, rect, gStyle.tooltipStyle)
 }
 
+// // Returns true for only the frame where the last checked elements hover was triggered
+// func HoverEnter() bool {
+// 	return newHover(global.cachedId)
+// }
+
+// func newHover(id eid) bool {
+// 	return ((global.hoverOnlyId != id) && (global.lastHoverOnlyId == id)) ||
+// 		((global.hotId != id) && (global.lastHotId == id))
+// }
+
 func TooltipExt(label string, rect glitch.Rect, style Style) {
 	id := getId(label)
 	text := removeDedup(label)
@@ -948,7 +962,7 @@ func TooltipExt(label string, rect glitch.Rect, style Style) {
 	resp := WidgetResp{}
 	resp.hoverOnly(id, rect)
 
-	if global.hoverOnlyId != id {
+	if (global.hoverOnlyId != id) {
 		return // Exit early if not hovered
 	}
 

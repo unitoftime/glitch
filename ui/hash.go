@@ -86,6 +86,7 @@ func getId(label string) eid {
 		// g.elementsRev[id] = label
 	}
 
+	// global.cachedId = id
 	return id
 }
 
