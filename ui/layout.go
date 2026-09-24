@@ -88,6 +88,15 @@ type vList struct {
 	fromBottom bool
 }
 
+func (l *vList) PadBy(amount float64) glitch.Rect {
+	if l.fromBottom {
+		l.last = l.rect.CutBottom(amount)
+	} else {
+		l.last = l.rect.CutTop(amount)
+	}
+	return l.last
+}
+
 func (l *vList) Next() glitch.Rect {
 	if l.fromBottom {
 		if l.padNext != 0 {
