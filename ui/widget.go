@@ -521,10 +521,14 @@ func drawDebug(rect glitch.Rect) {
 
 // --------------------------------------------------------------------------------
 func SmoothDragButton(label string, rect *glitch.Rect, bounds glitch.Rect, step glitch.Vec2, style Style) bool {
-	// mask := wmHoverable | wmClickable | wmDrawPanel | wmDrawText // | wmDragY
-	mask := wmDrawPanel
 	id := getId(label)
 	text := removeDedup(label)
+	return smoothDragButtonId(id, text, rect, bounds, step, style)
+}
+
+func smoothDragButtonId(id eid, text string, rect *glitch.Rect, bounds glitch.Rect, step glitch.Vec2, style Style) bool {
+	// mask := wmHoverable | wmClickable | wmDrawPanel | wmDrawText // | wmDragY
+	mask := wmDrawPanel
 
 	resp := WidgetResp{}
 	resp.clickable(id)
@@ -625,6 +629,17 @@ func PanelExt(label string, rect glitch.Rect, style Style) bool {
 
 	return resp.Released
 }
+
+// A panel that also reports presses, for tracks that a handle sits on
+func clickablePanel(label string, rect glitch.Rect, style Style) WidgetResp {
+	mask := wmHoverable | wmClickable | wmDrawPanel
+
+	id := getId(label)
+	text := removeDedup(label)
+
+	return doWidget(id, text, mask, style, rect)
+}
+
 func Panel2(label string, rect glitch.Rect) bool {
 	return PanelExt(label, rect, gStyle.panelStyle)
 }
@@ -743,12 +758,17 @@ func (s SliderStyle) Vertical(val *float64, min, max, step float64, rect, hoverR
 	// yPos := (ratio * deltaY) + rect.Max.Y - (square.H() / 2)
 
 	yPos := -(ratio * height) + rect.Max.Y - (square.H() / 2)
-	PanelExt("##vscrollbarbg", rect, s.Background)
+	trackResp := clickablePanel("##vscrollbarbg", rect, s.Background)
 
 	numSteps := (delta / step)
 	floatStep := height / numSteps
 	draggerRect := square.WithCenter(glitch.Vec2{rect.Center().X, yPos})
-	if SmoothDragButton("##vscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, s.Handle) {
+	draggerId := getId("##vscrollbarfg")
+	if trackResp.Pressed {
+		// Clicking the track hands the press to the handle, so it jumps to the cursor and keeps dragging while held
+		global.activeId = draggerId
+	}
+	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, s.Handle) {
 		y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
 
 		ratio := y / height
@@ -834,12 +854,17 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	width := rect.W() - square.W()
 
 	xPos := (ratio * width) + rect.Min.X + (square.W() / 2)
-	PanelExt("##hscrollbarbg", rect, gStyle.scrollbarBgStyle)
+	trackResp := clickablePanel("##hscrollbarbg", rect, gStyle.scrollbarBgStyle)
 
 	numSteps := (delta / step)
 	floatStep := width / numSteps
 	draggerRect := square.WithCenter(glitch.Vec2{xPos, rect.Center().Y})
-	if SmoothDragButton("##hscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) {
+	draggerId := getId("##hscrollbarfg")
+	if trackResp.Pressed {
+		// Clicking the track hands the press to the handle, so it jumps to the cursor and keeps dragging while held
+		global.activeId = draggerId
+	}
+	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) {
 		x := -rect.Min.X + draggerRect.Center().X - (square.W() / 2)
 
 		ratio := x / width
