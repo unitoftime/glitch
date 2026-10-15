@@ -55,6 +55,10 @@ func (g *Graph) RectDraw(target glitch.BatchTarget, rect glitch.Rect) {
 
 // TODO - Assumes sorted?
 func (g *Graph) Line(series []glitch.Vec2) {
+	if len(series) < 2 {
+		return // Skip: Need at least two points to draw a line
+	}
+
 	minDomain := math.MaxFloat64
 	maxDomain := -math.MaxFloat64
 	minRange := math.MaxFloat64
@@ -69,8 +73,14 @@ func (g *Graph) Line(series []glitch.Vec2) {
 
 	g.axes = glm.R(minDomain, minRange, maxDomain, maxRange)
 
-	dx := g.bounds.W() / (maxDomain - minDomain)
-	dy := g.bounds.H() / (maxRange - minRange)
+	// Note: A zero span (ie a constant series) is drawn along the bottom/left edge instead of producing NaN points
+	dx, dy := 0.0, 0.0
+	if maxDomain > minDomain {
+		dx = g.bounds.W() / (maxDomain - minDomain)
+	}
+	if maxRange > minRange {
+		dy = g.bounds.H() / (maxRange - minRange)
+	}
 	// fmt.Println(dx, dy, rect.H(), maxDomain, minDomain, minRange, maxRange)
 	g.points = g.points[:0]
 	for _, p := range series {

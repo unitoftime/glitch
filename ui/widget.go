@@ -95,6 +95,16 @@ func clamp[T cmp.Ordered](start, end T, val T) T {
 	return min(max(val, start), end)
 }
 
+// Returns the handle's position along the slider track as a ratio, and the track distance of a single step
+// Both are zero for an empty range so that sliders never produce NaN or Inf values
+func sliderTrack(val, min, max, step, trackLength float64) (ratio, trackStep float64) {
+	delta := max - min
+	if delta <= 0 {
+		return 0, 0
+	}
+	return (val - min) / delta, trackLength / (delta / step)
+}
+
 // Returns true if currently dragging
 func (resp *WidgetResp) smoothDrag(rect *glitch.Rect, bounds glitch.Rect, step glitch.Vec2) {
 	if resp.Held {
@@ -750,9 +760,8 @@ func (s SliderStyle) Vertical(val *float64, min, max, step float64, rect, hoverR
 	buttonTop := rect.CutTop(square.H())
 	buttonBot := rect.CutBottom(square.H())
 
-	delta := max - min
-	ratio := (*val - min) / delta
 	height := rect.H() - square.H()
+	ratio, floatStep := sliderTrack(*val, min, max, step, height)
 
 	// deltaY := rect.Min.Y - rect.Max.Y + square.H()
 	// yPos := (ratio * deltaY) + rect.Max.Y - (square.H() / 2)
@@ -760,15 +769,13 @@ func (s SliderStyle) Vertical(val *float64, min, max, step float64, rect, hoverR
 	yPos := -(ratio * height) + rect.Max.Y - (square.H() / 2)
 	trackResp := clickablePanel("##vscrollbarbg", rect, s.Background)
 
-	numSteps := (delta / step)
-	floatStep := height / numSteps
 	draggerRect := square.WithCenter(glitch.Vec2{rect.Center().X, yPos})
 	draggerId := getId("##vscrollbarfg")
 	if trackResp.Pressed {
 		// Clicking the track hands the press to the handle, so it jumps to the cursor and keeps dragging while held
 		global.activeId = draggerId
 	}
-	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, s.Handle) {
+	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, s.Handle) && height > 0 {
 		y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
 
 		ratio := y / height
@@ -849,26 +856,23 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	buttonRight := rect.CutRight(square.W())
 
 	oldVal := *val
-	delta := max - min
-	ratio := (*val - min) / delta
 	width := rect.W() - square.W()
+	ratio, floatStep := sliderTrack(*val, min, max, step, width)
 
 	xPos := (ratio * width) + rect.Min.X + (square.W() / 2)
 	trackResp := clickablePanel("##hscrollbarbg", rect, gStyle.scrollbarBgStyle)
 
-	numSteps := (delta / step)
-	floatStep := width / numSteps
 	draggerRect := square.WithCenter(glitch.Vec2{xPos, rect.Center().Y})
 	draggerId := getId("##hscrollbarfg")
 	if trackResp.Pressed {
 		// Clicking the track hands the press to the handle, so it jumps to the cursor and keeps dragging while held
 		global.activeId = draggerId
 	}
-	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) {
+	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) && width > 0 {
 		x := -rect.Min.X + draggerRect.Center().X - (square.W() / 2)
 
 		ratio := x / width
-		*val = (ratio * float64(delta)) + min
+		*val = (ratio * (max - min)) + min
 	}
 
 	leftResp := ButtonFull("##hscrollup", buttonLeft, gStyle.scrollbarTopStyle)

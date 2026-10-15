@@ -117,7 +117,7 @@ func (l vList) Last() glitch.Rect {
 }
 
 func VList(rect glitch.Rect, num int) vList {
-	elementHeight := rect.H() / float64(num)
+	elementHeight := rect.H() / float64(max(num, 1))
 	return vList{
 		rect: rect,
 		last: rect,
@@ -150,7 +150,7 @@ type hList struct {
 }
 
 func HList(rect glitch.Rect, num int) hList {
-	size := rect.W() / float64(num)
+	size := rect.W() / float64(max(num, 1))
 	return hList{
 		rect: rect,
 		last: rect,
@@ -186,6 +186,9 @@ type gridList struct {
 }
 
 func GridList(rect glitch.Rect, numX, numY int) gridList {
+	// Note: Clamped to 1 to prevent an integer divide by zero in Next()
+	numX = max(numX, 1)
+	numY = max(numY, 1)
 	sizeX := rect.W() / float64(numX)
 	sizeY := rect.H() / float64(numY)
 	return gridList{

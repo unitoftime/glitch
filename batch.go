@@ -236,8 +236,10 @@ func (b *Batch) Buffer() *Batch {
 // TODO: should I maintain a translucent and non-translucent batch mesh?
 // TODO: Fix the interface here to only allow meshes to be drawn to batches
 func (b *Batch) Add(filler GeometryFiller, matrix glMat4, mask RGBA, material Material) {
-	// mesh := filler.(*Mesh) // TODO: Hack
-	mesh := filler.mesh // TODO: Is this safe? Assumes everything added has a mesh
+	if filler.fillType != fillTypeMesh || filler.mesh == nil {
+		panic("Batch.Add: only meshes can be added to a Batch")
+	}
+	mesh := filler.mesh
 
 	if len(mesh.indices) == 0 {
 		return

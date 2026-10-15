@@ -359,7 +359,7 @@ func GetProgrami(p Program, pname Enum) int {
 func GetProgramInfoLog(p Program) string {
 	infoLen := GetProgrami(p, INFO_LOG_LENGTH)
 	buf := C.malloc(C.size_t(infoLen))
-	C.free(buf)
+	defer C.free(buf)
 	C.glGetProgramInfoLog(p.c(), C.GLsizei(infoLen), nil, (*C.GLchar)(buf))
 	return C.GoString((*C.char)(buf))
 }

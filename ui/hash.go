@@ -27,7 +27,8 @@ func PushId[T constraints.Integer](id T) {
 }
 
 func PopId() {
-	global.stackIndex--
+	// Note: Ignore unmatched pops so that the next PushId doesn't index out of range
+	global.stackIndex = max(global.stackIndex-1, 0)
 }
 
 func updateCrcWithIdStack(current uint64) uint64 {

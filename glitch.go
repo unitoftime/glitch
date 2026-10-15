@@ -280,15 +280,16 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 		return
 	}
 
-	if global.shader != nil {
-		global.flush() // TODO: You technically only need to do this if it will change the uniform
-		global.camera = camMaterial
+	global.flush() // TODO: You technically only need to do this if it will change the uniform
+	global.camera = camMaterial
 
+	// Note: If no shader is bound yet, setShader will apply the camera when one is bound
+	if global.shader != nil {
 		global.shader.setUniformMat4("projection", global.camera.Projection)
 		global.shader.setUniformMat4("view", global.camera.View)
-
-		global.metric.setCamera++
 	}
+
+	global.metric.setCamera++
 }
 
 func SetCamera(camera *CameraOrtho) {

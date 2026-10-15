@@ -249,7 +249,7 @@ func (s *NinePanelSprite) DrawColorMask(pass BatchTarget, mat Mat4, mask RGBA) {
 
 	r := s.bounds
 	r.Min = mat.Apply(r.Min.Vec3()).Vec2()
-	r.Min = mat.Apply(r.Max.Vec3()).Vec2()
+	r.Max = mat.Apply(r.Max.Vec3()).Vec2()
 
 	s.RectDrawColorMask(pass, r, mask)
 }

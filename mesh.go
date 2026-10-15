@@ -34,6 +34,8 @@ func NewMesh() *Mesh {
 func (m *Mesh) Buffer(shader *Shader) *Mesh {
 	return &Mesh{
 		buffer: shader.BufferMesh(m),
+		bounds: m.bounds,
+		origin: m.origin,
 	}
 }
 

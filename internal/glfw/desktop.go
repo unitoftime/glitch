@@ -800,7 +800,7 @@ func (m *Monitor) GetVideoMode() *VidMode {
 
 func (m *Monitor) GetVideoModes() []*VidMode {
 	modes := make([]*VidMode, 0)
-	for _, mode := range m.GetVideoModes() {
+	for _, mode := range m.Monitor.GetVideoModes() {
 		modes = append(modes, &VidMode{
 			Width:       mode.Width,
 			Height:      mode.Height,

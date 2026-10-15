@@ -115,7 +115,10 @@ var (
 )
 
 func CreateWindow(_, _ int, title string, monitor *Monitor, share *Window) (*Window, error) {
-	fnGetGamepads = navigator.Get("getGamepads").Call("bind", navigator)
+	// Note: The gamepad API is only available in secure contexts (https or localhost)
+	if getGamepads := navigator.Get("getGamepads"); !isNilOrUndefined(getGamepads) {
+		fnGetGamepads = getGamepads.Call("bind", navigator)
+	}
 
 	// Find a canvas, preferably one with an id of glfw
 	canvas := resolveCanvas()
@@ -1520,7 +1523,7 @@ func getGamepads() js.Value {
 	// 	}
 	// }()
 
-	if navigator.IsNull() {
+	if navigator.IsNull() || isNilOrUndefined(fnGetGamepads) {
 		return js.Null()
 	}
 	// gamepads := navigator.Call("getGamepads")

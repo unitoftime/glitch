@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	"fmt"
 	"image"
 	"image/color"
 	"image/draw"
@@ -346,16 +345,11 @@ func (a *Atlas) UngappedLineHeight() float64 {
 	return (a.ascent + a.descent)
 }
 
+// Returns the glyph for the rune, falling back to '?'. If the atlas has neither, returns an empty glyph which draws nothing
 func (a *Atlas) getRuneGlyph(r rune) Glyph {
 	glyph, ok := a.mapping[r]
 	if !ok {
-		// Replace rune with '?'
-		oldR := r
-		r = '?' // TODO - Pick some other rune. TODO - require this rune to be in the atlas!
-		glyph, ok = a.mapping[r]
-		if !ok {
-			panic(fmt.Sprintf("Missing Rune: %v and replacement%v", oldR, r))
-		}
+		glyph = a.mapping['?'] // TODO - Pick some other rune
 	}
 	return glyph
 }
@@ -446,11 +440,10 @@ func (t textDraw) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	// TODO: Adds an additional buffer copy for all of the verts
 	tt := t.atlas.tmpText
 
+	// Note: Always regenerate because tmpText is shared with Measure, so its mesh may not match currentString
 	tt.SetScale(t.scale)
-	tt.Set(t.text)
 	tt.currentString = t.text
-	tt.Clear()
-	tt.bounds = tt.AppendStringVerts(tt.currentString, false)
+	tt.regenerate()
 
 	return tt.mesh.Fill(pool, mat, mask)
 }
@@ -671,13 +664,13 @@ func (t *Text) AppendStringVerts(text string, measure bool) Rect {
 		newline := r == '\n'
 		// If we wordwraping and are on a space, check to see if we should go to the next line
 		if t.wordWrap && r == ' ' {
-			nextSpaceIdx := strings.Index(text[i+1:], " ")
-			if nextSpaceIdx < 0 {
-				// There is no next space so we measure the rest of the line
-				nextSpaceIdx = len(text) - i
+			// If there is no next space, then we measure the rest of the line
+			nextWordEnd := len(text)
+			if nextSpaceIdx := strings.Index(text[i+1:], " "); nextSpaceIdx >= 0 {
+				nextWordEnd = i + 1 + nextSpaceIdx
 			}
 
-			nextWord := t.atlas.Measure(text[i:i+nextSpaceIdx], t.scale)
+			nextWord := t.atlas.Measure(text[i:nextWordEnd], t.scale)
 
 			if (t.Dot.X-initialDot.X)+nextWord.W() > t.wrapRect.W() {
 				newline = true

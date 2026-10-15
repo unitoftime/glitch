@@ -294,37 +294,37 @@ func (renderer *OpenGL3) createFontsTexture() {
 }
 
 func (renderer *OpenGL3) invalidateDeviceObjects() {
-	if !renderer.vboHandle.Valid() {
+	if renderer.vboHandle.Valid() {
 		gl.DeleteBuffers(renderer.vboHandle)
 	}
 	renderer.vboHandle = gl.NoBuffer
-	if !renderer.elementsHandle.Valid() {
+	if renderer.elementsHandle.Valid() {
 		gl.DeleteBuffers(renderer.elementsHandle)
 	}
 	renderer.elementsHandle = gl.NoBuffer
 
-	if (!renderer.shaderHandle.Valid()) && (!renderer.vertHandle.Valid()) {
+	if renderer.shaderHandle.Valid() && renderer.vertHandle.Valid() {
 		gl.DetachShader(renderer.shaderHandle, renderer.vertHandle)
 	}
-	if !renderer.vertHandle.Valid() {
+	if renderer.vertHandle.Valid() {
 		gl.DeleteShader(renderer.vertHandle)
 	}
 	renderer.vertHandle = gl.NoShader
 
-	if (!renderer.shaderHandle.Valid()) && (!renderer.fragHandle.Valid()) {
+	if renderer.shaderHandle.Valid() && renderer.fragHandle.Valid() {
 		gl.DetachShader(renderer.shaderHandle, renderer.fragHandle)
 	}
-	if !renderer.fragHandle.Valid() {
+	if renderer.fragHandle.Valid() {
 		gl.DeleteShader(renderer.fragHandle)
 	}
 	renderer.fragHandle = gl.NoShader
 
-	if !renderer.shaderHandle.Valid() {
+	if renderer.shaderHandle.Valid() {
 		gl.DeleteProgram(renderer.shaderHandle)
 	}
 	renderer.shaderHandle = gl.NoProgram
 
-	if !renderer.fontTexture.Valid() {
+	if renderer.fontTexture.Valid() {
 		gl.DeleteTexture(renderer.fontTexture)
 		imgui.CurrentIO().Fonts().SetTextureID(0)
 		renderer.fontTexture = gl.NoTexture

@@ -286,6 +286,7 @@ func Clear() {
 	}
 
 	clear(global.dedup)
+	global.stackIndex = 0 // Note: Prevents an unmatched PushId from changing ids in every later frame
 }
 
 func Update() {

@@ -12,6 +12,10 @@ type Quad struct {
 }
 
 func NewSpriteQuad(texture *Texture, frame Rect) Quad {
+	// Note: Checked here because Fill (which needs the texture size) runs later, after sorting and batching
+	if texture == nil {
+		panic("NewSpriteQuad: texture must not be nil")
+	}
 	return Quad{
 		Frame:    frame,
 		material: DefaultMaterial(texture),
