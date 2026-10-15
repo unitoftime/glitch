@@ -91,8 +91,12 @@ type Monitor struct {
 	*glfw.Monitor
 }
 
+// Returns nil if no monitor is available (eg during a monitor hotplug)
 func GetPrimaryMonitor() *Monitor {
 	m := glfw.GetPrimaryMonitor()
+	if m == nil {
+		return nil
+	}
 	return &Monitor{Monitor: m}
 }
 
@@ -542,9 +546,13 @@ func (w *Window) Restore() {
 	w.Window.Restore()
 }
 
-func (w *Window) SetFullscreen() {
+// Returns false, and leaves the window unchanged, if no monitor is available
+func (w *Window) SetFullscreen() bool {
 	monitor := GetPrimaryMonitor()
 	mode := monitor.GetVideoMode()
+	if mode == nil {
+		return false
+	}
 
 	w.SetMonitor(
 		monitor,
@@ -554,6 +562,7 @@ func (w *Window) SetFullscreen() {
 		mode.Height,
 		mode.RefreshRate,
 	)
+	return true
 }
 
 func (w *Window) SetWindowed(x, y, width, height int) {
@@ -567,9 +576,13 @@ func (w *Window) SetWindowed(x, y, width, height int) {
 }
 
 // Sets the window to fill the entire screen
-func (w *Window) SetWindowToFillScreen() {
+// Returns false, and leaves the window unchanged, if no monitor is available
+func (w *Window) SetWindowToFillScreen() bool {
 	monitor := GetPrimaryMonitor()
 	mode := monitor.GetVideoMode()
+	if mode == nil {
+		return false
+	}
 
 	w.SetMonitor(
 		nil,
@@ -580,6 +593,7 @@ func (w *Window) SetWindowToFillScreen() {
 		// mode.RefreshRate, // TODO: Should this be DONT_CARE?
 		glfw.DontCare,
 	)
+	return true
 }
 
 func (w *Window) SetDecorations(value bool) {
@@ -799,8 +813,15 @@ func GetMonitors() []*Monitor {
 	return monitors
 }
 
+// Returns nil if the monitor is nil, or its video mode isn't available
 func (m *Monitor) GetVideoMode() *VidMode {
+	if m == nil {
+		return nil
+	}
 	vm := m.Monitor.GetVideoMode()
+	if vm == nil {
+		return nil
+	}
 	return &VidMode{int(vm.Width), int(vm.Height), int(vm.RedBits), int(vm.GreenBits), int(vm.BlueBits), int(vm.RefreshRate)}
 }
 

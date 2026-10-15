@@ -644,8 +644,10 @@ func (w *Window) goFullscreenIfRequested() {
 	w.fullscreen = true
 }
 
-func (w *Window) SetFullscreen() {
+// Note: The browser only allows fullscreen from a user gesture, so this is requested and applied later. Returns true because the request was made
+func (w *Window) SetFullscreen() bool {
 	w.requestFullscreen = true
+	return true
 }
 func (w *Window) SetWindowed(x, y, width, height int) {
 	if w.canvasIsFullscreen() {
@@ -658,7 +660,9 @@ func (w *Window) SetDecorations(value bool) {
 	// Note: Currently a no op. In browser, I'm not really sure. can we hide the titlebar? Even worth?
 }
 
-func (w *Window) SetWindowToFillScreen() {
+// Note: Not supported in the browser, so this always returns false
+func (w *Window) SetWindowToFillScreen() bool {
+	return false
 }
 
 func (w *Window) Maximize() {

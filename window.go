@@ -130,6 +130,9 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 		var fullscreenMonitor *glfw.Monitor
 		if win.config.Fullscreen {
 			fullscreenMonitor = glfw.GetPrimaryMonitor()
+			if fullscreenMonitor == nil {
+				win.config.Fullscreen = false // Note: No monitor is available to go fullscreen on, so start windowed
+			}
 
 			// Note: These settings are for a fullscreen mode with faster alt tabs (alt tabs dont require mode switch).
 			// glfw.WindowHint(glfw.RedBits, mode.RedBits)
@@ -144,20 +147,20 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 				win.lastWinSize = glm.IVec2{int(r.W()), int(r.H())}
 			}
 		} else if win.config.FillMonitor {
-			monitor := glfw.GetPrimaryMonitor()
-			mode := monitor.GetVideoMode()
+			// Note: If no monitor is available, then we just use the requested width and height
+			if mode := glfw.GetPrimaryMonitor().GetVideoMode(); mode != nil {
+				width = mode.Width
+				height = mode.Height
 
-			width = mode.Width
-			height = mode.Height
+				// Maximized must be set false because we are going to Fill the monitor manually
+				win.config.Maximized = false
 
-			// Maximized must be set false because we are going to Fill the monitor manually
-			win.config.Maximized = false
-
-			// Set a restore point since we are starting borderless windowed
-			{
-				r := glm.R(0, 0, float64(width), float64(height)).CenterScaled(0.8)
-				win.lastWinPos = glm.IVec2{int(r.Min.X), int(r.Min.Y)}
-				win.lastWinSize = glm.IVec2{int(r.W()), int(r.H())}
+				// Set a restore point since we are starting borderless windowed
+				{
+					r := glm.R(0, 0, float64(width), float64(height)).CenterScaled(0.8)
+					win.lastWinPos = glm.IVec2{int(r.Min.X), int(r.Min.Y)}
+					win.lastWinSize = glm.IVec2{int(r.W()), int(r.H())}
+				}
 			}
 		}
 
@@ -643,7 +646,9 @@ func (w *Window) SetFullscreen() {
 func (w *Window) SetWindowedFullscreen() {
 	mainthread.Call(func() {
 		w.saveLastWindow()
-		w.window.SetWindowToFillScreen()
+		if !w.window.SetWindowToFillScreen() {
+			return // Skip: No monitor is available, so the window is unchanged
+		}
 
 		// Note: In windows, when going to fullscreen, it looks like vsync data gets lost during SetMonitor, So I will manually reset swapinterval here
 		// GLFW Issue: https://github.com/glfw/glfw/issues/1072
@@ -694,7 +699,9 @@ func (w *Window) setFullscreen(value bool) {
 			// If going fullscreen, and not currently fullscreen
 			w.saveLastWindow()
 
-			w.window.SetFullscreen()
+			if !w.window.SetFullscreen() {
+				return // Skip: No monitor is available, so stay windowed
+			}
 		} else if !value && w.config.Fullscreen {
 			// If going windowed and not currently windowed
 			w.restoreLastWindow()
