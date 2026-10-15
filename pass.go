@@ -40,15 +40,30 @@ const (
 	// fillTypeSprite
 )
 
-// A tagged union of the geometry types that can be drawn. fillType selects the field that is used
+// A tagged union of the geometry types that can be drawn. fillType selects which fields are used
 // Note: Quads and text are stored inline rather than through the ProgrammaticGeom interface, because putting them in an interface heap allocates them on every draw
+// Note: The variants share the ref field to keep this struct small, because it gets copied several times per draw. Storing a pointer in an interface doesn't allocate
 type GeometryFiller struct {
 	fillType fillType
-	mesh     *Mesh            // fillTypeMesh
-	prog     ProgrammaticGeom // fillTypeProgrammatic: Custom geometry
-	quad     quadGeom         // fillTypeQuad
-	text     textDraw         // fillTypeText
+	ref      any      // Mesh: *Mesh, Programmatic: ProgrammaticGeom, Quad: *Texture, Text: *Atlas
+	str      string   // Text: The string to draw
+	scale    float64  // Text: The scale to draw at
+	quad     quadGeom // Quad: The frame and origin of the quad
 	// sprite spriteDraw
+}
+
+// Returns the mesh, or nil if this isn't a mesh
+func (g GeometryFiller) meshRef() *Mesh {
+	mesh, _ := g.ref.(*Mesh)
+	return mesh
+}
+
+func (g GeometryFiller) textDraw() textDraw {
+	return textDraw{
+		atlas: g.ref.(*Atlas),
+		text:  g.str,
+		scale: g.scale,
+	}
 }
 
 // returns true if the filler is blank for some reason
@@ -58,14 +73,12 @@ func (g GeometryFiller) empty() bool {
 
 // Returns a prebuild VertexBuffer, or nil if does not exist
 func (g GeometryFiller) GetBuffer() *VertexBuffer {
-	if g.fillType != fillTypeMesh {
-		return nil
-	}
-	if g.mesh == nil {
+	mesh := g.meshRef()
+	if mesh == nil {
 		return nil
 	}
 
-	return g.mesh.GetBuffer()
+	return mesh.GetBuffer()
 }
 
 // TODO: I think instead of BufferPool maybe just pass the shader (which has access to the buffer pool)
@@ -73,13 +86,13 @@ func (g GeometryFiller) GetBuffer() *VertexBuffer {
 func (g GeometryFiller) Fill(pool *BufferPool, mat glMat4, col RGBA) *VertexBuffer {
 	switch g.fillType {
 	case fillTypeMesh:
-		return g.mesh.Fill(pool, mat, col)
+		return g.ref.(*Mesh).Fill(pool, mat, col)
 	case fillTypeProgrammatic:
-		return g.prog.Fill(pool, mat, col)
+		return g.ref.(ProgrammaticGeom).Fill(pool, mat, col)
 	case fillTypeQuad:
-		return g.quad.Fill(pool, mat, col)
+		return g.quad.Fill(pool, mat, col, g.ref.(*Texture))
 	case fillTypeText:
-		return g.text.Fill(pool, mat, col)
+		return g.textDraw().Fill(pool, mat, col)
 		// case fillTypeSprite:
 		// 	return g.sprite.Fill(pool, mat, col)
 	}
@@ -90,13 +103,13 @@ func (g GeometryFiller) Fill(pool *BufferPool, mat glMat4, col RGBA) *VertexBuff
 func (g GeometryFiller) Bounds() glm.Box {
 	switch g.fillType {
 	case fillTypeMesh:
-		return g.mesh.Bounds()
+		return g.ref.(*Mesh).Bounds()
 	case fillTypeProgrammatic:
-		return g.prog.Bounds()
+		return g.ref.(ProgrammaticGeom).Bounds()
 	case fillTypeQuad:
 		return g.quad.Bounds()
 	case fillTypeText:
-		return g.text.Bounds()
+		return g.textDraw().Bounds()
 		// case fillTypeSprite:
 		// 	return g.sprite.Bounds()
 	}

@@ -458,7 +458,9 @@ func (t textDraw) Draw(target BatchTarget, matrix Mat4) {
 func (t textDraw) DrawColorMask(target BatchTarget, matrix Mat4, mask glm.RGBA) {
 	geom := GeometryFiller{
 		fillType: fillTypeText,
-		text:     t,
+		ref:      t.atlas,
+		str:      t.text,
+		scale:    t.scale,
 	}
 	target.Add(geom, glm4(matrix), mask, t.atlas.defaultMaterial)
 }

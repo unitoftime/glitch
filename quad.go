@@ -32,12 +32,13 @@ func (s *Sprite) ToQuad() Quad {
 }
 
 func (s Quad) Bounds() glm.Box {
-	return s.geom().Bounds()
+	return s.Frame.WithCenter(glm.Vec2{}).Box()
 }
 
 func (s Quad) g() GeometryFiller {
 	return GeometryFiller{
 		fillType: fillTypeQuad,
+		ref:      s.material.texture,
 		quad:     s.geom(),
 	}
 }
@@ -45,9 +46,9 @@ func (s Quad) g() GeometryFiller {
 // Returns just the geometry of the quad. The material is passed separately when drawing
 func (s Quad) geom() quadGeom {
 	return quadGeom{
-		frame:   s.Frame,
-		origin:  s.Origin,
-		texture: s.material.texture,
+		min:    glv2(s.Frame.Min),
+		max:    glv2(s.Frame.Max),
+		origin: glv3(s.Origin),
 	}
 }
 
@@ -85,21 +86,28 @@ var quadIndices = []uint32{
 }
 
 func (s Quad) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
-	return s.geom().Fill(pool, mat, mask)
+	return s.geom().Fill(pool, mat, mask, s.material.texture)
 }
 
 // The geometry of a quad. This is what a GeometryFiller stores inline for quads (See: fillTypeQuad)
+// Note: Stored as float32 to keep GeometryFiller small. The vertices are float32 anyways
 type quadGeom struct {
-	frame   Rect     // The bounds inside the texture
-	origin  glm.Vec3 // The offset of the quad from its center
-	texture *Texture // Used to calculate the UVs
+	min, max glVec2 // The frame inside the texture
+	origin   glVec3 // The offset of the quad from its center
 }
 
+// The half size of the frame
+func (s quadGeom) halfSize() (float32, float32) {
+	return (s.max[0] - s.min[0]) / 2, (s.max[1] - s.min[1]) / 2
+}
+
+// The frame, centered on (0, 0)
 func (s quadGeom) Bounds() glm.Box {
-	return s.frame.WithCenter(glm.Vec2{}).Box()
+	w, h := s.halfSize()
+	return glm.R(float64(-w), float64(-h), float64(w), float64(h)).Box()
 }
 
-func (s quadGeom) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
+func (s quadGeom) Fill(pool *BufferPool, mat glMat4, mask RGBA, texture *Texture) *VertexBuffer {
 	numVerts := 4
 	vertexBuffer := pool.Reserve(quadIndices, numVerts, pool.shader.tmpBuffers)
 
@@ -108,9 +116,10 @@ func (s quadGeom) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
 		case shaders.PositionXYZ:
-			bounds := s.Bounds().Moved(s.origin.Scaled(-1, -1, -1))
-			min := glv3(bounds.Min)
-			max := glv3(bounds.Max)
+			// The frame centered on (0, 0), then moved by the origin
+			w, h := s.halfSize()
+			min := glVec3{-w - s.origin[0], -h - s.origin[1], -s.origin[2]}
+			max := glVec3{w - s.origin[0], h - s.origin[1], -s.origin[2]}
 
 			if mat != glMat4Ident {
 				min = mat.Apply(min)
@@ -132,19 +141,16 @@ func (s quadGeom) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 			colBuf[2] = color
 			colBuf[3] = color
 		case shaders.TexCoordXY:
-			texture := s.texture
-			uvBounds := glm.R(
-				s.frame.Min.X/float64(texture.width),
-				s.frame.Min.Y/float64(texture.height),
-				s.frame.Max.X/float64(texture.width),
-				s.frame.Max.Y/float64(texture.height),
-			)
+			texW := float32(texture.width)
+			texH := float32(texture.height)
+			uvMin := glVec2{s.min[0] / texW, s.min[1] / texH}
+			uvMax := glVec2{s.max[0] / texW, s.max[1] / texH}
 
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)
-			texBuf[0] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Min.Y)}
-			texBuf[1] = glVec2{float32(uvBounds.Max.X), float32(uvBounds.Max.Y)}
-			texBuf[2] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Max.Y)}
-			texBuf[3] = glVec2{float32(uvBounds.Min.X), float32(uvBounds.Min.Y)}
+			texBuf[0] = glVec2{uvMax[0], uvMin[1]}
+			texBuf[1] = glVec2{uvMax[0], uvMax[1]}
+			texBuf[2] = glVec2{uvMin[0], uvMax[1]}
+			texBuf[3] = glVec2{uvMin[0], uvMin[1]}
 		default:
 			panic("Unsupported")
 		}
