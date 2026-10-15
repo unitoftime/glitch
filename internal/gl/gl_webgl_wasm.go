@@ -1104,9 +1104,10 @@ func TexParameteri(target, pname Enum, param int) {
 // 	}
 // }
 
-// func Uniform1f(dst Uniform, v float32) {
-// 	c.Call("uniform1f", dst.Value, v)
-// }
+// Note: The by-value uniform functions go through the vector versions, which pass the data to WebGL through the shared typed array
+func Uniform1f(dst Uniform, v float32) {
+	Uniform1fv(dst, []float32{v})
+}
 
 func Uniform1fv(dst Uniform, src []float32) {
 	array, length := float32SliceToTypedArray(src)
@@ -1122,9 +1123,9 @@ func Uniform1fv(dst Uniform, src []float32) {
 // 	c.Call("uniform1iv", dst.Value, src)
 // }
 
-// func Uniform2f(dst Uniform, v0, v1 float32) {
-// 	c.Call("uniform2f", dst.Value, v0, v1)
-// }
+func Uniform2f(dst Uniform, v0, v1 float32) {
+	Uniform2fv(dst, []float32{v0, v1})
+}
 
 func Uniform2fv(dst Uniform, src []float32) {
 	array, length := SliceToTypedArray(src)
@@ -1145,9 +1146,9 @@ func Uniform2fv(dst Uniform, src []float32) {
 // 	c.Call("uniform2iv", dst.Value, src)
 // }
 
-// func Uniform3f(dst Uniform, v0, v1, v2 float32) {
-// 	c.Call("uniform3f", dst.Value, v0, v1, v2)
-// }
+func Uniform3f(dst Uniform, v0, v1, v2 float32) {
+	Uniform3fv(dst, []float32{v0, v1, v2})
+}
 
 func Uniform3fv(dst Uniform, src []float32) {
 	array, length := SliceToTypedArray(src)
@@ -1163,9 +1164,9 @@ func Uniform3fv(dst Uniform, src []float32) {
 // 	c.Call("uniform3iv", dst.Value, src)
 // }
 
-// func Uniform4f(dst Uniform, v0, v1, v2, v3 float32) {
-// 	c.Call("uniform4f", dst.Value, v0, v1, v2, v3)
-// }
+func Uniform4f(dst Uniform, v0, v1, v2, v3 float32) {
+	Uniform4fv(dst, []float32{v0, v1, v2, v3})
+}
 
 func Uniform4fv(dst Uniform, src []float32) {
 	array, length := SliceToTypedArray(src)

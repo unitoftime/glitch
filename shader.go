@@ -227,27 +227,25 @@ func (u *uniformSetter) Func() {
 		panic(fmt.Sprintf("Uniform not found! Or uniform location was invalid: %s", uniformName))
 	}
 
+	// Note: These pass the values directly (rather than as slices), because slices passed through cgo get moved to the heap
 	switch val := value.(type) {
 	case float32:
-		sliced := []float32{val}
-		gl.Uniform1fv(uniform.loc, sliced)
-	// gl.Uniform1fv(uniform.loc, val)
+		gl.Uniform1f(uniform.loc, val)
 	case float64:
-		sliced := []float32{float32(val)}
-		gl.Uniform1fv(uniform.loc, sliced)
+		gl.Uniform1f(uniform.loc, float32(val))
 
 	case Vec2:
 		vec := glv2(val)
-		gl.Uniform2fv(uniform.loc, vec[:])
+		gl.Uniform2f(uniform.loc, vec[0], vec[1])
 	case Vec3:
 		vec := glv3(val)
-		gl.Uniform3fv(uniform.loc, vec[:])
+		gl.Uniform3f(uniform.loc, vec[0], vec[1], vec[2])
 	case Vec4:
 		vec := glv4(val)
-		gl.Uniform4fv(uniform.loc, vec[:])
+		gl.Uniform4f(uniform.loc, vec[0], vec[1], vec[2], vec[3])
 	case RGBA: // Same as vec4
 		vec := glc4(val)
-		gl.Uniform4fv(uniform.loc, vec[:])
+		gl.Uniform4f(uniform.loc, vec[0], vec[1], vec[2], vec[3])
 	default:
 		panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
 	}
