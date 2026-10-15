@@ -525,6 +525,31 @@ type Text struct {
 	Orig  Vec2 // The baseline starting point from which to draw the text
 	Dot   Vec2 // The location of the next rune to draw
 	color RGBA // The color with which to draw the next text
+
+	generated textSettings // The settings that the mesh was last regenerated with
+}
+
+// The settings that get baked into the generated text mesh
+type textSettings struct {
+	scale     float64
+	shadow    Vec2
+	color     RGBA
+	wordWrap  bool
+	wrapWidth float64
+}
+
+func (t *Text) settings() textSettings {
+	s := textSettings{
+		scale:    t.scale,
+		shadow:   t.shadow,
+		color:    t.color,
+		wordWrap: t.wordWrap,
+	}
+	// Note: Only the wrap width affects the layout, and only when wrapping. So moving text around doesn't regenerate it
+	if t.wordWrap {
+		s.wrapWidth = t.wrapRect.W()
+	}
+	return s
 }
 
 func (t *Text) Bounds() Rect {
@@ -570,11 +595,11 @@ func (t *Text) Clear() {
 	t.mesh.Clear()
 }
 
-// This resets the text and sets it to the passed in string (if the passed in string is different!)
+// This resets the text and sets it to the passed in string
+// Note: The mesh is only regenerated if the string, or any setting baked into the mesh (scale, shadow, color, word wrap) has changed
 // TODO - I need to deprecate this in favor of a better interface
 func (t *Text) Set(str string) {
-	// TODO: If wordwrap we also need to regenerate, but technically only if the bounds of the wrapRect have changed
-	if t.currentString != str || t.wordWrap {
+	if t.currentString != str || t.generated != t.settings() {
 		t.currentString = str
 		t.regenerate()
 	}
@@ -583,6 +608,7 @@ func (t *Text) Set(str string) {
 func (t *Text) regenerate() {
 	t.Clear()
 	t.bounds = t.AppendStringVerts(t.currentString, false)
+	t.generated = t.settings()
 }
 
 func (t *Text) WriteString(str string) (n int, err error) {
