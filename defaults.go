@@ -64,7 +64,7 @@ func DefaultMaterial(texture *Texture) Material {
 var defaultMsdfShader *Shader // Can set this to whatever you want
 
 func SetDefaultMsdfShader(shader *Shader) {
-	defaultSpriteShader = shader
+	defaultMsdfShader = shader
 }
 
 func GetDefaultMsdfShader() *Shader {

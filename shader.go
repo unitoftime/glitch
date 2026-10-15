@@ -11,14 +11,13 @@ import (
 // Notes: Uniforms are specific to a program: https://stackoverflow.com/questions/10857602/do-uniform-values-remain-in-glsl-shader-if-unbound
 
 type Shader struct {
-	program         gl.Program
-	uniformLocs     map[string]Uniform
-	uniformsMat4    map[string]glMat4 // All uniforms that are glMat4
-	uniforms        map[string]any    // All other uniforms
-	attrFmt         shaders.VertexFormat
-	tmpBuffers      []any
-	tmpFloat32Slice []float32
-	mainthreadBind  func()
+	program        gl.Program
+	uniformLocs    map[string]Uniform
+	uniformsMat4   map[string]glMat4 // All uniforms that are glMat4
+	uniforms       map[string]any    // All other uniforms
+	attrFmt        shaders.VertexFormat
+	tmpBuffers     []any
+	mainthreadBind func()
 
 	uniformLoc gl.Uniform
 
@@ -41,11 +40,10 @@ func NewShader(cfg shaders.ShaderConfig) (*Shader, error) {
 
 func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFormat, uniformFmt shaders.UniformFormat) (*Shader, error) {
 	shader := &Shader{
-		uniformLocs:     make(map[string]Uniform),
-		uniformsMat4:    make(map[string]glMat4),
-		uniforms:        make(map[string]any),
-		attrFmt:         attrFmt,
-		tmpFloat32Slice: make([]float32, 0),
+		uniformLocs:  make(map[string]Uniform),
+		uniformsMat4: make(map[string]glMat4),
+		uniforms:     make(map[string]any),
+		attrFmt:      attrFmt,
 	}
 	err := mainthread.CallErr(func() error {
 		var err error
@@ -183,13 +181,13 @@ func (s *Shader) setUniform(name string, value any) bool {
 	// We need to ensure that all Mat4s go into shader.setUniformMat4()
 	switch val := value.(type) {
 	case Mat4:
-		s.setUniformMat4(name, glm4(val))
+		return s.setUniformMat4(name, glm4(val))
 	case *Mat4:
-		s.setUniformMat4(name, glm4(*val))
+		return s.setUniformMat4(name, glm4(*val))
 	case glMat4:
-		s.setUniformMat4(name, val)
+		return s.setUniformMat4(name, val)
 	case *glMat4:
-		s.setUniformMat4(name, *val)
+		return s.setUniformMat4(name, *val)
 	}
 
 	currentValue, ok := s.uniforms[name]
@@ -249,9 +247,6 @@ func (u *uniformSetter) Func() {
 		sliced := []float32{float32(val)}
 		gl.Uniform1fv(uniform.loc, sliced)
 
-	case glMat4:
-		gl.UniformMatrix4fv(uniform.loc, []float32(val[:]))
-
 	case Vec2:
 		vec := glv2(val)
 		gl.Uniform2fv(uniform.loc, vec[:])
@@ -264,14 +259,6 @@ func (u *uniformSetter) Func() {
 	case RGBA: // Same as vec4
 		vec := glc4(val)
 		gl.Uniform4fv(uniform.loc, vec[:])
-	case Mat4:
-		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-		s.tmpFloat32Slice = mat4ToFloat32(val, s.tmpFloat32Slice)
-		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
-	case *Mat4:
-		s.tmpFloat32Slice = s.tmpFloat32Slice[:0]
-		s.tmpFloat32Slice = mat4ToFloat32(*val, s.tmpFloat32Slice)
-		gl.UniformMatrix4fv(uniform.loc, s.tmpFloat32Slice)
 	default:
 		panic(fmt.Sprintf("set uniform attr: invalid attribute type: %T", value))
 	}

@@ -148,13 +148,6 @@ func (m *glMat4) Mul(n *glMat4) *glMat4 {
 // 	return s
 // }
 
-func mat4ToFloat32(m Mat4, s []float32) []float32 {
-	for i := range m {
-		s = append(s, float32(m[i]))
-	}
-	return s
-}
-
 // func (m Mat4) writeToFloat32(s []float32) []float32 {
 // 	for i := range m {
 // 		s = append(s, float32(m[i]))

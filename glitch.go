@@ -347,6 +347,8 @@ func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, materi
 
 	buffer := filler.GetBuffer()
 	if buffer != nil {
+		// Draw any pending batched geometry first so that draw order is preserved
+		g.flush()
 		global.drawCall(buffer, mat)
 		return
 	}

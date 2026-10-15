@@ -186,7 +186,7 @@ func NewVertexBuffer2(shader *Shader, data bufferData) *VertexBuffer {
 		gl.BindVertexArray(b.vao)
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, sof*data.numVerts*data.stride, nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, data.numVerts*data.stride, nil, gl.DYNAMIC_DRAW) // Note: stride is already in bytes
 
 		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
@@ -242,6 +242,7 @@ func (v *VertexBuffer) delete() {
 	mainthread.CallNonBlock(func() {
 		gl.DeleteVertexArrays(v.vao)
 		gl.DeleteBuffers(v.vbo)
+		gl.DeleteBuffers(v.ebo)
 	})
 }
 

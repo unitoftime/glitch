@@ -82,6 +82,7 @@ func (f *Frame) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 func (f *Frame) delete() {
 	mainthread.CallNonBlock(func() {
 		gl.DeleteFramebuffer(f.fbo)
+		gl.DeleteTexture(f.depth)
 	})
 }
 

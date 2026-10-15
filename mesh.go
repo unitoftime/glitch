@@ -427,13 +427,12 @@ func batchToBuffers(shader *Shader, mesh *Mesh, mat32 glMat4, mask RGBA) {
 			// 	}
 
 		case shaders.NormalXYZ:
-			posBuf := *(destBuffs[bufIdx]).(*[]glVec3)
+			normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 			if mat32 == glMat4Ident {
 				// If matrix is identity, don't transform anything
-				copy(posBuf, mesh.positions)
+				copy(normBuf, mesh.normals)
 			} else {
 				normMat32 := mat32.Inv().Transpose()
-				normBuf := *(destBuffs[bufIdx]).(*[]glVec3)
 				for i := range mesh.normals {
 					vec := normMat32.Apply(mesh.normals[i])
 					normBuf[i] = vec

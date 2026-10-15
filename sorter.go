@@ -2,6 +2,7 @@ package glitch
 
 import (
 	"cmp"
+	"math"
 	"slices"
 )
 
@@ -27,8 +28,13 @@ type Sorter struct {
 
 func NewSorter() *Sorter {
 	return &Sorter{
-		commands: make([]cmdList, 256), // TODO - hardcoding from sizeof(uint8)
+		commands: make([]cmdList, math.MaxUint8+1), // One cmdList per int8 layer
 	}
+}
+
+// Maps an int8 layer [-128, 127] to a command list index [0, 255], preserving order
+func layerIndex(layer int8) int {
+	return int(layer) - math.MinInt8
 }
 
 func (s *Sorter) SetLayer(layer int8) {
@@ -151,7 +157,7 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	// 	material.depth = DepthModeLess
 	// }
 
-	s.commands[s.currentLayer].Add(translucent, drawCommand{
+	s.commands[layerIndex(s.currentLayer)].Add(translucent, drawCommand{
 		filler, mat, mask, material,
 	})
 }
