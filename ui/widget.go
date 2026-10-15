@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
@@ -170,6 +171,12 @@ func findWordIndexRight(str string, cursorPos int) int {
 	return cursorPos + lastIndex + trimAmount
 }
 
+// Deletes the rune before the cursor, returning the new string and cursor position
+func deleteRuneBefore(str string, cursorPos int) (string, int) {
+	_, size := utf8.DecodeLastRuneInString(str[:cursorPos])
+	return str[:cursorPos-size] + str[cursorPos:], cursorPos - size
+}
+
 func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 	if str == nil {
 		return
@@ -177,12 +184,19 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 
 	runes := global.win.Typed()
 
+	// Note: cursorPos is a byte index into the string, so it must always sit on a rune boundary
 	tStr := *str
 	cursorPos := clamp(0, len(tStr), *cursorPosRet)
+	for cursorPos > 0 && cursorPos < len(tStr) && !utf8.RuneStart(tStr[cursorPos]) {
+		cursorPos--
+	}
 
 	// *str = *str + string(runes)
-	tStr = tStr[:cursorPos] + string(runes) + tStr[cursorPos:]
-	cursorPos += len(runes)
+	if len(runes) > 0 {
+		typed := string(runes)
+		tStr = tStr[:cursorPos] + typed + tStr[cursorPos:]
+		cursorPos += len(typed)
+	}
 
 	controlPressed := global.win.Pressed(glitch.KeyLeftControl) || global.win.Pressed(glitch.KeyRightControl)
 
@@ -206,22 +220,10 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 			tStr = tStr[:lastIndex] + tStr[cursorPos:]
 			cursorPos -= cursorPos - lastIndex
 		} else {
-			if len(tStr) > 0 {
-				// tStr = tStr[:len(tStr)-1]
-				if cursorPos > 0 {
-					tStr = tStr[:cursorPos-1] + tStr[cursorPos:]
-					cursorPos--
-				}
-			}
+			tStr, cursorPos = deleteRuneBefore(tStr, cursorPos)
 		}
 	} else if global.win.Repeated(glitch.KeyBackspace) {
-		if len(tStr) > 0 {
-			// tStr = tStr[:len(tStr)-1]
-			if cursorPos > 0 {
-				tStr = tStr[:cursorPos-1] + tStr[cursorPos:]
-				cursorPos--
-			}
-		}
+		tStr, cursorPos = deleteRuneBefore(tStr, cursorPos)
 	}
 
 	if global.win.JustPressed(glitch.KeyLeft) {
@@ -229,7 +231,8 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 			lastIndex := findWordIndexLeft(tStr, cursorPos)
 			cursorPos = lastIndex
 		} else {
-			cursorPos -= 1
+			_, size := utf8.DecodeLastRuneInString(tStr[:cursorPos])
+			cursorPos -= size
 		}
 	}
 	if global.win.JustPressed(glitch.KeyRight) {
@@ -237,7 +240,8 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 			lastIndex := findWordIndexRight(tStr, cursorPos)
 			cursorPos = lastIndex
 		} else {
-			cursorPos += 1
+			_, size := utf8.DecodeRuneInString(tStr[cursorPos:])
+			cursorPos += size
 		}
 	}
 
