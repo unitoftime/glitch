@@ -32,13 +32,22 @@ func (s *Sprite) ToQuad() Quad {
 }
 
 func (s Quad) Bounds() glm.Box {
-	return s.Frame.WithCenter(glm.Vec2{}).Box()
+	return s.geom().Bounds()
 }
 
 func (s Quad) g() GeometryFiller {
 	return GeometryFiller{
-		fillType: fillTypeProgrammatic,
-		prog:     s,
+		fillType: fillTypeQuad,
+		quad:     s.geom(),
+	}
+}
+
+// Returns just the geometry of the quad. The material is passed separately when drawing
+func (s Quad) geom() quadGeom {
+	return quadGeom{
+		frame:   s.Frame,
+		origin:  s.Origin,
+		texture: s.material.texture,
 	}
 }
 
@@ -76,6 +85,21 @@ var quadIndices = []uint32{
 }
 
 func (s Quad) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
+	return s.geom().Fill(pool, mat, mask)
+}
+
+// The geometry of a quad. This is what a GeometryFiller stores inline for quads (See: fillTypeQuad)
+type quadGeom struct {
+	frame   Rect     // The bounds inside the texture
+	origin  glm.Vec3 // The offset of the quad from its center
+	texture *Texture // Used to calculate the UVs
+}
+
+func (s quadGeom) Bounds() glm.Box {
+	return s.frame.WithCenter(glm.Vec2{}).Box()
+}
+
+func (s quadGeom) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 	numVerts := 4
 	vertexBuffer := pool.Reserve(quadIndices, numVerts, pool.shader.tmpBuffers)
 
@@ -84,7 +108,7 @@ func (s Quad) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 		// TODO - I'm not sure of a good way to break up this switch statement
 		switch attr.Swizzle {
 		case shaders.PositionXYZ:
-			bounds := s.Bounds().Moved(s.Origin.Scaled(-1, -1, -1))
+			bounds := s.Bounds().Moved(s.origin.Scaled(-1, -1, -1))
 			min := glv3(bounds.Min)
 			max := glv3(bounds.Max)
 
@@ -108,12 +132,12 @@ func (s Quad) Fill(pool *BufferPool, mat glMat4, mask RGBA) *VertexBuffer {
 			colBuf[2] = color
 			colBuf[3] = color
 		case shaders.TexCoordXY:
-			texture := s.material.texture
+			texture := s.texture
 			uvBounds := glm.R(
-				s.Frame.Min.X/float64(texture.width),
-				s.Frame.Min.Y/float64(texture.height),
-				s.Frame.Max.X/float64(texture.width),
-				s.Frame.Max.Y/float64(texture.height),
+				s.frame.Min.X/float64(texture.width),
+				s.frame.Min.Y/float64(texture.height),
+				s.frame.Max.X/float64(texture.width),
+				s.frame.Max.Y/float64(texture.height),
 			)
 
 			texBuf := *(destBuffs[bufIdx]).(*[]glVec2)

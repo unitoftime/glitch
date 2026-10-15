@@ -100,7 +100,7 @@ func (s *Sorter) drawCommands(target BatchTarget, cmds []drawCommand, sortMode S
 	matIdx, descending, sorted := sortModeKey(sortMode)
 	if !sorted {
 		for i := range cmds {
-			s.applyDrawCommand(target, cmds[i])
+			s.applyDrawCommand(target, &cmds[i])
 		}
 		return
 	}
@@ -116,11 +116,12 @@ func (s *Sorter) drawCommands(target BatchTarget, cmds []drawCommand, sortMode S
 	slices.Sort(s.keys)
 
 	for _, k := range s.keys {
-		s.applyDrawCommand(target, cmds[uint32(k)])
+		s.applyDrawCommand(target, &cmds[uint32(k)])
 	}
 }
 
-func (s *Sorter) applyDrawCommand(target BatchTarget, c drawCommand) {
+// Note: Takes a pointer so that the (large) command isn't copied
+func (s *Sorter) applyDrawCommand(target BatchTarget, c *drawCommand) {
 	target.Add(c.filler, c.matrix, c.mask, c.material)
 }
 
@@ -177,9 +178,11 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	// 	material.depth = DepthModeLess
 	// }
 
-	s.commands[layerIndex(s.currentLayer)].Add(translucent, drawCommand{
-		filler, mat, mask, material,
-	})
+	cmd := s.commands[layerIndex(s.currentLayer)].Add(translucent)
+	cmd.filler = filler
+	cmd.matrix = mat
+	cmd.mask = mask
+	cmd.material = material
 }
 
 // --------------------------------------------------------------------------------
@@ -189,14 +192,17 @@ type cmdList struct {
 
 }
 
-func (c *cmdList) Add(translucent bool, cmd drawCommand) {
+// Adds a command slot to the list and returns it, so that the caller can fill it in place rather than copying a whole command in
+// Note: The returned slot may hold a stale command from a previous frame, so the caller must set every field
+func (c *cmdList) Add(translucent bool) *drawCommand {
+	list := &c.Opaque
 	if translucent {
-		c.Translucent = append(c.Translucent, cmd)
-		// return &c.Translucent[len(c.Translucent)-1]
-	} else {
-		c.Opaque = append(c.Opaque, cmd)
-		// return &c.Opaque[len(c.Opaque)-1]
+		list = &c.Translucent
 	}
+
+	n := len(*list)
+	*list = slices.Grow(*list, 1)[:n+1]
+	return &(*list)[n]
 }
 
 func (c *cmdList) Clear() {

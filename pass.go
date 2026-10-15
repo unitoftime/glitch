@@ -35,13 +35,19 @@ const (
 	fillTypeNone fillType = iota
 	fillTypeMesh
 	fillTypeProgrammatic
+	fillTypeQuad
+	fillTypeText
 	// fillTypeSprite
 )
 
+// A tagged union of the geometry types that can be drawn. fillType selects the field that is used
+// Note: Quads and text are stored inline rather than through the ProgrammaticGeom interface, because putting them in an interface heap allocates them on every draw
 type GeometryFiller struct {
 	fillType fillType
-	mesh     *Mesh
-	prog     ProgrammaticGeom
+	mesh     *Mesh            // fillTypeMesh
+	prog     ProgrammaticGeom // fillTypeProgrammatic: Custom geometry
+	quad     quadGeom         // fillTypeQuad
+	text     textDraw         // fillTypeText
 	// sprite spriteDraw
 }
 
@@ -70,6 +76,10 @@ func (g GeometryFiller) Fill(pool *BufferPool, mat glMat4, col RGBA) *VertexBuff
 		return g.mesh.Fill(pool, mat, col)
 	case fillTypeProgrammatic:
 		return g.prog.Fill(pool, mat, col)
+	case fillTypeQuad:
+		return g.quad.Fill(pool, mat, col)
+	case fillTypeText:
+		return g.text.Fill(pool, mat, col)
 		// case fillTypeSprite:
 		// 	return g.sprite.Fill(pool, mat, col)
 	}
@@ -83,6 +93,10 @@ func (g GeometryFiller) Bounds() glm.Box {
 		return g.mesh.Bounds()
 	case fillTypeProgrammatic:
 		return g.prog.Bounds()
+	case fillTypeQuad:
+		return g.quad.Bounds()
+	case fillTypeText:
+		return g.text.Bounds()
 		// case fillTypeSprite:
 		// 	return g.sprite.Bounds()
 	}
