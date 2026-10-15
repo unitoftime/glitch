@@ -995,7 +995,7 @@ func TooltipExt(label string, rect glitch.Rect, style Style) {
 	resp := WidgetResp{}
 	resp.hoverOnly(id, rect)
 
-	if (global.hoverOnlyId != id) {
+	if global.hoverOnlyId != id {
 		return // Exit early if not hovered
 	}
 

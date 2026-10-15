@@ -173,10 +173,8 @@ type uiGlobals struct {
 
 	cursorPos int
 
-	idCounter eid
-	elements  map[uint64]eid // Maps labels to elements
 	// elementsRev map[eid]string
-	dedup map[uint64]uint32
+	dedup map[uint64]uint32 // Counts the uses of each id this frame, so duplicate labels get unique ids
 
 	stackIndex int // Indicates the next stack index for pushing
 	idStack    [][]byte
@@ -196,11 +194,8 @@ var global = uiGlobals{
 	graphBuffer: make([]*graph.Graph, 0),
 
 	// For global interface
-	idCounter: invalidId + 1,
-	elements:  make(map[uint64]eid),
 	// elementsRev: make(map[eid]string),
 	dedup: make(map[uint64]uint32),
-
 }
 
 func SetHudScale(scale float64) {

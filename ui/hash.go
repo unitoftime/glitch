@@ -50,18 +50,18 @@ func bumpCrc(crc uint64, bump []byte) uint64 {
 	return crc64.Update(crc, hashTable, bump)
 }
 
-func getIdNoBump(label string) eid {
-	crc := crc(label)
-
-	id, ok := global.elements[crc]
-	if !ok {
-		id = global.idCounter
-		global.idCounter++
-		global.elements[crc] = id
-		// g.elementsRev[id] = label
+// Element ids are the 64 bit hash itself, so they don't need to be stored anywhere
+// Note: Two labels could collide, but with 64 bits that is extremely unlikely
+func hashToId(crc uint64) eid {
+	if eid(crc) == invalidId {
+		return invalidId + 1
 	}
+	return eid(crc)
+}
 
-	return id
+// Note: This must match the id that getId returns for the first use of the label in a frame (outside of any PushId)
+func getIdNoBump(label string) eid {
+	return hashToId(crc(label))
 }
 
 func getId(label string) eid {
@@ -71,7 +71,11 @@ func getId(label string) eid {
 	bump, alreadyFetched := global.dedup[crc]
 	if alreadyFetched {
 		global.dedup[crc] = bump + 1
-		crc = bumpCrc(crc, []byte{uint8(bump)})
+
+		// Note: The full bump is hashed so that ids don't repeat after 256 duplicates
+		var bumpBuf [binary.MaxVarintLen32]byte
+		n := binary.PutUvarint(bumpBuf[:], uint64(bump))
+		crc = bumpCrc(crc, bumpBuf[:n])
 		// label = fmt.Sprintf("%s##%d", label, bump)
 		// fmt.Printf("duplicate label, using bump: %s\n", label)
 		// panic(fmt.Sprintf("duplicate label found: %s", label))
@@ -79,16 +83,8 @@ func getId(label string) eid {
 		global.dedup[crc] = 0
 	}
 
-	id, ok := global.elements[crc]
-	if !ok {
-		id = global.idCounter
-		global.idCounter++
-		global.elements[crc] = id
-		// g.elementsRev[id] = label
-	}
-
 	// global.cachedId = id
-	return id
+	return hashToId(crc)
 }
 
 func removeDedup(label string) string {
