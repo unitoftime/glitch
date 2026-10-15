@@ -272,10 +272,14 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 		if global.hotId == id {
 			// if global.win.JustReleased(glitch.MouseButtonLeft) {
 			if !global.win.Pressed(glitch.MouseButtonLeft) {
-				if global.activeId != invalidId {
+				// Note: Only an actual drag can be dropped, not any active element (eg a focused text input or a held button)
+				if global.dragId != invalidId {
 					global.stopDragging = true
-					resp.droppedId = global.activeId
-					global.activeId = invalidId
+					resp.droppedId = global.dragId
+					if global.activeId == global.dragId {
+						global.activeId = invalidId
+					}
+					global.dragId = invalidId
 				}
 			}
 		}
@@ -283,9 +287,10 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 
 	// -- Drag Item --
 	if mask.Get(wmDragItem) {
-		if global.activeId == id {
+		if global.dragId == id {
 			// If we are currently dragging this item
 			resp.Dragging = true
+			global.dragSeen = true
 			// TODO: Do I need this?
 			// global.mouseCaught = true // Because we are actively dragging, the mouse should be captured
 
@@ -299,6 +304,8 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 			if global.mousePos.Sub(global.mouseDownPos).Len() > 5.0 { // TODO - arbitrary
 				// fmt.Println("Drag:", elem)
 				global.activeId = id
+				global.dragId = id
+				global.dragSeen = true
 				global.downId = invalidId
 				// } else if global.win.JustReleased(glitch.MouseButtonLeft) {
 			} else if !global.win.Pressed(glitch.MouseButtonLeft) {

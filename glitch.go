@@ -368,6 +368,12 @@ func (g *globalBatcher) finish() {
 	for shader := range g.shaderCache {
 		shader.pool.Clear()
 	}
+
+	// Forget the last material, so that the first draw of the next frame always binds its material.
+	// Note: Material uniforms can be changed through the material's uniforms pointer without changing the material value itself,
+	// so without this, a material that is drawn first every frame would never upload its new uniform values
+	// TODO: Uniforms changed mid-frame on the current material still won't upload until the material switches. Could track a version on Uniforms
+	g.material = Material{}
 	// clear(g.shaderCache) // TODO: the shaderCache leaks right now, but only grows to as many shaders as the user loads which isn't that much. You cant clear here because in single shader scenarios itll never get set back again
 	g.metric.finish++
 }

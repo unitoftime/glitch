@@ -168,6 +168,8 @@ type uiGlobals struct {
 
 	stopDragging bool
 	dragData     any
+	dragId       eid  // The element that is being dragged. Only DragItems set this, so that only real drags can be dropped
+	dragSeen     bool // Set when the dragged element is drawn. A drag ends if its element isn't drawn for a frame (See: Clear)
 
 	// cachedId eid
 
@@ -274,9 +276,19 @@ func Clear() {
 	global.hoverOnlyId = global.lastHoverOnlyId
 	global.lastHoverOnlyId = invalidId
 
+	// If the dragged element wasn't drawn last frame (eg its panel was closed mid-drag), then end the drag
+	if global.dragId != invalidId && !global.dragSeen {
+		global.stopDragging = true
+	}
+	global.dragSeen = false
+
 	if global.stopDragging {
 		global.stopDragging = false
-		global.activeId = invalidId
+		// Note: Only clear the active element if it is the drag, so that ending a drag doesn't unfocus something else (eg a text input)
+		if global.dragId != invalidId && global.activeId == global.dragId {
+			global.activeId = invalidId
+		}
+		global.dragId = invalidId
 		global.dragData = nil
 	}
 
