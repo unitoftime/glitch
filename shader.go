@@ -22,9 +22,6 @@ type Shader struct {
 
 	// TODO: You may be able to do a memory optimization here. where instead of allocating enough for the entire frame to be rendered through this shader, you can make a ringbuffer of VertexBuffers and cycle through those, drawing as you need to. The downside here is that there may be some performance impact if the ringbuffer is too small causing contention between filling the next VertexBuffer and rendering it on the GPU
 	pool *BufferPool
-
-	// This is for manually buffering a mesh into a fixed vertex buffer
-	bufferData *bufferData
 }
 
 type Uniform struct {
@@ -291,6 +288,7 @@ func (u *uniformSetterMat4) Func() {
 
 //--------------------------------------------------------------------------------
 
+// Buffers the mesh to the GPU in a vertex buffer that is sized exactly to the mesh
 // TODO: This would be much better if VertexBuffer was more of just a pointer to all of the GPU objects, and the cached data was maintained separately
 func (shader *Shader) BufferMesh(mesh *Mesh) *VertexBuffer {
 	// bufferState := BufferState{material, BlendModeNormal} // TODO: Blendmode used to come from renderpass
@@ -299,28 +297,9 @@ func (shader *Shader) BufferMesh(mesh *Mesh) *VertexBuffer {
 		panic("Cmd.Mesh indices must have 3 indices per triangle!")
 	}
 	numVerts := len(mesh.positions)
-	numIndices := len(mesh.indices)
-	if shader.bufferData == nil {
-		// If no buffer exists yet, then make a new one
-		data := NewSubBuffers(shader, numVerts, numIndices)
-		shader.bufferData = &data
-	}
-
-	// Use the shader.bufferData to make a new vertex buffer
-	vertBuf := NewVertexBuffer2(shader, *shader.bufferData)
-
-	// Reserve, creating a brand new one if the current isn't sized correctly
-	success := vertBuf.Reserve(mesh.indices, numVerts, shader.tmpBuffers)
-	if !success {
-		// If there isn't enough room, then resize up to the new required size
-		data := NewSubBuffers(shader, numVerts, numIndices)
-		shader.bufferData = &data
-		vertBuf = NewVertexBuffer2(shader, *shader.bufferData)
-
-		success := vertBuf.Reserve(mesh.indices, numVerts, shader.tmpBuffers)
-		if !success {
-			panic("Something went wrong")
-		}
+	vertBuf := NewVertexBuffer(shader, numVerts, len(mesh.indices))
+	if !vertBuf.Reserve(mesh.indices, numVerts, shader.tmpBuffers) {
+		panic("BufferMesh: failed to reserve on an exactly sized vertex buffer")
 	}
 	vertBuf.deallocAfterBuffer = true
 
@@ -328,9 +307,7 @@ func (shader *Shader) BufferMesh(mesh *Mesh) *VertexBuffer {
 	// TODO: Depth sorting?
 	batchToBuffers(shader, mesh, glMat4Ident, White)
 
-	mainthread.Call(func() {
-		vertBuf.mainthreadBufferData()
-	})
+	mainthread.Call(vertBuf.mainthreadUpload)
 
 	return vertBuf
 }

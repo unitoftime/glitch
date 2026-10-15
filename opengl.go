@@ -11,11 +11,13 @@ import (
 )
 
 const sof int = 4 // SizeOf(Float)
+const soi int = 4 // SizeOf(Index) // TODO - make this modifiable?
 
 // TODO - rename
 type ISubBuffer interface {
 	Clear()
 	Buffer() []byte
+	VertexSize() int // The number of bytes per vertex
 	Offset() int
 	Len() int
 	Cap() int
@@ -75,6 +77,10 @@ func (b *SubBuffer[T]) Buffer() []byte {
 // 	}
 // }
 
+func (b *SubBuffer[T]) VertexSize() int {
+	return b.sliceScale
+}
+
 func (b *SubBuffer[T]) Offset() int {
 	return sof * int(b.attr.Size()) * b.maxVerts
 }
@@ -101,14 +107,21 @@ type bufferData struct {
 	indices []uint32
 }
 
+// A VertexBuffer is either drawn whole (eg a buffered mesh), or used as a streaming chunk where batched geometry is appended
+// throughout the frame and drawn in ranges. Each range only uploads the data appended since the last upload
 type VertexBuffer struct {
-	vao, vbo, ebo gl.Buffer
+	vao, vbo, ebo    gl.Buffer
+	vboSize, eboSize int // The byte sizes of the GPU buffers
 
 	data bufferData
 
 	numVerts           uint32 // The number of vertices we currently have buffered
-	numIndicesToDraw   int    // The number of indices we are currently drawing
-	bufferedToGPU      bool   // Tracks whether the data has been written to the GPU
+	numIndices         int    // The number of indices we currently have buffered
+	uploadedVerts      int    // The number of vertices that have been written to the GPU
+	uploadedIndices    int    // The number of indices that have been written to the GPU
+	drawnVerts         int    // Streaming: The number of vertices that have already been drawn as part of a range
+	drawnIndices       int    // Streaming: The number of indices that have already been drawn as part of a range
+	needsOrphan        bool   // If true, the GPU storage may still be read by last frame's draws, so it must be orphaned before the next upload
 	deallocAfterBuffer bool   // If set true, once we write data to the GPU we deallocate CPU buffers
 	deleted            bool   // If true, we've already deleted this
 }
@@ -175,7 +188,9 @@ func NewSubBuffers(shader *Shader, numVerts, numIndices int) bufferData {
 
 func NewVertexBuffer2(shader *Shader, data bufferData) *VertexBuffer {
 	b := &VertexBuffer{
-		data: data,
+		data:    data,
+		vboSize: data.numVerts * data.stride, // Note: stride is already in bytes
+		eboSize: soi * len(data.indices),
 	}
 
 	mainthread.Call(func() {
@@ -186,11 +201,10 @@ func NewVertexBuffer2(shader *Shader, data bufferData) *VertexBuffer {
 		gl.BindVertexArray(b.vao)
 
 		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-		gl.BufferData(gl.ARRAY_BUFFER, data.numVerts*data.stride, nil, gl.DYNAMIC_DRAW) // Note: stride is already in bytes
+		gl.BufferData(gl.ARRAY_BUFFER, b.vboSize, nil, gl.DYNAMIC_DRAW)
 
-		indexSize := 4 // uint32 // TODO - make this modifiable?
 		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, indexSize*len(b.data.indices), nil, gl.DYNAMIC_DRAW)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, b.eboSize, nil, gl.DYNAMIC_DRAW)
 
 		for i := range b.data.buffers {
 			switch subBuffer := b.data.buffers[i].(type) {
@@ -255,10 +269,16 @@ func (v *VertexBuffer) Clear() {
 		v.data.buffers[i].Clear()
 	}
 	v.data.indices = v.data.indices[:0]
-	v.numIndicesToDraw = 0
+	v.numIndices = 0
 	v.numVerts = 0
 	// v.materialSet = false
-	v.bufferedToGPU = false
+
+	// If the GPU storage was used, then last frame's draws may still be reading it
+	v.needsOrphan = v.needsOrphan || v.uploadedIndices > 0
+	v.uploadedVerts = 0
+	v.uploadedIndices = 0
+	v.drawnVerts = 0
+	v.drawnIndices = 0
 }
 
 func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface{}) bool {
@@ -276,8 +296,6 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 		return false
 	}
 
-	v.bufferedToGPU = false
-
 	// v.materialSet = true
 	// v.state = state
 
@@ -287,7 +305,7 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 		v.data.indices = append(v.data.indices, currentElement+indices[i])
 	}
 	v.numVerts += uint32(numVerts)
-	v.numIndicesToDraw = len(v.data.indices)
+	v.numIndices = len(v.data.indices)
 
 	for i := range v.data.buffers {
 		switch subBuffer := v.data.buffers[i].(type) {
@@ -310,45 +328,75 @@ func (v *VertexBuffer) Reserve(indices []uint32, numVerts int, dests []interface
 	return true
 }
 
-// Buffers the entire vertex buffer
+// Uploads the vertices and indices that were reserved since the last upload
 // This function returns with the Element array buffer bound, so it is ready to be drawn
-func (v *VertexBuffer) mainthreadBufferData() {
-	gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
-	offset := 0
-	var buf []byte
-	for i := range v.data.buffers {
-		buf = v.data.buffers[i].Buffer()
-		gl.BufferSubDataByte(gl.ARRAY_BUFFER, offset, buf)
-		offset += v.data.buffers[i].Offset()
+func (v *VertexBuffer) mainthreadUpload() {
+	if v.needsOrphan {
+		v.needsOrphan = false
+
+		// Orphan the GPU storage, so that the driver gives us fresh memory instead of stalling until the GPU finishes reading last frame's data
+		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
+		gl.BufferData(gl.ARRAY_BUFFER, v.vboSize, nil, gl.DYNAMIC_DRAW)
+		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
+		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, v.eboSize, nil, gl.DYNAMIC_DRAW)
+	}
+
+	numVerts := int(v.numVerts)
+	if v.uploadedVerts < numVerts {
+		// Each attribute has its own region in the vbo, so upload the new tail of each region
+		gl.BindBuffer(gl.ARRAY_BUFFER, v.vbo)
+		regionOffset := 0
+		for i := range v.data.buffers {
+			subBuffer := v.data.buffers[i]
+			tailOffset := v.uploadedVerts * subBuffer.VertexSize()
+			gl.BufferSubDataByte(gl.ARRAY_BUFFER, regionOffset+tailOffset, subBuffer.Buffer()[tailOffset:])
+			regionOffset += subBuffer.Offset()
+		}
+		v.uploadedVerts = numVerts
 	}
 
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-	gl.BufferSubDataUint32(gl.ELEMENT_ARRAY_BUFFER, 0, v.data.indices)
+	if v.uploadedIndices < v.numIndices {
+		gl.BufferSubDataUint32(gl.ELEMENT_ARRAY_BUFFER, v.uploadedIndices*soi, v.data.indices[v.uploadedIndices:])
+		v.uploadedIndices = v.numIndices
+	}
 
 	if v.deallocAfterBuffer {
+		v.deallocAfterBuffer = false
 		v.deallocCPUBuffers()
 	}
-	v.bufferedToGPU = true
 }
 
-func (v *VertexBuffer) mainthreadDraw() {
+// Draws the indices in the range [start, start+count)
+func (v *VertexBuffer) mainthreadDraw(start, count int) {
 	gl.BindVertexArray(v.vao)
-
-	if !v.bufferedToGPU {
-		v.mainthreadBufferData()
-		gl.DrawElements(gl.TRIANGLES, v.numIndicesToDraw, gl.UNSIGNED_INT, 0)
-	} else {
-		gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, v.ebo)
-		gl.DrawElements(gl.TRIANGLES, v.numIndicesToDraw, gl.UNSIGNED_INT, 0)
-	}
+	v.mainthreadUpload()
+	gl.DrawElements(gl.TRIANGLES, count, gl.UNSIGNED_INT, start*soi)
 }
 
+// Draws the entire vertex buffer
 func (v *VertexBuffer) Draw() {
-	if v.numIndicesToDraw <= 0 {
+	v.drawRange(0, v.numIndices)
+}
+
+// Draws the indices in the range [start, start+count)
+func (v *VertexBuffer) drawRange(start, count int) {
+	if count <= 0 {
 		return
 	}
 
-	state.drawVertBuffer(v)
+	state.drawVertBuffer(v, start, count)
+}
+
+// Streaming: Returns the range of indices (and the number of vertices) that were added since the last call, and marks them as drawn
+func (v *VertexBuffer) takePendingRange() (start, count, verts int) {
+	start = v.drawnIndices
+	count = v.numIndices - v.drawnIndices
+	verts = int(v.numVerts) - v.drawnVerts
+
+	v.drawnIndices = v.numIndices
+	v.drawnVerts = int(v.numVerts)
+	return start, count, verts
 }
 
 // BufferPool
@@ -358,8 +406,7 @@ type BufferPool struct {
 	triangleBatchSize int
 	triangleCount     int
 	buffers           []*VertexBuffer
-	currentIndex      int
-	nextClean         int // Tracks the next clean vertex buffer (ie clean = buffers that haven't been written reserved on in this case
+	currentIndex      int // The buffer we are currently streaming into. Buffers before this one are full for this frame
 }
 
 func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
@@ -369,7 +416,6 @@ func NewBufferPool(shader *Shader, triangleBatchSize int) *BufferPool {
 		triangleCount:     0,
 		buffers:           make([]*VertexBuffer, 0),
 		currentIndex:      0,
-		nextClean:         0,
 	}
 }
 
@@ -379,22 +425,16 @@ func (b *BufferPool) Clear() {
 	}
 	b.triangleCount = 0
 	b.currentIndex = 0
-	b.nextClean = 0
-}
-
-// Updates the buffer pool, so that the next reserve call will return a brand new vertex buffer
-func (b *BufferPool) gotoNextClean() {
-	b.currentIndex = b.nextClean
 }
 
 // Returns the vertexbuffer that we reserved to
+// Note: Geometry is appended to the current buffer until it is full, so callers draw it in ranges (See: VertexBuffer.takePendingRange)
 func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}) *VertexBuffer {
 	for i := b.currentIndex; i < len(b.buffers); i++ {
 		success := b.buffers[i].Reserve(indices, numVerts, dests)
 		if success {
 			b.triangleCount += len(indices) / 3
 			b.currentIndex = i
-			b.nextClean = b.currentIndex + 1
 			return b.buffers[i]
 		}
 	}
@@ -415,7 +455,6 @@ func (b *BufferPool) Reserve(indices []uint32, numVerts int, dests []interface{}
 	b.triangleCount += len(indices) / 3
 
 	b.currentIndex = len(b.buffers) - 1
-	b.nextClean = b.currentIndex + 1
 
 	return newBuff
 }

@@ -347,7 +347,7 @@ func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, materi
 	if buffer != nil {
 		// Draw any pending batched geometry first so that draw order is preserved
 		g.flush()
-		global.drawCall(buffer, mat)
+		g.drawCall(buffer, mat, 0, buffer.numIndices, int(buffer.numVerts))
 		return
 	}
 
@@ -355,12 +355,12 @@ func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, materi
 	// 1. If you fill up then draw the last one
 	vertexBuffer := filler.Fill(state.shader.pool, mat, mask)
 
-	// If vertexBuffer has changed then we want to draw the last one
-	if global.lastBuffer != nil && vertexBuffer != global.lastBuffer {
-		global.drawCall(global.lastBuffer, glMat4Ident)
+	// If vertexBuffer has changed then the last one is full, so draw what is pending in it
+	if g.lastBuffer != nil && vertexBuffer != g.lastBuffer {
+		g.drawPending(g.lastBuffer)
 	}
 
-	global.lastBuffer = vertexBuffer
+	g.lastBuffer = vertexBuffer
 }
 
 func (g *globalBatcher) finish() {
@@ -372,22 +372,31 @@ func (g *globalBatcher) finish() {
 	g.metric.finish++
 }
 
-// Draws the current buffer and progress the shader pool to the next available
+// Draws the geometry that is pending in the current buffer. Later geometry keeps getting appended to the same buffer
 func (g *globalBatcher) flush() {
 	g.metric.flushAttempt++
 	if g.lastBuffer == nil {
 		return
 	}
 
-	g.drawCall(g.lastBuffer, glMat4Ident)
+	g.drawPending(g.lastBuffer)
 	g.lastBuffer = nil
-	state.shader.pool.gotoNextClean()
 
 	g.metric.flush++
 }
 
-// Executes a drawcall with ...
-func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
+// Draws the range of the streaming buffer that hasn't been drawn yet. The model matrix was already applied when filling it
+func (g *globalBatcher) drawPending(buffer *VertexBuffer) {
+	start, count, verts := buffer.takePendingRange()
+	g.drawCall(buffer, glMat4Ident, start, count, verts)
+}
+
+// Draws the indices in the range [start, start+count) of the buffer. vertCount is only used for metrics
+func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4, start, count, vertCount int) {
+	if count <= 0 {
+		return
+	}
+
 	// // TODO: rewrite how buffer state works for immediate mode case
 	// buffer.state.Bind(g.shader)
 
@@ -397,10 +406,9 @@ func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
 		panic("Error setting model uniform - all shaders must have 'model' uniform")
 	}
 
-	buffer.Draw()
+	buffer.drawRange(start, count)
 	g.metric.draw++
 
-	vertCount := int(buffer.numVerts)
 	g.metric.vertsTotal += vertCount
 	g.metric.vertsAvg = g.metric.vertsTotal / g.metric.draw
 	// g.metric.vertsMax = max(vertCount, g.metric.vertsMax)

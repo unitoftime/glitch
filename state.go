@@ -47,8 +47,9 @@ type stateTracker struct {
 	cullModeBinder func()
 
 	// Vert Buffer
-	vertBuf       *VertexBuffer
-	vertBufDrawer func()
+	vertBuf                    *VertexBuffer
+	vertBufStart, vertBufCount int // The range of indices to draw
+	vertBufDrawer              func()
 
 	clearColor RGBA
 	clearMode  gl.Enum
@@ -136,7 +137,7 @@ func init() {
 	// }
 
 	state.vertBufDrawer = func() {
-		state.vertBuf.mainthreadDraw()
+		state.vertBuf.mainthreadDraw(state.vertBufStart, state.vertBufCount)
 	}
 
 	state.clearFunc = func() {
@@ -252,8 +253,10 @@ func (s *stateTracker) setCullMode(cull CullMode) {
 // 	mainthread.Call(s.blendFuncBinder)
 // }
 
-func (s *stateTracker) drawVertBuffer(vb *VertexBuffer) {
+func (s *stateTracker) drawVertBuffer(vb *VertexBuffer, start, count int) {
 	s.vertBuf = vb
+	s.vertBufStart = start
+	s.vertBufCount = count
 	mainthread.Call(s.vertBufDrawer)
 }
 
