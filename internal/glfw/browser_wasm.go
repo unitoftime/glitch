@@ -718,6 +718,12 @@ func GetCurrentContext() *Window {
 	panic("not implemented")
 }
 
+// Returns true if the caller is on the thread that the GL context is current on
+// Note: The browser only has one thread
+func OnContextThread() bool {
+	return true
+}
+
 type CursorPosCallback func(w *Window, xpos float64, ypos float64)
 
 func (w *Window) SetCursorPosCallback(cbfun CursorPosCallback) (previous CursorPosCallback) {

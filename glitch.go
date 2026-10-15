@@ -7,17 +7,15 @@ import (
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
+// Runs the game loop. Must be called from the main goroutine (eg directly from main()), because OpenGL and GLFW must run on the main thread
+// Note: The function runs directly on the main thread, so glitch calls made from it have no overhead. Calls from other goroutines wait until the next Window.Update
 func Run(function func()) {
-	f := func() {
+	mainthread.Run(func() {
 		function()
 
 		// Perform any cleanup operations
-		mainthread.Call(func() {
-			glfw.Terminate()
-		})
-	}
-
-	mainthread.Run(f)
+		glfw.Terminate()
+	})
 }
 
 // type Material interface {
@@ -218,6 +216,7 @@ type Metrics struct {
 	// vertsMax int
 }
 
+// Returns the metrics since the last call, and resets them
 func GetMetrics() Metrics {
 	metric := global.metric
 	global.metric = Metrics{}

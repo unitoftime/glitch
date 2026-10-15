@@ -300,6 +300,9 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 		return nil, fmt.Errorf("failed to create window: %w", err)
 	}
 
+	// Now that the GL context is current on the main thread, calls from other goroutines can be detected and queued (See: mainthread.Drain)
+	mainthread.SetMainThreadCheck(glfw.OnContextThread)
+
 	win.mainthreadUpdate = func() {
 		// TODO - I think this is only useful for webgl because of how my RAF works I think in Firefox it sometimes swaps buffer before finishing the opengl stuff. Weird!
 		// TODO - using gl.Finish is bad? https://www.khronos.org/opengl/wiki/Swap_Interval
@@ -354,6 +357,9 @@ func (w *Window) Update() {
 	w.lastUpdateTime = nextLastUpdate
 
 	global.finish()
+
+	// Run any GL work that other goroutines queued for the main thread (eg resource creation and finalizer deletes)
+	mainthread.Drain()
 
 	mainthread.Call(w.mainthreadUpdate)
 

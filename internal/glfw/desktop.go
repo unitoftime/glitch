@@ -65,6 +65,12 @@ func DetachCurrentContext() {
 	contextWatcher.OnDetach()
 }
 
+// Returns true if the caller is on the thread that the GL context is current on (ie the main thread)
+// Note: glfwGetCurrentContext is safe to call from any thread
+func OnContextThread() bool {
+	return glfw.GetCurrentContext() != nil
+}
+
 type winRect struct {
 	xpos, ypos, width, height int
 }
