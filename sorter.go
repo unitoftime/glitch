@@ -1,7 +1,6 @@
 package glitch
 
 import (
-	"cmp"
 	"math"
 	"slices"
 )
@@ -24,6 +23,7 @@ type Sorter struct {
 	// camera *CameraOrtho
 
 	commands []cmdList
+	keys     []uint64 // Scratch buffer for sorting, reused every draw (See: drawCommands)
 }
 
 func NewSorter() *Sorter {
@@ -67,37 +67,57 @@ func (s *Sorter) Clear() {
 // }
 
 func (s *Sorter) Draw(target BatchTarget) {
-	s.sort()
-
 	if s.DepthTest {
-		// Opaque goes front to back (0 to 255)
+		// TODO - do special sort function for depth test code:
+		// 1. Fully Opaque or fully transparent groups of meshes: Don't sort inside that group
+		// 2. Partially transparent groups of meshes: sort inside that group
+		// 3. Take into account blendMode
+
+		// Opaque goes front to back (0 to 255), unsorted
 		for l := range s.commands {
-			for i := range s.commands[l].Opaque {
-				// fmt.Println("- Opaque: (layer, x, z)", l, s.commands[l].Opaque[i].matrix[i4_3_1], s.commands[l].Opaque[i].matrix[i4_3_2])
-				s.applyDrawCommand(target, s.commands[l].Opaque[i])
-			}
+			s.drawCommands(target, s.commands[l].Opaque, SoftwareSortNone)
 		}
 
 		// Translucent goes from back to front (255 to 0)
 		for l := len(s.commands) - 1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
-			for i := range s.commands[l].Translucent {
-				// for i := len(s.commands[l].Translucent)-1; i >= 0; i-- {
-				// fmt.Println("- Transl: (layer, x, z)", l, s.commands[l].Translucent[i].matrix[i4_3_1], s.commands[l].Translucent[i].matrix[i4_3_2])
-				s.applyDrawCommand(target, s.commands[l].Translucent[i])
-			}
+			s.drawCommands(target, s.commands[l].Translucent, s.SoftwareSort)
 		}
 	} else {
 		for l := len(s.commands) - 1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
-			for i := range s.commands[l].Opaque {
-				s.applyDrawCommand(target, s.commands[l].Opaque[i])
-			}
-			for i := range s.commands[l].Translucent {
-				s.applyDrawCommand(target, s.commands[l].Translucent[i])
-			}
+			s.drawCommands(target, s.commands[l].Opaque, s.SoftwareSort)
+			s.drawCommands(target, s.commands[l].Translucent, s.SoftwareSort)
 		}
 	}
 
 	s.Clear()
+}
+
+// Draws the commands to the target in the order given by the sort mode
+// Note: Rather than sorting the commands (which are large), we sort uint64 keys that index into them.
+// The high 32 bits hold the sort value and the low 32 bits hold the command index. Because the index breaks ties,
+// commands with equal values keep the order they were added in (ie the same result as a stable sort)
+func (s *Sorter) drawCommands(target BatchTarget, cmds []drawCommand, sortMode SoftwareSortMode) {
+	matIdx, descending, sorted := sortModeKey(sortMode)
+	if !sorted {
+		for i := range cmds {
+			s.applyDrawCommand(target, cmds[i])
+		}
+		return
+	}
+
+	s.keys = s.keys[:0]
+	for i := range cmds {
+		key := sortableFloatBits(cmds[i].matrix[matIdx])
+		if descending {
+			key = ^key
+		}
+		s.keys = append(s.keys, uint64(key)<<32|uint64(i))
+	}
+	slices.Sort(s.keys)
+
+	for _, k := range s.keys {
+		s.applyDrawCommand(target, cmds[uint32(k)])
+	}
 }
 
 func (s *Sorter) applyDrawCommand(target BatchTarget, c drawCommand) {
@@ -162,28 +182,6 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	})
 }
 
-func (s *Sorter) sort() {
-	if s.DepthTest {
-		// TODO - do special sort function for depth test code:
-		// 1. Fully Opaque or fully transparent groups of meshes: Don't sort inside that group
-		// 2. Partially transparent groups of meshes: sort inside that group
-		// 3. Take into account blendMode
-
-		// Sort translucent buffer
-		for l := range s.commands {
-			s.commands[l].SortTranslucent(s.SoftwareSort)
-		}
-
-		return
-	}
-
-	// Sort both buffers
-	for l := range s.commands {
-		s.commands[l].SortTranslucent(s.SoftwareSort)
-		s.commands[l].SortOpaque(s.SoftwareSort)
-	}
-}
-
 // --------------------------------------------------------------------------------
 type cmdList struct {
 	Opaque      []drawCommand // TODO: This is kindof more like the unsorted list
@@ -199,14 +197,6 @@ func (c *cmdList) Add(translucent bool, cmd drawCommand) {
 		c.Opaque = append(c.Opaque, cmd)
 		// return &c.Opaque[len(c.Opaque)-1]
 	}
-}
-
-func (c *cmdList) SortTranslucent(sortMode SoftwareSortMode) {
-	SortDrawCommands(c.Translucent, sortMode)
-}
-
-func (c *cmdList) SortOpaque(sortMode SoftwareSortMode) {
-	SortDrawCommands(c.Opaque, sortMode)
 }
 
 func (c *cmdList) Clear() {
@@ -232,30 +222,34 @@ type drawCommand struct {
 	material Material
 }
 
-func SortDrawCommands(buf []drawCommand, sortMode SoftwareSortMode) {
-	if sortMode == SoftwareSortNone {
-		return
-	} // Skip if sorting disabled
+// Returns the matrix index to sort on, and whether to sort it descending. Returns false if the mode doesn't sort
+func sortModeKey(sortMode SoftwareSortMode) (matIdx int, descending bool, sorted bool) {
+	switch sortMode {
+	case SoftwareSortX:
+		return i4_3_0, true, true // sort by x
+	case SoftwareSortY:
+		return i4_3_1, true, true // sort by y
+	case SoftwareSortZ:
+		return i4_3_2, false, true // sort by z
+	case SoftwareSortZNegative:
+		return i4_3_2, true, true // sort by z
+	}
+	// TODO: SoftwareSortCommand: Sort by the computed drawCommand.command
+	return 0, false, false
+}
 
-	if sortMode == SoftwareSortX {
-		slices.SortStableFunc(buf, func(a, b drawCommand) int {
-			return -cmp.Compare(a.matrix[i4_3_0], b.matrix[i4_3_0]) // sort by x
-		})
-	} else if sortMode == SoftwareSortY {
-		slices.SortStableFunc(buf, func(a, b drawCommand) int {
-			return -cmp.Compare(a.matrix[i4_3_1], b.matrix[i4_3_1]) // sort by y
-		})
-	} else if sortMode == SoftwareSortZ {
-		slices.SortStableFunc(buf, func(a, b drawCommand) int {
-			return cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
-		})
-	} else if sortMode == SoftwareSortZNegative {
-		slices.SortStableFunc(buf, func(a, b drawCommand) int {
-			return -cmp.Compare(a.matrix[i4_3_2], b.matrix[i4_3_2]) // sort by z
-		})
-	} //  else if sortMode == SoftwareSortCommand {
-	// 	slices.SortStableFunc(buf, func(a, b drawCommand) int {
-	// 		return -cmp.Compare(a.command, b.command) // sort by command
-	// 	})
-	// }
+// Encodes a float into a uint32 whose unsigned order matches the order of cmp.Compare (NaN first, -0 equal to +0)
+func sortableFloatBits(f float32) uint32 {
+	if f != f {
+		return 0 // NaN sorts before everything. Note: No other float encodes to 0
+	}
+	if f == 0 {
+		f = 0 // Treat -0 the same as +0
+	}
+
+	bits := math.Float32bits(f)
+	if bits&(1<<31) != 0 {
+		return ^bits // Negative: Flip all bits, so that larger magnitudes sort first
+	}
+	return bits | (1 << 31) // Positive: Set the sign bit, so that positives sort after negatives
 }
