@@ -8,12 +8,21 @@ import (
 	"github.com/unitoftime/glitch/internal/mainthread"
 )
 
+// The stateTracker is the single owner of GL binding state (render target + viewport, shader program, texture, depth, blend, cull).
+// Every change to that state must go through it, otherwise its cache won't match the real GL state and needed binds will be skipped.
+// The one exception is resource creation: code running on the mainthread may bind objects directly, as long as it calls the
+// matching mainthreadApply* function before returning, which restores the tracked binding.
+// Note: Vertex arrays and buffers are not tracked. They are always bound right before they are used.
 type stateTracker struct {
-	// FBO
+	// Render Target (FBO + Viewport)
+	target    Target // The currently bound target. Nil if the next setTarget must rebind
 	fbo       gl.Framebuffer
 	fboBounds Rect
 	fboBinder func()
-	fboFrame  *Frame
+
+	// Shader Program
+	shader       *Shader
+	shaderBinder func()
 
 	// Depth Test
 	// depthTest       bool
@@ -49,7 +58,9 @@ type stateTracker struct {
 var state *stateTracker
 
 func init() {
-	state = &stateTracker{}
+	state = &stateTracker{
+		fbo: gl.NoFramebuffer,
+	}
 
 	state.depthModeBinder = func() {
 		if state.depthMode == DepthModeNone {
@@ -99,19 +110,15 @@ func init() {
 	state.fboBinder = func() {
 		// TODO - Note: I set the viewport when I bind the framebuffer. Is this okay?
 		gl.Viewport(0, 0, int(state.fboBounds.W()), int(state.fboBounds.H()))
-		gl.BindFramebuffer(gl.FRAMEBUFFER, state.fbo)
+		state.mainthreadApplyFramebuffer()
 	}
+
+	state.shaderBinder = state.mainthreadApplyShader
 
 	state.textureBinder = func() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		// gl.ActiveTexture(gl.TEXTURE0 + position); // TODO - include position
-
-		if state.texture == nil {
-			gl.BindTexture(gl.TEXTURE_2D, gl.NoTexture)
-		} else {
-			gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
-		}
-		// gl.BindTexture(gl.TEXTURE_2D, state.texture.texture)
+		state.mainthreadApplyTexture()
 	}
 
 	// state.blendFuncBinder = func() {
@@ -139,22 +146,60 @@ func init() {
 	}
 }
 
-// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
-func (s *stateTracker) bindTexture(texture *Texture) {
-	// TODO: Check if changed
-	s.texture = texture
-	mainthread.Call(state.textureBinder)
+// --- Mainthread: Apply the tracked bindings to GL ---
+// Note: Resource creation uses these to restore the tracked bindings after binding objects directly
+
+func (s *stateTracker) mainthreadApplyFramebuffer() {
+	gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbo)
 }
 
-func (s *stateTracker) bindFramebuffer(f *Frame, fbo gl.Framebuffer, bounds Rect) {
+func (s *stateTracker) mainthreadApplyShader() {
+	if s.shader == nil {
+		gl.UseProgram(gl.NoProgram)
+	} else {
+		gl.UseProgram(s.shader.program)
+	}
+}
+
+func (s *stateTracker) mainthreadApplyTexture() {
+	if s.texture == nil {
+		gl.BindTexture(gl.TEXTURE_2D, gl.NoTexture)
+	} else {
+		gl.BindTexture(gl.TEXTURE_2D, s.texture.texture)
+	}
+}
+
+// --- Tracked state changes ---
+
+// TODO - maybe allow for more than 15 if the platform supports it? TODO - max texture units
+func (s *stateTracker) bindTexture(texture *Texture) {
+	if s.texture == texture {
+		return // Skip: State already matches
+	}
+	s.texture = texture
+	mainthread.Call(s.textureBinder)
+}
+
+// Note: Callers are responsible for checking if the shader has changed, because they need to flush before changing it
+func (s *stateTracker) bindShader(shader *Shader) {
+	s.shader = shader
+	mainthread.Call(s.shaderBinder)
+}
+
+func (s *stateTracker) bindFramebuffer(target Target, fbo gl.Framebuffer, bounds Rect) {
+	s.target = target
 	if s.fbo.Equal(fbo) && s.fboBounds == bounds {
-		return
+		return // Skip: State already matches
 	}
 	s.fbo = fbo
 	s.fboBounds = bounds
-	s.fboFrame = f
 
 	mainthread.Call(s.fboBinder)
+}
+
+// Forces the next setTarget to rebind its target, so that a changed target size (ie its viewport) gets applied
+func (s *stateTracker) invalidateTarget() {
+	s.target = nil
 }
 
 func (s *stateTracker) setDepthMode(depth DepthMode) {

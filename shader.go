@@ -11,13 +11,12 @@ import (
 // Notes: Uniforms are specific to a program: https://stackoverflow.com/questions/10857602/do-uniform-values-remain-in-glsl-shader-if-unbound
 
 type Shader struct {
-	program        gl.Program
-	uniformLocs    map[string]Uniform
-	uniformsMat4   map[string]glMat4 // All uniforms that are glMat4
-	uniforms       map[string]any    // All other uniforms
-	attrFmt        shaders.VertexFormat
-	tmpBuffers     []any
-	mainthreadBind func()
+	program      gl.Program
+	uniformLocs  map[string]Uniform
+	uniformsMat4 map[string]glMat4 // All uniforms that are glMat4
+	uniforms     map[string]any    // All other uniforms
+	attrFmt      shaders.VertexFormat
+	tmpBuffers   []any
 
 	uniformLoc gl.Uniform
 
@@ -58,29 +57,22 @@ func NewShaderExt(vertexSource, fragmentSource string, attrFmt shaders.VertexFor
 			// fmt.Println("Found uniform: ", uniform)
 		}
 
+		// Set all matrices to identity matrices. Setting uniforms requires the program to be bound,
+		// so we bind it directly and then restore the tracked program, so creating a shader never changes the current render state
+		gl.UseProgram(shader.program)
+		for _, uniform := range uniformFmt {
+			// TODO handle other matrices
+			if uniform.Type == shaders.AttrMat4 {
+				gl.UniformMatrix4fv(shader.uniformLocs[uniform.Name].loc, glMat4Ident[:])
+				shader.uniformsMat4[uniform.Name] = glMat4Ident
+			}
+		}
+		state.mainthreadApplyShader()
+
 		return nil
 	})
 	if err != nil {
 		return nil, err
-	}
-
-	shader.mainthreadBind = func() {
-		gl.UseProgram(shader.program)
-	}
-
-	// shader.setUniformMat4 = func() {
-	// 	gl.UniformMatrix4fv(shader.uniformLoc, shader.tmpFloat32Slice)
-	// }
-
-	// Loop through and set all matrices to identity matrices
-	// shader.Bind()
-	setShader(shader)
-	for _, uniform := range uniformFmt {
-		// TODO handle other matrices
-		if uniform.Type == shaders.AttrMat4 {
-			// Setting uniform
-			shader.setUniformMat4(uniform.Name, glMat4Ident)
-		}
 	}
 
 	shader.tmpBuffers = make([]any, len(shader.attrFmt))

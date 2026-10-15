@@ -240,11 +240,10 @@ var global = &globalBatcher{
 	},
 } // TODO: Default case for shader?
 
+// Note: The currently bound shader and target live in the stateTracker
 type globalBatcher struct {
-	shader     *Shader
 	camera     CameraMaterial
 	lastBuffer *VertexBuffer
-	target     Target
 	blend      BlendMode
 
 	material Material
@@ -284,9 +283,9 @@ func SetCameraMaterial(camMaterial CameraMaterial) {
 	global.camera = camMaterial
 
 	// Note: If no shader is bound yet, setShader will apply the camera when one is bound
-	if global.shader != nil {
-		global.shader.setUniformMat4("projection", global.camera.Projection)
-		global.shader.setUniformMat4("view", global.camera.View)
+	if state.shader != nil {
+		state.shader.setUniformMat4("projection", global.camera.Projection)
+		state.shader.setUniformMat4("view", global.camera.View)
 	}
 
 	global.metric.setCamera++
@@ -301,28 +300,26 @@ func SetCamera(camera *CameraOrtho) {
 }
 
 func setTarget(target Target) {
-	if global.target == target {
+	if state.target == target {
 		return
 	}
 
 	global.flush() // TODO: You technically only need to do this if it will change the uniform
-	global.target = target
 	target.Bind()
 
 	global.metric.setTarget++
 }
 
 func setShader(shader *Shader) {
-	if global.shader == shader {
+	if state.shader == shader {
 		return
 	}
 
 	global.flush()
-	global.shader = shader
-	mainthread.Call(shader.mainthreadBind)
+	state.bindShader(shader)
 
-	global.shader.setUniformMat4("projection", global.camera.Projection)
-	global.shader.setUniformMat4("view", global.camera.View)
+	shader.setUniformMat4("projection", global.camera.Projection)
+	shader.setUniformMat4("view", global.camera.View)
 
 	global.shaderCache[shader] = struct{}{}
 	global.metric.setShader++
@@ -356,7 +353,7 @@ func (g *globalBatcher) Add(filler GeometryFiller, mat glMat4, mask RGBA, materi
 
 	// Note: Captured in shader.pool
 	// 1. If you fill up then draw the last one
-	vertexBuffer := filler.Fill(global.shader.pool, mat, mask)
+	vertexBuffer := filler.Fill(state.shader.pool, mat, mask)
 
 	// If vertexBuffer has changed then we want to draw the last one
 	if global.lastBuffer != nil && vertexBuffer != global.lastBuffer {
@@ -384,7 +381,7 @@ func (g *globalBatcher) flush() {
 
 	g.drawCall(g.lastBuffer, glMat4Ident)
 	g.lastBuffer = nil
-	g.shader.pool.gotoNextClean()
+	state.shader.pool.gotoNextClean()
 
 	g.metric.flush++
 }
@@ -395,7 +392,7 @@ func (g *globalBatcher) drawCall(buffer *VertexBuffer, mat glMat4) {
 	// buffer.state.Bind(g.shader)
 
 	// TOOD: Maybe pass this into VertexBuffer.Draw() func
-	ok := g.shader.setUniformMat4("model", mat)
+	ok := state.shader.setUniformMat4("model", mat)
 	if !ok {
 		panic("Error setting model uniform - all shaders must have 'model' uniform")
 	}

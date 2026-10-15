@@ -30,6 +30,7 @@ type Window struct {
 	closed bool
 
 	width, height int
+	resized       bool // Set by the framebuffer size callback, so the next Update can apply the new viewport
 
 	tmpInput, input struct {
 		justPressed  [KeyLast + 1]bool
@@ -203,13 +204,13 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 
 		win.width = width
 		win.height = height
-		gl.Viewport(0, 0, int(width), int(height))
 
+		// Note: The viewport is applied by the stateTracker when the window is bound, so here we only record the new size
 		win.window.SetFramebufferSizeCallback(func(w *glfw.Window, width, height int) {
 			// fmt.Println("Framebuffer size callback", width, height)
 			win.width = width
 			win.height = height
-			gl.Viewport(0, 0, int(win.width), int(win.height))
+			win.resized = true
 		})
 
 		win.AddScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
@@ -290,7 +291,6 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 			w, h := win.window.GetFramebufferSize()
 			win.width = w
 			win.height = h
-			gl.Viewport(0, 0, w, h)
 		}
 
 		return nil
@@ -356,6 +356,11 @@ func (w *Window) Update() {
 	global.finish()
 
 	mainthread.Call(w.mainthreadUpdate)
+
+	if w.resized {
+		w.resized = false
+		state.invalidateTarget() // The next draw rebinds its target, which applies the new window viewport
+	}
 
 	w.input = w.tmpInput
 	w.tmpInput.scroll.X = 0
@@ -515,7 +520,7 @@ func (w *Window) Repeated(key Key) bool {
 
 // Binds the window as the OpenGL render targe
 func (w *Window) Bind() {
-	state.bindFramebuffer(nil, gl.NoFramebuffer, w.Bounds())
+	state.bindFramebuffer(w, gl.NoFramebuffer, w.Bounds())
 }
 
 // Reads a rectangle of the window's frame as a collection of bytes

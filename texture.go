@@ -123,17 +123,21 @@ func (t *Texture) initialize(pixels []uint8) {
 			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
 			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
 		}
+
+		state.mainthreadApplyTexture() // Restore the tracked texture binding
 	})
 
 	runtime.SetFinalizer(t, (*Texture).delete)
 }
 
-// TODO: This needs to be combined into the NewTexture function, or this needs to bind the texture
 func (t *Texture) GenerateMipmap() {
 	mainthread.Call(func() {
+		gl.BindTexture(gl.TEXTURE_2D, t.texture)
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
 		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 		gl.GenerateMipmap(gl.TEXTURE_2D)
+
+		state.mainthreadApplyTexture() // Restore the tracked texture binding
 	})
 }
 
@@ -160,12 +164,8 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 		panic("set pixels: wrong number of pixels")
 	}
 
-	// TODO: This is a little inefficient. But I can't messup the global bound texture state
-	lastTexture := state.texture
-	defer state.bindTexture(lastTexture)
-	state.bindTexture(t)
-
 	mainthread.Call(func() {
+		gl.BindTexture(gl.TEXTURE_2D, t.texture)
 		gl.TexSubImage2D(
 			gl.TEXTURE_2D,
 			0,
@@ -177,6 +177,8 @@ func (t *Texture) SetPixels(x, y, w, h int, pixels []uint8) {
 			gl.UNSIGNED_BYTE,
 			pixels,
 		)
+
+		state.mainthreadApplyTexture() // Restore the tracked texture binding
 	})
 }
 
