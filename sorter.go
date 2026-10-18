@@ -14,6 +14,7 @@ type Sorter struct {
 	DepthBump    bool
 	depthBump    float32
 	currentLayer int8
+	translucentFirst bool // See SetTranslucentFirst
 
 	// States that are used for forming the draw command
 	// blendMode BlendMode
@@ -43,6 +44,12 @@ func (s *Sorter) SetLayer(layer int8) {
 
 func (s *Sorter) Layer() int8 {
 	return s.currentLayer
+}
+
+// While set, translucent commands are drawn before the rest of their layer's translucent commands, rather than sorted in among them. They keep their depth
+// Note: For a batch that holds many things at different depths, ie a tilemap chunk. It sorts as one command, so it could otherwise be drawn after a translucent sprite in front of it, and fail the depth test that sprite wrote
+func (s *Sorter) SetTranslucentFirst(first bool) {
+	s.translucentFirst = first
 }
 
 func (s *Sorter) Clear() {
@@ -80,11 +87,13 @@ func (s *Sorter) Draw(target BatchTarget) {
 
 		// Translucent goes from back to front (255 to 0)
 		for l := len(s.commands) - 1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
+			s.drawCommands(target, s.commands[l].TranslucentFirst, s.SoftwareSort)
 			s.drawCommands(target, s.commands[l].Translucent, s.SoftwareSort)
 		}
 	} else {
 		for l := len(s.commands) - 1; l >= 0; l-- { // Reverse order so that layer 0 is drawn last
 			s.drawCommands(target, s.commands[l].Opaque, s.SoftwareSort)
+			s.drawCommands(target, s.commands[l].TranslucentFirst, s.SoftwareSort)
 			s.drawCommands(target, s.commands[l].Translucent, s.SoftwareSort)
 		}
 	}
@@ -178,7 +187,7 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 	// 	material.depth = DepthModeLess
 	// }
 
-	cmd := s.commands[layerIndex(s.currentLayer)].Add(translucent)
+	cmd := s.commands[layerIndex(s.currentLayer)].Add(translucent, s.translucentFirst)
 	cmd.filler = filler
 	cmd.matrix = mat
 	cmd.mask = mask
@@ -189,15 +198,18 @@ func (s *Sorter) Add(filler GeometryFiller, mat glMat4, mask RGBA, material Mate
 type cmdList struct {
 	Opaque      []drawCommand // TODO: This is kindof more like the unsorted list
 	Translucent []drawCommand // TODO: This is kindof more like the sorted list
-
+	TranslucentFirst []drawCommand // Translucent, but drawn before Translucent, see Sorter.SetTranslucentFirst
 }
 
 // Adds a command slot to the list and returns it, so that the caller can fill it in place rather than copying a whole command in
 // Note: The returned slot may hold a stale command from a previous frame, so the caller must set every field
-func (c *cmdList) Add(translucent bool) *drawCommand {
+func (c *cmdList) Add(translucent, translucentFirst bool) *drawCommand {
 	list := &c.Opaque
 	if translucent {
 		list = &c.Translucent
+		if translucentFirst {
+			list = &c.TranslucentFirst
+		}
 	}
 
 	n := len(*list)
@@ -208,6 +220,7 @@ func (c *cmdList) Add(translucent bool) *drawCommand {
 func (c *cmdList) Clear() {
 	c.Opaque = c.Opaque[:0]
 	c.Translucent = c.Translucent[:0]
+	c.TranslucentFirst = c.TranslucentFirst[:0]
 }
 
 type SoftwareSortMode uint8
