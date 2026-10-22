@@ -36,10 +36,8 @@ void main()
   /* FragColor = mix(spriteColor, silhouetteColor, silhouetteMix); */
 
 
-  // If alpha > 1.1 then switch to silhuette mode
-  if (ourColor.a > 1.1) {
-    FragColor = ourColor;
-  } else {
-    FragColor = ourColor * tex;
-  }
+  // Alpha above 1 flashes the sprite toward white, reaching a white silhouette at 2
+  vec4 color = vec4(ourColor.rgb, min(ourColor.a, 1.0)) * tex;
+  float flash = clamp(ourColor.a - 1.0, 0.0, 1.0);
+  FragColor = vec4(mix(color.rgb, vec3(color.a), flash), color.a);
 }
