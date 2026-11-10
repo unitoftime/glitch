@@ -5,74 +5,35 @@ import (
 	"github.com/unitoftime/glitch"
 )
 
-type FullStyle struct {
-	buttonStyle   Style
-	panelStyle    Style
-	dragSlotStyle Style
-	dragItemStyle Style
+// The styles that the widgets which don't take a style argument draw with
+type Theme struct {
+	Button   Style
+	Panel    Style
+	DragSlot Style
+	DragItem Style
 
-	scrollbarTopStyle    Style
-	scrollbarBotStyle    Style
-	scrollbarHandleStyle Style
-	scrollbarBgStyle     Style
+	ScrollbarTop    Style
+	ScrollbarBottom Style
+	ScrollbarHandle Style
+	ScrollbarBg     Style
 
-	checkboxStyleTrue  Style
-	checkboxStyleFalse Style
+	CheckboxTrue  Style
+	CheckboxFalse Style
 
-	textInputPanelStyle Style
-	textCursorStyle     Style
-	tooltipStyle        Style
-
-	// textStyle TextStyle // TODO: This should also include the atlas
-}
-
-var gStyle FullStyle
-
-func SetButtonStyle(style Style) {
-	gStyle.buttonStyle = style
-}
-func SetPanelStyle(style Style) {
-	gStyle.panelStyle = style
-}
-func SetDragSlotStyle(style Style) {
-	gStyle.dragSlotStyle = style
-}
-func DragSlotStyle() Style {
-	return gStyle.dragSlotStyle
+	TextInputPanel Style
+	TextCursor     Style
+	Tooltip        Style
 }
 
-//	func SetDragItemStyle(style Style) {
-//		gStyle.dragItemStyle = style
-//	}
-func DragItemStyle() Style {
-	return gStyle.dragItemStyle
-}
-func SetCheckboxStyleTrue(style Style) {
-	gStyle.checkboxStyleTrue = style
-}
-func SetCheckboxStyleFalse(style Style) {
-	gStyle.checkboxStyleFalse = style
+var gStyle Theme
+
+// Swaps the theme that widgets draw with. Takes effect on the next widget drawn
+func SetTheme(theme Theme) {
+	gStyle = theme
 }
 
-// func SetTextStyle(style TextStyle) {
-// 	gStyle.textStyle = style
-// }
-
-func SetTooltipStyle(style Style) {
-	gStyle.tooltipStyle = style
-}
-
-func SetScrollbarTopStyle(style Style) {
-	gStyle.scrollbarTopStyle = style
-}
-func SetScrollbarBottomStyle(style Style) {
-	gStyle.scrollbarBotStyle = style
-}
-func SetScrollbarBgStyle(style Style) {
-	gStyle.scrollbarBgStyle = style
-}
-func SetScrollbarHandleStyle(style Style) {
-	gStyle.scrollbarHandleStyle = style
+func CurrentTheme() Theme {
+	return gStyle
 }
 
 //--------------------------------------------------------------------------------

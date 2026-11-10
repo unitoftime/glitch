@@ -5,19 +5,12 @@ import (
 	"fmt"
 	"math"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 )
-
-func SetActive(label string) {
-	global.activeId = getIdNoBump(label)
-}
-
-func ClearActive() {
-	global.activeId = invalidId
-}
 
 // --------------------------------------------------------------------------------
 // - Widgets
@@ -131,21 +124,21 @@ func (resp *WidgetResp) smoothDrag(rect *glitch.Rect, bounds glitch.Rect, step g
 	}
 }
 
-// Lets the widget be selectable if clicked
-// Returns true if we just selected this widget
-func (resp *WidgetResp) selectableOnClick(id eid, rect glitch.Rect) bool {
+// Gives the widget the keyboard when it is clicked, and takes it away when the mouse clicks anywhere else
+// Returns true if we just focused this widget
+func (resp *WidgetResp) focusOnClick(id eid) bool {
 	ret := false
-	if global.activeId == id {
+	if global.focusId == id {
 		if global.win.JustPressed(glitch.MouseButtonLeft) {
 			if global.lastHotId != id {
-				// If we are active, but not hot this frame and we click, then the user has clicked off the input field
-				global.activeId = invalidId
+				// If we are focused, but not hot this frame and we click, then the user has clicked off the input field
+				global.focusId = invalidId
 			}
 		}
 	} else if global.hotId == id {
 		if global.win.JustPressed(glitch.MouseButtonLeft) {
 			ret = true
-			global.activeId = id
+			global.focusId = id
 		}
 	}
 	return ret
@@ -177,6 +170,22 @@ func deleteRuneBefore(str string, cursorPos int) (string, int) {
 	return str[:cursorPos-size] + str[cursorPos:], cursorPos - size
 }
 
+// Deletes the rune after the cursor. The cursor position doesn't move
+func deleteRuneAfter(str string, cursorPos int) string {
+	_, size := utf8.DecodeRuneInString(str[cursorPos:])
+	return str[:cursorPos] + str[cursorPos+size:]
+}
+
+// Drops newlines and other control characters, so pasted text fits on one line
+func singleLine(str string) string {
+	return strings.Map(func(r rune) rune {
+		if unicode.IsControl(r) {
+			return -1
+		}
+		return r
+	}, str)
+}
+
 func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 	if str == nil {
 		return
@@ -199,6 +208,12 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 	}
 
 	controlPressed := global.win.Pressed(glitch.KeyLeftControl) || global.win.Pressed(glitch.KeyRightControl)
+
+	if controlPressed && global.win.JustPressed(glitch.KeyV) {
+		pasted := singleLine(global.win.Clipboard())
+		tStr = tStr[:cursorPos] + pasted + tStr[cursorPos:]
+		cursorPos += len(pasted)
+	}
 
 	if global.win.JustPressed(glitch.KeyBackspace) {
 		if controlPressed {
@@ -224,6 +239,17 @@ func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
 		}
 	} else if global.win.Repeated(glitch.KeyBackspace) {
 		tStr, cursorPos = deleteRuneBefore(tStr, cursorPos)
+	}
+
+	if global.win.JustPressed(glitch.KeyDelete) || global.win.Repeated(glitch.KeyDelete) {
+		tStr = deleteRuneAfter(tStr, cursorPos)
+	}
+
+	if global.win.JustPressed(glitch.KeyHome) {
+		cursorPos = 0
+	}
+	if global.win.JustPressed(glitch.KeyEnd) {
+		cursorPos = len(tStr)
 	}
 
 	if global.win.JustPressed(glitch.KeyLeft) {
@@ -362,7 +388,7 @@ func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rec
 
 		// -- Drawing Panels ---
 		if mask.Get(wmDrawPanel) {
-			if global.activeId == id {
+			if global.activeId == id || global.focusId == id {
 				drawSprite(rect, style.Pressed)
 			} else if global.downId == id {
 				drawSprite(rect, style.Pressed) // Note: This is for wmDragItem
@@ -627,16 +653,16 @@ func CheckboxExt(val *bool, rect glitch.Rect, styleTrue, styleFalse Style) bool 
 
 // Returns true if the value has changed
 func Checkbox(val *bool, rect glitch.Rect) bool {
-	return CheckboxExt(val, rect, gStyle.checkboxStyleTrue, gStyle.checkboxStyleFalse)
+	return CheckboxExt(val, rect, gStyle.CheckboxTrue, gStyle.CheckboxFalse)
 }
 
 func Button(label string, rect glitch.Rect) bool {
-	style := gStyle.buttonStyle
+	style := gStyle.Button
 	return ButtonExt(label, rect, style)
 }
 
 func Button2(label string, rect glitch.Rect) bool {
-	style := gStyle.buttonStyle
+	style := gStyle.Button
 	return ButtonExt(label, rect, style)
 }
 
@@ -662,7 +688,7 @@ func clickablePanel(label string, rect glitch.Rect, style Style) WidgetResp {
 }
 
 func Panel2(label string, rect glitch.Rect) bool {
-	return PanelExt(label, rect, gStyle.panelStyle)
+	return PanelExt(label, rect, gStyle.Panel)
 }
 func SpritePanel(sprite Drawer, rect glitch.Rect, color glitch.RGBA) bool {
 	label := "##__p"
@@ -692,7 +718,7 @@ func Sprite(sprite Drawer, rect glitch.Rect, color glitch.RGBA) {
 
 // returns (Clicked, hovered, isdragging, dropSlot)
 func DragItem(label string, rect glitch.Rect, style Style) (bool, bool, bool, bool) {
-	// style := gStyle.dragItemStyle
+	// style := gStyle.DragItem
 	mask := wmHoverable | wmDrawPanel | wmDropSlot | wmDragItem | wmDrawText
 
 	id := getId(label)
@@ -709,7 +735,7 @@ func DragItem(label string, rect glitch.Rect, style Style) (bool, bool, bool, bo
 
 // Returns true if we dropped the drag Item to this drag slot location
 func DragSlot(label string, rect glitch.Rect, style Style) bool {
-	// style := gStyle.dragSlotStyle
+	// style := gStyle.DragSlot
 	mask := wmHoverable | wmDrawPanel | wmDropSlot
 
 	id := getId(label)
@@ -722,7 +748,7 @@ func DragSlot(label string, rect glitch.Rect, style Style) bool {
 
 // Clicked, Dropped
 func DragSlotClickable(label string, rect glitch.Rect, style Style) (bool, bool) {
-	// style := gStyle.dragSlotStyle
+	// style := gStyle.DragSlot
 	mask := wmHoverable | wmDrawPanel | wmDropSlot | wmClickable
 
 	id := getId(label)
@@ -753,10 +779,36 @@ func ScrollbarReverse(idx *int, total int, rect, hoverRect glitch.Rect) {
 	*idx = -int(math.Round(val))
 }
 
+// Scrolls a list of count rows, of which shown fit in view. Clamps idx into range, draws the scrollbar into rect and returns the visible rows as [start, end)
+// Note: hoverRect is the region that the mouse wheel scrolls, usually the list itself. For a grid, pass rows and multiply the range by the column count
+func ScrollRows(idx *int, count, shown int, rect, hoverRect glitch.Rect) (int, int) {
+	return themeSlider().ScrollRows(idx, count, shown, rect, hoverRect)
+}
+
 type SliderStyle struct {
 	Background Style
 	Handle     Style
 	Up, Down   Style
+}
+
+// The scrollbar of the current theme
+func themeSlider() SliderStyle {
+	return SliderStyle{
+		Background: gStyle.ScrollbarBg,
+		Handle:     gStyle.ScrollbarHandle,
+		Up:         gStyle.ScrollbarTop,
+		Down:       gStyle.ScrollbarBottom,
+	}
+}
+
+// See: ScrollRows
+func (s SliderStyle) ScrollRows(idx *int, count, shown int, rect, hoverRect glitch.Rect) (int, int) {
+	count = max(0, count)
+	shown = max(0, shown) // Note: Keeps start <= end, so the range can always slice
+	val := float64(*idx)
+	s.Vertical(&val, 0, float64(max(0, count-shown)), 1, rect, hoverRect)
+	*idx = int(math.Round(val))
+	return *idx, min(count, *idx+shown)
 }
 
 func (s SliderStyle) ScrollbarReverse(idx *int, total int, rect, hoverRect glitch.Rect) {
@@ -802,22 +854,14 @@ func (s SliderStyle) Vertical(val *float64, min, max, step float64, rect, hoverR
 		*val += step
 	}
 
-	if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
-		_, scrollY := global.win.MouseScroll()
-		*val -= (scrollY * step)
-	}
+	_, scrollY := global.trackScroll(getId("##vscrollwheel"), rect, hoverRect)
+	*val -= (scrollY * step)
 
 	*val = clamp(min, max, *val)
 }
 
 func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) {
-	slider := SliderStyle{
-		Background: gStyle.scrollbarBgStyle,
-		Handle:     gStyle.scrollbarHandleStyle,
-		Up:         gStyle.scrollbarTopStyle,
-		Down:       gStyle.scrollbarBotStyle,
-	}
-	slider.Vertical(val, min, max, step, rect, hoverRect)
+	themeSlider().Vertical(val, min, max, step, rect, hoverRect)
 	// square := rect.SubSquare()
 
 	// buttonTop := rect.CutTop(square.H())
@@ -831,23 +875,23 @@ func SliderV(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	// // yPos := (ratio * deltaY) + rect.Max.Y - (square.H() / 2)
 
 	// yPos := -(ratio * height) + rect.Max.Y - (square.H() / 2)
-	// PanelExt("##vscrollbarbg", rect, gStyle.scrollbarBgStyle)
+	// PanelExt("##vscrollbarbg", rect, gStyle.ScrollbarBg)
 
 	// numSteps := (delta / step)
 	// floatStep := height / numSteps
 	// draggerRect := square.WithCenter(glitch.Vec2{rect.Center().X, yPos})
-	// if SmoothDragButton("##vscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) {
+	// if SmoothDragButton("##vscrollbarfg", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.ScrollbarHandle) {
 	// 	y := rect.Max.Y - draggerRect.Center().Y - (square.H() / 2)
 
 	// 	ratio := y / height
 	// 	*val = ratio*float64(max-min) + min
 	// }
 
-	// topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.scrollbarTopStyle)
+	// topResp := ButtonFull("##vscrolltop", buttonTop, gStyle.ScrollbarTop)
 	// if topResp.Released || topResp.Repeated {
 	// 	*val -= step
 	// }
-	// botResp := ButtonFull("##vscrollbot", buttonBot, gStyle.scrollbarBotStyle)
+	// botResp := ButtonFull("##vscrollbot", buttonBot, gStyle.ScrollbarBottom)
 	// if botResp.Released || botResp.Repeated {
 	// 	*val += step
 	// }
@@ -871,7 +915,7 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 	ratio, floatStep := sliderTrack(*val, min, max, step, width)
 
 	xPos := (ratio * width) + rect.Min.X + (square.W() / 2)
-	trackResp := clickablePanel("##hscrollbarbg", rect, gStyle.scrollbarBgStyle)
+	trackResp := clickablePanel("##hscrollbarbg", rect, gStyle.ScrollbarBg)
 
 	draggerRect := square.WithCenter(glitch.Vec2{xPos, rect.Center().Y})
 	draggerId := getId("##hscrollbarfg")
@@ -879,28 +923,24 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 		// Clicking the track hands the press to the handle, so it jumps to the cursor and keeps dragging while held
 		global.activeId = draggerId
 	}
-	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.scrollbarHandleStyle) && width > 0 {
+	if smoothDragButtonId(draggerId, "", &draggerRect, rect, glitch.Vec2{floatStep, floatStep}, gStyle.ScrollbarHandle) && width > 0 {
 		x := -rect.Min.X + draggerRect.Center().X - (square.W() / 2)
 
 		ratio := x / width
 		*val = (ratio * (max - min)) + min
 	}
 
-	leftResp := ButtonFull("##hscrollup", buttonLeft, gStyle.scrollbarTopStyle)
+	leftResp := ButtonFull("##hscrollup", buttonLeft, gStyle.ScrollbarTop)
 	if leftResp.Released || leftResp.Repeated {
 		*val -= step
 	}
 
-	rightResp := ButtonFull("##hscrolldown", buttonRight, gStyle.scrollbarBotStyle)
+	rightResp := ButtonFull("##hscrolldown", buttonRight, gStyle.ScrollbarBottom)
 	if rightResp.Released || rightResp.Repeated {
 		*val += step
 	}
 
-	// TODO: I disabled this for horizontal sliders  because I dont have a good way to detect if a scroll has been captured. For example. when you have a horizontal slider inside of a scrollbox (which is a vertical slider). the scroll from one should block the scroll from the other. I think I could fix by having the scroll get constructed and consumed each frame. So for example, you'd have it get consumed by the sliderH if the mouse is over that, then it wouldn't be consumable by the sliderV of the scrollbox (which is usually placed after)
-	// if HoveredNoBlock(hoverRect) || HoveredNoBlock(rect) {
-	// 	_, scrollY := global.win.MouseScroll()
-	// 	*val += (scrollY * step)
-	// }
+	// Note: Horizontal sliders ignore the mouse wheel. They usually sit inside a scrolled list (eg settings), and scrolling the list shouldn't edit whatever slider passes under the mouse
 
 	*val = clamp(min, max, *val)
 
@@ -909,10 +949,8 @@ func SliderH(val *float64, min, max, step float64, rect, hoverRect glitch.Rect) 
 }
 
 func scrollZone(val *float64, min, max, step float64, rect glm.Rect) {
-	if HoveredNoBlock(rect) {
-		_, scrollY := global.win.MouseScroll()
-		*val -= (scrollY * step)
-	}
+	_, scrollY := global.trackScroll(getId("##scrollzone"), rect, rect)
+	*val -= (scrollY * step)
 
 	*val = clamp(min, max, *val)
 }
@@ -932,17 +970,19 @@ func scrollZone(val *float64, min, max, step float64, rect glm.Rect) {
 // }
 
 func TextInput(label string, str *string, rect glitch.Rect, style Style) {
-	id := getId(label)
-	// text := removeDedup(label)
+	textInputId(getId(label), str, rect, style, gStyle.TextCursor.Normal, 2.0)
+}
 
+func textInputId(id eid, str *string, rect glitch.Rect, style Style, cursor SpriteStyle, cursorWidth float64) {
 	resp := WidgetResp{}
 	resp.hoverable(id, rect)
-	if resp.selectableOnClick(id, rect) {
+	if resp.focusOnClick(id) {
 		global.cursorPos = len(*str)
 	}
 
-	isActive := global.activeId == id
+	isActive := global.focusId == id
 	if isActive {
+		global.focusSeen = true
 		resp.recordTyped(str, &global.cursorPos)
 	}
 
@@ -961,10 +1001,9 @@ func TextInput(label string, str *string, rect glitch.Rect, style Style) {
 			cursoredTextRect = glm.R(0, 0, 0, textResp.textRect.H())
 		}
 
-		cursorWidth := 2.0                                             // TODO: Configurable?
 		cursorRect := glm.R(0, 0, cursorWidth, textResp.textRect.H()). // cursoredTextRect.H()
 										Moved(glitch.Vec2{textResp.textRect.Min.X + cursoredTextRect.W(), textResp.textRect.Min.Y})
-		drawSprite(cursorRect, gStyle.textCursorStyle.Normal)
+		drawSprite(cursorRect, cursor)
 	}
 }
 
@@ -982,7 +1021,7 @@ func DefaultTooltipMount() (glm.Rect, glm.Vec2) {
 }
 
 func Tooltip(label string, rect glitch.Rect) {
-	TooltipExt(label, rect, gStyle.tooltipStyle)
+	TooltipExt(label, rect, gStyle.Tooltip)
 }
 
 // // Returns true for only the frame where the last checked elements hover was triggered

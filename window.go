@@ -776,6 +776,24 @@ func (w *Window) SetSkipWarningOnBrowserClose(value bool) {
 	w.window.SetSkipWarningOnBrowserClose(value)
 }
 
+// Returns the text on the system clipboard
+// Note: Currently in browser, this returns an empty string
+func (w *Window) Clipboard() string {
+	var str string
+	mainthread.Call(func() {
+		str = w.window.GetClipboardString()
+	})
+	return str
+}
+
+// Sets the text on the system clipboard
+// Note: Currently in browser, this does nothing
+func (w *Window) SetClipboard(str string) {
+	mainthread.Call(func() {
+		w.window.SetClipboardString(str)
+	})
+}
+
 // --- Dear Imgui required ---
 func (w *Window) GetMouse() (x, y float64) {
 	return w.window.GetCursorPos()

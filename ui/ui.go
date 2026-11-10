@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"math"
+
 	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
 	"github.com/unitoftime/glitch/graph"
@@ -54,66 +56,68 @@ func Initialize(win *glitch.Window, camera *glitch.CameraOrtho, atlas *glitch.At
 		grey[i] = glm.FromUint8(val, val, val, 0xff)
 	}
 
-	gStyle.buttonStyle = Style{
+	gStyle.Button = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[6]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[7]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[8]),
 		Text:    defaultTextStyle,
 	}
 
-	gStyle.panelStyle = Style{
+	gStyle.Panel = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[3]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[3]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[3]),
 		Text:    defaultTextStyle,
 	}
 
-	gStyle.dragSlotStyle = Style{
+	gStyle.DragSlot = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[2]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[2]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[2]),
 		Text:    defaultTextStyle,
 	}
 
-	gStyle.dragItemStyle = Style{
+	gStyle.DragItem = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[9]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[9]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[9]),
 		Text:    defaultTextStyle,
 	}
 
-	gStyle.scrollbarBotStyle = gStyle.buttonStyle
-	gStyle.scrollbarTopStyle = gStyle.buttonStyle
-	gStyle.scrollbarHandleStyle = Style{
+	gStyle.ScrollbarBottom = gStyle.Button
+	gStyle.ScrollbarTop = gStyle.Button
+	gStyle.ScrollbarHandle = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[7]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[8]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[9]),
 		Text:    defaultTextStyle,
 	}
-	gStyle.scrollbarBgStyle = Style{
+	gStyle.ScrollbarBg = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[2]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[2]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[2]),
 		Text:    defaultTextStyle,
 	}
 
-	gStyle.checkboxStyleTrue = gStyle.buttonStyle
-	gStyle.checkboxStyleFalse = gStyle.buttonStyle
+	gStyle.CheckboxTrue = gStyle.Button
+	gStyle.CheckboxFalse = gStyle.Button
 
-	gStyle.textInputPanelStyle = Style{
+	gStyle.TextInputPanel = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[2]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[2]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[2]),
 		Text:    defaultTextStyle,
 	}
-	gStyle.textCursorStyle = Style{
+	gStyle.TextCursor = Style{
 		Normal:  NewSpriteStyle(whiteSquare, grey[15]),
 		Hovered: NewSpriteStyle(whiteSquare, grey[15]),
 		Pressed: NewSpriteStyle(whiteSquare, grey[15]),
 		Text:    defaultTextStyle,
 	}
 
-	gStyle.tooltipStyle = Style{
+	gDebug = defaultDebugTheme(whiteSquare, grey)
+
+	gStyle.Tooltip = Style{
 		// Draw no backgrounds
 		// Normal:  NewSpriteStyle(whiteSquare, grey[15]),
 		// Hovered: NewSpriteStyle(whiteSquare, grey[15]),
@@ -157,14 +161,26 @@ type uiGlobals struct {
 	// lastRect glitch.Rect
 
 	// New Way
-	hotId     eid // The element id that you are hovering over or about to interact with
-	downId    eid // The element id that you have selected or are holding down on
-	activeId  eid // The element id that is active?
-	lastHotId eid // HotId from the last frame
+	hotId        eid  // The element id that you are hovering over or about to interact with
+	downId       eid  // The element id that you have selected or are holding down on
+	activeId     eid  // The element id that the mouse is holding (a pressed button, a dragged handle or item)
+	lastHotId    eid  // HotId being collected this frame, used as the hotId of the next frame
+	lastHotLayer int8 // The layer of lastHotId
+
+	// Note: Kept apart from activeId, so that pressing a button doesn't take the keyboard away from a text input
+	focusId   eid  // The element id that has the keyboard (a text input)
+	focusSeen bool // Set when the focused element is drawn. The focus ends if its element isn't drawn for a frame (See: Clear)
 
 	// Note: This is for strictly hover zones: Things like tooltips that you dont want blocking actual interactive things like buttons
-	hoverOnlyId     eid // The element that you are currently hovering
-	lastHoverOnlyId eid // HoverId from the last frame
+	hoverOnlyId        eid  // The element that you are currently hovering
+	lastHoverOnlyId    eid  // HoverId from the last frame
+	lastHoverOnlyLayer int8 // The layer of lastHoverOnlyId
+
+	// The scroll region that gets the mouse wheel. Only one region takes it, so nested regions don't both scroll
+	scrollId        eid
+	lastScrollId    eid // The scroll region being collected this frame, used as the scrollId of the next frame
+	lastScrollLayer int8
+	lastScrollArea  float64
 
 	stopDragging bool
 	dragData     any
@@ -185,6 +201,11 @@ type uiGlobals struct {
 var global = uiGlobals{
 	hudScale:  1.0,
 	fontScale: 1.0,
+
+	lastHotLayer:       math.MaxInt8,
+	lastHoverOnlyLayer: math.MaxInt8,
+	lastScrollLayer:    math.MaxInt8,
+	lastScrollArea:     math.Inf(1),
 
 	drawDraggedDrawers: true,
 
@@ -272,9 +293,24 @@ func Clear() {
 	// New
 	global.hotId = global.lastHotId
 	global.lastHotId = invalidId
+	global.lastHotLayer = math.MaxInt8
 
 	global.hoverOnlyId = global.lastHoverOnlyId
 	global.lastHoverOnlyId = invalidId
+	global.lastHoverOnlyLayer = math.MaxInt8
+
+	global.scrollId = global.lastScrollId
+	global.lastScrollId = invalidId
+	global.lastScrollLayer = math.MaxInt8
+	global.lastScrollArea = math.Inf(1)
+
+	// If the focused element wasn't drawn last frame (eg its panel was closed), then it loses the keyboard
+	if !global.focusSeen {
+		global.focusId = invalidId
+	}
+	global.focusSeen = false
+
+	clearDebug()
 
 	// If the dragged element wasn't drawn last frame (eg its panel was closed mid-drag), then end the drag
 	if global.dragId != invalidId && !global.dragSeen {
@@ -284,7 +320,7 @@ func Clear() {
 
 	if global.stopDragging {
 		global.stopDragging = false
-		// Note: Only clear the active element if it is the drag, so that ending a drag doesn't unfocus something else (eg a text input)
+		// Note: Only clear the active element if it is the drag, so that ending a drag doesn't release something else
 		if global.dragId != invalidId && global.activeId == global.dragId {
 			global.activeId = invalidId
 		}
@@ -326,17 +362,70 @@ func MouseCaptured() bool {
 	return global.mouseCaughtLastFrame
 }
 
+// Note: Hover goes to the topmost layer under the mouse (the lowest layer number, because the sorter draws layer 0 last). Within a layer, the last element drawn wins
 func (g *uiGlobals) trackHoverOnly(id eid, rect glitch.Rect) {
 	if mouseCheck(rect, g.mousePos) {
-		g.lastHoverOnlyId = id
+		layer := g.sorter.Layer()
+		if layer <= g.lastHoverOnlyLayer {
+			g.lastHoverOnlyId = id
+			g.lastHoverOnlyLayer = layer
+		}
 	}
 }
 
 func (g *uiGlobals) trackHover(id eid, rect glitch.Rect) {
 	if mouseCheck(rect, g.mousePos) {
-		g.lastHotId = id
-		g.lastHoverOnlyId = id // TODO: Is this always right? when would it not be?
+		layer := g.sorter.Layer()
+		if layer <= g.lastHotLayer {
+			g.lastHotId = id
+			g.lastHotLayer = layer
+		}
+		if layer <= g.lastHoverOnlyLayer {
+			g.lastHoverOnlyId = id // TODO: Is this always right? when would it not be?
+			g.lastHoverOnlyLayer = layer
+		}
 	}
+}
+
+// Registers a scroll region made of two rects (eg a scrollbar and the list it scrolls) and returns the wheel's scroll if this region owns it
+// Note: The wheel goes to the topmost layer, then the smallest rect under the mouse, so an inner region takes it from the region it sits inside regardless of draw order
+func (g *uiGlobals) trackScroll(id eid, rect, hoverRect glitch.Rect) (float64, float64) {
+	g.scrollCandidate(id, rect)
+	g.scrollCandidate(id, hoverRect)
+
+	if g.scrollId != id {
+		return 0, 0
+	}
+	return g.win.MouseScroll()
+}
+
+func (g *uiGlobals) scrollCandidate(id eid, rect glitch.Rect) {
+	if !mouseCheck(rect, g.mousePos) {
+		return
+	}
+	layer := g.sorter.Layer()
+	area := rect.W() * rect.H()
+	if layer < g.lastScrollLayer || (layer == g.lastScrollLayer && area <= g.lastScrollArea) {
+		g.lastScrollId = id
+		g.lastScrollLayer = layer
+		g.lastScrollArea = area
+	}
+}
+
+// Gives the keyboard to the element with this label
+func Focus(label string) {
+	global.focusId = getIdNoBump(label)
+	global.focusSeen = true // Note: So that focusing before the element is first drawn doesn't drop the focus on the next Clear
+}
+
+// Takes the keyboard away from whatever element has it
+func ClearFocus() {
+	global.focusId = invalidId
+}
+
+// Returns true if an element (eg a text input or an open dropdown) has the keyboard, so keybinds shouldn't fire
+func KeyboardCaptured() bool {
+	return global.focusId != invalidId || dbg.popupId != invalidId
 }
 
 // Returns the mouse position with respect to the group camera

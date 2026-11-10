@@ -1380,8 +1380,8 @@ func (w *Window) SetClipboardString(str string) {
 	// TODO: Implement.
 }
 func (w *Window) GetClipboardString() string {
-	// TODO: Implement.
-	return "GetClipboardString not implemented"
+	// TODO: Implement. Browsers only give clipboard text asynchronously or through a paste event
+	return ""
 }
 
 func (w *Window) SetTitle(title string) {

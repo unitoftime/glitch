@@ -246,7 +246,7 @@ func runGame() {
 
 			list := ui.VList(panelBounds.Unpad(glm.R(5, 5, 5, 5)), 7)
 			ui.TextExt("Title Section", list.Next().Unpad(glm.R(5, 5, 5, 5)), textStyle)
-			ui.TextInput("textinput", &inputStr, list.Next().Unpad(glm.R(5, 5, 5, 5)), ui.DragItemStyle())
+			ui.TextInput("textinput", &inputStr, list.Next().Unpad(glm.R(5, 5, 5, 5)), ui.CurrentTheme().DragItem)
 
 			topButton := ui.HList(list.Next().Unpad(glm.R(5, 5, 5, 5)), 2)
 
@@ -281,7 +281,7 @@ func runGame() {
 			for i := range dragData {
 				str := dragData[i]
 				slotRect := list.Next().Unpad(glm.R(5, 5, 5, 5))
-				if ui.DragSlot(str, slotRect, ui.DragSlotStyle()) {
+				if ui.DragSlot(str, slotRect, ui.CurrentTheme().DragSlot) {
 					dragIdx, ok := ui.DragData().(int)
 					if ok {
 						tmp := dragData[dragIdx]
@@ -294,7 +294,7 @@ func runGame() {
 					continue
 				} // Skip: No item there
 
-				clicked, hovered, dragging, dropping := ui.DragItem(str, slotRect.Unpad(glm.R(5, 5, 5, 5)), ui.DragItemStyle())
+				clicked, hovered, dragging, dropping := ui.DragItem(str, slotRect.Unpad(glm.R(5, 5, 5, 5)), ui.CurrentTheme().DragItem)
 				if clicked {
 					fmt.Println("CLICKED", i)
 				}
