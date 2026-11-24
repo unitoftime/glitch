@@ -4,9 +4,6 @@ import (
 	"cmp"
 	"fmt"
 	"math"
-	"strings"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/unitoftime/flow/glm"
 	"github.com/unitoftime/glitch"
@@ -142,138 +139,6 @@ func (resp *WidgetResp) focusOnClick(id eid) bool {
 		}
 	}
 	return ret
-}
-
-func findWordIndexLeft(str string, cursorPos int) int {
-	lastIndex := strings.LastIndex(strings.TrimRight(str[:cursorPos], " "), " ")
-	if lastIndex < 0 {
-		// Means there were no spaces, find start
-		return 0
-	}
-	return lastIndex + 1 // To give back the " "
-}
-
-func findWordIndexRight(str string, cursorPos int) int {
-	trimmed := strings.TrimLeft(str[cursorPos:], " ")
-	trimAmount := len(str[cursorPos:]) - len(trimmed)
-	lastIndex := strings.Index(trimmed, " ")
-	if lastIndex < 0 {
-		// Means there were no spaces, find end
-		return len(str)
-	}
-	return cursorPos + lastIndex + trimAmount
-}
-
-// Deletes the rune before the cursor, returning the new string and cursor position
-func deleteRuneBefore(str string, cursorPos int) (string, int) {
-	_, size := utf8.DecodeLastRuneInString(str[:cursorPos])
-	return str[:cursorPos-size] + str[cursorPos:], cursorPos - size
-}
-
-// Deletes the rune after the cursor. The cursor position doesn't move
-func deleteRuneAfter(str string, cursorPos int) string {
-	_, size := utf8.DecodeRuneInString(str[cursorPos:])
-	return str[:cursorPos] + str[cursorPos+size:]
-}
-
-// Drops newlines and other control characters, so pasted text fits on one line
-func singleLine(str string) string {
-	return strings.Map(func(r rune) rune {
-		if unicode.IsControl(r) {
-			return -1
-		}
-		return r
-	}, str)
-}
-
-func (resp *WidgetResp) recordTyped(str *string, cursorPosRet *int) {
-	if str == nil {
-		return
-	}
-
-	runes := global.win.Typed()
-
-	// Note: cursorPos is a byte index into the string, so it must always sit on a rune boundary
-	tStr := *str
-	cursorPos := clamp(0, len(tStr), *cursorPosRet)
-	for cursorPos > 0 && cursorPos < len(tStr) && !utf8.RuneStart(tStr[cursorPos]) {
-		cursorPos--
-	}
-
-	// *str = *str + string(runes)
-	if len(runes) > 0 {
-		typed := string(runes)
-		tStr = tStr[:cursorPos] + typed + tStr[cursorPos:]
-		cursorPos += len(typed)
-	}
-
-	controlPressed := global.win.Pressed(glitch.KeyLeftControl) || global.win.Pressed(glitch.KeyRightControl)
-
-	if controlPressed && global.win.JustPressed(glitch.KeyV) {
-		pasted := singleLine(global.win.Clipboard())
-		tStr = tStr[:cursorPos] + pasted + tStr[cursorPos:]
-		cursorPos += len(pasted)
-	}
-
-	if global.win.JustPressed(glitch.KeyBackspace) {
-		if controlPressed {
-			// // Delete whole word
-			// lastIndex := strings.LastIndex(strings.TrimRight(tStr, " "), " ")
-			// if lastIndex < 0 {
-			// 	// Means there were no spaces, delete everything
-			// 	lastIndex = 0
-			// }
-
-			// tStr = tStr[:lastIndex]
-
-			// lastIndex := strings.LastIndex(strings.TrimRight(tStr[:cursorPos], " "), " ")
-			// if lastIndex < 0 {
-			// 	// Means there were no spaces, delete everything
-			// 	lastIndex = 0
-			// }
-			lastIndex := findWordIndexLeft(tStr, cursorPos)
-			tStr = tStr[:lastIndex] + tStr[cursorPos:]
-			cursorPos -= cursorPos - lastIndex
-		} else {
-			tStr, cursorPos = deleteRuneBefore(tStr, cursorPos)
-		}
-	} else if global.win.Repeated(glitch.KeyBackspace) {
-		tStr, cursorPos = deleteRuneBefore(tStr, cursorPos)
-	}
-
-	if global.win.JustPressed(glitch.KeyDelete) || global.win.Repeated(glitch.KeyDelete) {
-		tStr = deleteRuneAfter(tStr, cursorPos)
-	}
-
-	if global.win.JustPressed(glitch.KeyHome) {
-		cursorPos = 0
-	}
-	if global.win.JustPressed(glitch.KeyEnd) {
-		cursorPos = len(tStr)
-	}
-
-	if global.win.JustPressed(glitch.KeyLeft) {
-		if controlPressed {
-			lastIndex := findWordIndexLeft(tStr, cursorPos)
-			cursorPos = lastIndex
-		} else {
-			_, size := utf8.DecodeLastRuneInString(tStr[:cursorPos])
-			cursorPos -= size
-		}
-	}
-	if global.win.JustPressed(glitch.KeyRight) {
-		if controlPressed {
-			lastIndex := findWordIndexRight(tStr, cursorPos)
-			cursorPos = lastIndex
-		} else {
-			_, size := utf8.DecodeRuneInString(tStr[cursorPos:])
-			cursorPos += size
-		}
-	}
-
-	*cursorPosRet = min(max(cursorPos, 0), len(tStr))
-
-	*str = tStr
 }
 
 func doWidget(id eid, text string, mask widgetMask, style Style, rect glitch.Rect) WidgetResp {
@@ -436,24 +301,7 @@ func drawText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 
 	text := global.getText(str, t, rect)
 
-	rect = rect.Unpad(t.padding)
-	// if t.autoFit {
-	// 	rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
-	// } else {
-	// 	rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
-	// }
-	if t.autoFit {
-		if t.fitInteger {
-			intFitScale := math.Floor(text.Bounds().FitScale(rect))
-			rect = rect.FullAnchorOLD(text.Bounds().Scaled(intFitScale), t.anchor, t.pivot)
-		} else {
-			rect = rect.FullAnchorOLD(text.Bounds().ScaledToFit(rect), t.anchor, t.pivot)
-		}
-	} else {
-		// rect = rect.FullAnchor(text.Bounds().Scaled(global.fontScale * t.scale), t.anchor, t.pivot)
-		rect = rect.FullAnchorOLD(text.Bounds().Scaled(t.scale), t.anchor, t.pivot)
-		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
-	}
+	rect = placeText(text.Bounds(), rect, t)
 
 	// rect = rectSnap(rect)
 	text.RectDrawColorMask(global.sorter, rect, t.color)
@@ -495,20 +343,21 @@ func MeasureText(str string, rect glitch.Rect, t TextStyle) glitch.Rect {
 		textBounds = global.atlas.Measure(str, global.fontScale)
 	}
 
+	return placeText(textBounds, rect, t)
+}
+
+// Returns the rect that a text with these bounds (see glitch.Text.Bounds) is drawn into, inside of the rect with the style
+// Note: The text's mesh is scaled from its bounds to this rect, then moved so that the mesh's origin is at its Min. See glitch.Text.RectDrawColorMask and PlacedText
+func placeText(bounds glitch.Rect, rect glitch.Rect, t TextStyle) glitch.Rect {
 	rect = rect.Unpad(t.padding)
 	if t.autoFit {
 		if t.fitInteger {
-			intFitScale := math.Floor(textBounds.FitScale(rect))
-			rect = rect.FullAnchorOLD(textBounds.Scaled(intFitScale), t.anchor, t.pivot)
-		} else {
-			rect = rect.FullAnchorOLD(textBounds.ScaledToFit(rect), t.anchor, t.pivot)
+			intFitScale := math.Floor(bounds.FitScale(rect))
+			return rect.FullAnchorOLD(bounds.Scaled(intFitScale), t.anchor, t.pivot)
 		}
-	} else {
-		rect = rect.FullAnchorOLD(textBounds.Scaled(t.scale), t.anchor, t.pivot)
-		// rect = rect.FullAnchor(text.Bounds(), t.anchor, t.pivot)
+		return rect.FullAnchorOLD(bounds.ScaledToFit(rect), t.anchor, t.pivot)
 	}
-
-	return rect
+	return rect.FullAnchorOLD(bounds.Scaled(t.scale), t.anchor, t.pivot)
 }
 
 func drawDebug(rect glitch.Rect) {
@@ -955,57 +804,7 @@ func scrollZone(val *float64, min, max, step float64, rect glm.Rect) {
 	*val = clamp(min, max, *val)
 }
 
-// // Lets you click to select and set the field as active. Returns true if the field is active
-// func SelectField(label string, rect glitch.Rect) bool {
-// 	id := getId(label)
-// 	// text := removeDedup(label)
-
-// 	resp := WidgetResp{}
-// 	resp.hoverable(id, rect)
-// 	if resp.selectableOnClick(id, rect) {
-// 		global.cursorPos = len(*str)
-// 	}
-// 	isActive := global.activeId == id
-// 	return isActive
-// }
-
-func TextInput(label string, str *string, rect glitch.Rect, style Style) {
-	textInputId(getId(label), str, rect, style, gStyle.TextCursor.Normal, 2.0)
-}
-
-func textInputId(id eid, str *string, rect glitch.Rect, style Style, cursor SpriteStyle, cursorWidth float64) {
-	resp := WidgetResp{}
-	resp.hoverable(id, rect)
-	if resp.focusOnClick(id) {
-		global.cursorPos = len(*str)
-	}
-
-	isActive := global.focusId == id
-	if isActive {
-		global.focusSeen = true
-		resp.recordTyped(str, &global.cursorPos)
-	}
-
-	mask := wmDrawText | wmDrawPanel
-	drawStr := *str
-	if drawStr == "" {
-		drawStr = " "
-	}
-	textResp := doWidget(id, drawStr, mask, style, rect)
-
-	if isActive {
-		// .Color(glitch.RGBA{0.5, 0.5, 0.5, 0.5})) // TODO: CursorColor? Default to white
-		cursoredTextRect := MeasureText((*str)[:global.cursorPos], rect, style.Text)
-		// cursoredTextRect := drawText((*str)[:global.cursorPos], rect, textStyle)
-		if global.cursorPos == 0 {
-			cursoredTextRect = glm.R(0, 0, 0, textResp.textRect.H())
-		}
-
-		cursorRect := glm.R(0, 0, cursorWidth, textResp.textRect.H()). // cursoredTextRect.H()
-										Moved(glitch.Vec2{textResp.textRect.Min.X + cursoredTextRect.W(), textResp.textRect.Min.Y})
-		drawSprite(cursorRect, cursor)
-	}
-}
+// Note: The text input lives in textinput.go
 
 // Returns the cursor rect and the anchor vector for the tooltip
 func DefaultTooltipMount() (glm.Rect, glm.Vec2) {

@@ -57,6 +57,8 @@ type Window struct {
 
 	// The back and front buffers for tracking typed characters
 	typedBack, typedFront []rune
+	// The back and front buffers for text pasted through the browser's paste event, see Pasted
+	pastedBack, pastedFront string
 
 	mainthreadUpdate  func()
 	mainthreadPressed func()
@@ -257,6 +259,10 @@ func NewWindow(width, height int, title string, inputConfig WindowConfig) (*Wind
 			win.typedBack = append(win.typedBack, char)
 		})
 
+		win.window.SetPasteCallback(func(w *glfw.Window, text string) {
+			win.pastedBack += text
+		})
+
 		win.window.SetScrollCallback(func(w *glfw.Window, xoff float64, yoff float64) {
 			for _, c := range win.scrollCallbacks {
 				c(w, xoff, yoff)
@@ -401,6 +407,9 @@ func (w *Window) Update() {
 		backBuf := w.typedBack
 		w.typedBack = w.typedFront[:0]
 		w.typedFront = backBuf
+
+		w.pastedFront = w.pastedBack
+		w.pastedBack = ""
 	}
 
 	// Note: Disabled this logic because the wasm performance is really bad
@@ -591,6 +600,12 @@ func (w *Window) Typed() []rune {
 	return w.typedFront
 }
 
+// Returns the text that was pasted this frame through the browser's paste event, or "" if none was
+// Note: The browser only hands over the clipboard in its paste event, so Clipboard is empty there. On desktop this is always empty, and the paste shortcut reads Clipboard instead
+func (w *Window) Pasted() string {
+	return w.pastedFront
+}
+
 func (w *Window) MouseScroll() (float64, float64) {
 	return w.input.scroll.X, w.input.scroll.Y
 }
@@ -777,7 +792,7 @@ func (w *Window) SetSkipWarningOnBrowserClose(value bool) {
 }
 
 // Returns the text on the system clipboard
-// Note: Currently in browser, this returns an empty string
+// Note: In the browser this is always empty, because it only gives the clipboard to its paste event. See Pasted
 func (w *Window) Clipboard() string {
 	var str string
 	mainthread.Call(func() {
@@ -787,7 +802,7 @@ func (w *Window) Clipboard() string {
 }
 
 // Sets the text on the system clipboard
-// Note: Currently in browser, this does nothing
+// Note: In the browser this goes through its clipboard API, which needs the page to be served over https (or localhost) and focused
 func (w *Window) SetClipboard(str string) {
 	mainthread.Call(func() {
 		w.window.SetClipboardString(str)

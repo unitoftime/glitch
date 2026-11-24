@@ -166,6 +166,13 @@ func (w *Window) SetCharCallback(cbfun CharCallback) (previous CharCallback) {
 	return nil
 }
 
+type PasteCallback func(w *Window, text string)
+
+// Note: Desktop has no paste event, so this is never called. The paste shortcut reads the clipboard instead, see GetClipboardString
+func (w *Window) SetPasteCallback(cbfun PasteCallback) (previous PasteCallback) {
+	return nil
+}
+
 type ScrollCallback func(w *Window, xoff float64, yoff float64)
 
 func (w *Window) SetScrollCallback(cbfun ScrollCallback) (previous ScrollCallback) {

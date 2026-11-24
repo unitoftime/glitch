@@ -189,7 +189,8 @@ type uiGlobals struct {
 
 	// cachedId eid
 
-	cursorPos int
+	edit       textEdit   // The editing state of the text input that has the keyboard, see textinput.go
+	textLayout textLayout // Note: Reused by every text input, so that laying one out doesn't allocate
 
 	// elementsRev map[eid]string
 	dedup map[uint64]uint32 // Counts the uses of each id this frame, so duplicate labels get unique ids
@@ -260,12 +261,14 @@ func DragData() any {
 	return global.dragData
 }
 
+// Moves the cursor of the text input that has the keyboard to the byte index, and clears its selection
 func SetCursorPos(pos int) {
-	global.cursorPos = pos
+	global.edit.cursor = pos
+	global.edit.anchor = pos
 }
 
 func CursorPos() int {
-	return global.cursorPos
+	return global.edit.cursor
 }
 
 // func LastRect() glitch.Rect {
@@ -413,9 +416,15 @@ func (g *uiGlobals) scrollCandidate(id eid, rect glitch.Rect) {
 }
 
 // Gives the keyboard to the element with this label
+// Note: The cursor goes to the end of the text, see SetCursorPos to put it somewhere else
+// Note: Focusing the element that already has the keyboard keeps its cursor and selection, because some callers (ie a chat box) focus their input every frame
 func Focus(label string) {
-	global.focusId = getIdNoBump(label)
-	global.focusSeen = true // Note: So that focusing before the element is first drawn doesn't drop the focus on the next Clear
+	id := getIdNoBump(label)
+	if global.focusId == id {
+		global.focusSeen = true
+		return
+	}
+	global.beginEdit(id, math.MaxInt)
 }
 
 // Takes the keyboard away from whatever element has it
@@ -426,6 +435,16 @@ func ClearFocus() {
 // Returns true if an element (eg a text input or an open dropdown) has the keyboard, so keybinds shouldn't fire
 func KeyboardCaptured() bool {
 	return global.focusId != invalidId || dbg.popupId != invalidId
+}
+
+// Returns true if the element with this label has the keyboard
+func HasFocus(label string) bool {
+	return global.focusId != invalidId && global.focusId == getIdNoBump(label)
+}
+
+// Returns true while a drag that started in a text input is selecting its text, so the drag shouldn't also do something else (ie pan a camera)
+func TextSelecting() bool {
+	return global.edit.dragging && global.focusId == global.edit.id
 }
 
 // Returns the mouse position with respect to the group camera

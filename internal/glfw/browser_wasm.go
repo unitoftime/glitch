@@ -276,18 +276,36 @@ func SetupEventListeners(w *Window) {
 			go w.keyCallback(w, key, -1, action, mods)
 		}
 
-		if w.charCallback != nil {
-			keyStr := ke.Get("key").String()
-			if len(keyStr) == 1 {
-				keyRune := []rune(keyStr)
-				go w.charCallback(w, keyRune[0])
+		// Note: A Ctrl or Cmd shortcut doesn't type its letter, ie Ctrl+A isn't an 'a'. Except with Alt too, because AltGr sends Ctrl and Alt together, and it does type
+		shortcut := (ke.Get("ctrlKey").Bool() || ke.Get("metaKey").Bool()) && !ke.Get("altKey").Bool()
+
+		if w.charCallback != nil && !shortcut {
+			// Note: Counted in runes, so that a key on another layout like 'é' still types
+			keyRunes := []rune(ke.Get("key").String())
+			if len(keyRunes) == 1 {
+				go w.charCallback(w, keyRunes[0])
 			}
 		}
 
 		// Dont prevent default on F11. That's the fullscreen hotkey
+		// Note: Nor on the paste shortcut, because the browser only fires its paste event (see the "paste" listener) when the keypress is left alone
 		// TODO: make this configurable? Maybe also include KeyF12?
-		if key != KeyF11 {
+		if key != KeyF11 && !(shortcut && key == KeyV) {
 			ke.Call("preventDefault")
+		}
+		return nil
+	}))
+	document.Call("addEventListener", "paste", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+		pe := args[0]
+		pe.Call("preventDefault")
+
+		data := pe.Get("clipboardData")
+		if isNilOrUndefined(data) || w.pasteCallback == nil {
+			return nil
+		}
+		text := data.Call("getData", "text/plain").String()
+		if text != "" {
+			go w.pasteCallback(w, text)
 		}
 		return nil
 	}))
@@ -605,6 +623,7 @@ type Window struct {
 	keyCallback             KeyCallback
 	scrollCallback          ScrollCallback
 	charCallback            CharCallback
+	pasteCallback           PasteCallback
 	framebufferSizeCallback FramebufferSizeCallback
 	sizeCallback            SizeCallback
 	focusCallback           FocusCallback
@@ -759,6 +778,16 @@ type CharCallback func(w *Window, char rune)
 
 func (w *Window) SetCharCallback(cbfun CharCallback) (previous CharCallback) {
 	w.charCallback = cbfun
+
+	// TODO: Handle previous.
+	return nil
+}
+
+// Called with the text of the page's paste event, which is the only way that the browser hands over the clipboard
+type PasteCallback func(w *Window, text string)
+
+func (w *Window) SetPasteCallback(cbfun PasteCallback) (previous PasteCallback) {
+	w.pasteCallback = cbfun
 
 	// TODO: Handle previous.
 	return nil
@@ -1376,11 +1405,23 @@ func DefaultWindowHints() {
 	// TODO: Implement.
 }
 
+// Note: Goes through the browser's clipboard API, which needs the page to be served over https (or localhost) and focused. Writing can still be refused, which is ignored
 func (w *Window) SetClipboardString(str string) {
-	// TODO: Implement.
+	clipboard := js.Global().Get("navigator").Get("clipboard")
+	if isNilOrUndefined(clipboard) {
+		return
+	}
+	promise := clipboard.Call("writeText", str)
+	promise.Call("catch", ignoreRejection) // Note: So that a refusal doesn't show up as an uncaught error
 }
+
+// Note: Made once, because every js.FuncOf stays alive until it's released
+var ignoreRejection = js.FuncOf(func(this js.Value, args []js.Value) interface{} {
+	return nil
+})
+
+// Note: Always empty. Browsers only give the clipboard asynchronously or through the paste event, see SetPasteCallback
 func (w *Window) GetClipboardString() string {
-	// TODO: Implement. Browsers only give clipboard text asynchronously or through a paste event
 	return ""
 }
 

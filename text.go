@@ -485,6 +485,12 @@ func (a *Atlas) Text(str string, scale float64) *Text {
 	return t
 }
 
+// Returns how far the pen moves past the rune when it's drawn. A string's width from Measure is the sum of these, which is what lets a text input put its cursor between two runes
+func (a *Atlas) RuneAdvance(r rune, scale float64) float64 {
+	glyph := a.getRuneGlyph(r)
+	return (scale * float64(a.texture.width) * glyph.Advance) + (a.defaultKerning * scale) // Note: Must match the dot advance in RuneVerts
+}
+
 func (a *Atlas) MeasureRune(r rune, scale float64) Rect {
 	// TODO: This could be improved by just calling specialized measurement functions
 	return a.Measure(string(r), scale)
@@ -668,6 +674,59 @@ func (t *Text) RectDrawColorMask(target BatchTarget, bounds Rect, mask RGBA) {
 	target.Add(t.mesh.g(), glm4(mat), mask, t.material)
 }
 
+// Returns where the pen goes after a tab at x, which is measured from the start of the line
+// Note: Shared by AppendStringVerts and AppendCarets, so that carets land where the text is drawn
+func (a *Atlas) tabStop(x float64, scale float64) float64 {
+	tabWidth := 4.0 * a.runeSize(' ', scale).X
+	return math.Floor(x/tabWidth + 1.0) * tabWidth
+}
+
+// Returns true if word wrap breaks the line at the space at byte i, because the word after it doesn't fit on the line. The space itself isn't drawn. lineX is how far the pen is along the line
+// Note: Shared by AppendStringVerts and AppendCarets, so that carets land where the text is drawn
+func (a *Atlas) wrapsAt(text string, i int, lineX float64, scale float64, wrapWidth float64) bool {
+	// If there is no next space, then we measure the rest of the line
+	nextWordEnd := len(text)
+	if nextSpaceIdx := strings.Index(text[i+1:], " "); nextSpaceIdx >= 0 {
+		nextWordEnd = i + 1 + nextSpaceIdx
+	}
+	return lineX + a.Measure(text[i:nextWordEnd], scale).W() > wrapWidth
+}
+
+// The spot in front of a rune of laid out text, where a caret would go. See AppendCarets
+type TextCaret struct {
+	Index int // The byte of the rune in the string
+	X float64 // How far along its row, in the units of the text's mesh
+	Row int // Counted down from the first row. Rows wrap or start after a newline
+}
+
+// Lays the string out like a Text draws it (tabs, newlines and word wrap at wrapWidth), and appends a caret in front of each rune plus one at the end. Also returns the bounds that the Text would have
+// Note: A space that word wrap breaks at, and a newline, sit at the end of their row with no width, so the next row starts at the rune after them
+func (a *Atlas) AppendCarets(dst []TextCaret, str string, scale float64, wordWrap bool, wrapWidth float64) ([]TextCaret, Rect) {
+	lineHeight := a.UngappedLineHeight() * scale
+	x, maxX := 0.0, 0.0
+	row := 0
+	for i, r := range str {
+		dst = append(dst, TextCaret{Index: i, X: x, Row: row})
+		if r == '\t' {
+			x = a.tabStop(x, scale)
+			continue
+		}
+		if r == '\n' || (wordWrap && r == ' ' && a.wrapsAt(str, i, x, scale, wrapWidth)) {
+			x = 0
+			row++
+			continue
+		}
+		x += a.RuneAdvance(r, scale)
+		maxX = max(maxX, x)
+	}
+	dst = append(dst, TextCaret{Index: len(str), X: x, Row: row})
+
+	// Note: Matches the bounds from AppendStringVerts
+	top := lineHeight
+	bot := top - float64(row + 1) * lineHeight
+	return dst, glm.R(0, top, maxX, bot).Norm()
+}
+
 // If measure is set true, dont add them to the text mesh, just measure the bounds of the string
 func (t *Text) AppendStringVerts(text string, measure bool) Rect {
 	// maxAscent := float32(0) // Tracks the maximum y point of the text block
@@ -681,28 +740,15 @@ func (t *Text) AppendStringVerts(text string, measure bool) Rect {
 		// On tab, go to the next tabwidth position
 		tab := r == '\t'
 		if tab {
-			spaceSize := t.atlas.runeSize(' ', t.scale)
-			tabWidth := 4.0 * spaceSize.X
-			currentTabSection := (t.Dot.X - t.Orig.X) / tabWidth
-			t.Dot.X = t.Orig.X + math.Floor(currentTabSection+1.0)*tabWidth
+			t.Dot.X = t.Orig.X + t.atlas.tabStop(t.Dot.X - t.Orig.X, t.scale)
 			continue
 		}
 
 		// If the rune is a newline, then we need to reset the dot for the next line
 		newline := r == '\n'
 		// If we wordwraping and are on a space, check to see if we should go to the next line
-		if t.wordWrap && r == ' ' {
-			// If there is no next space, then we measure the rest of the line
-			nextWordEnd := len(text)
-			if nextSpaceIdx := strings.Index(text[i+1:], " "); nextSpaceIdx >= 0 {
-				nextWordEnd = i + 1 + nextSpaceIdx
-			}
-
-			nextWord := t.atlas.Measure(text[i:nextWordEnd], t.scale)
-
-			if (t.Dot.X-initialDot.X)+nextWord.W() > t.wrapRect.W() {
-				newline = true
-			}
+		if t.wordWrap && r == ' ' && t.atlas.wrapsAt(text, i, t.Dot.X - initialDot.X, t.scale, t.wrapRect.W()) {
+			newline = true
 		}
 		if newline {
 			// t.Dot.Y -= t.atlas.LineHeight()

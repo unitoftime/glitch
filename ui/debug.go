@@ -119,7 +119,7 @@ func DebugText(str string, rect glitch.Rect) {
 }
 
 func DebugTextInput(label string, str *string, rect glitch.Rect) {
-	textInputId(getId(label), str, rect, fieldStyle(), gDebug.Cursor, gDebug.CursorWidth)
+	textInputId(getId(label), str, rect, fieldStyle(), TextInputConfig{}, gDebug.Cursor, gDebug.CursorWidth)
 }
 
 // --------------------------------------------------------------------------------
@@ -387,7 +387,7 @@ func numberField(id eid, display string, value, speed float64, rect glitch.Rect)
 	ret := numberEdit{}
 
 	if dbg.editId == id && global.focusId == id {
-		textInputId(id, &dbg.editText, rect, fieldStyle(), gDebug.Cursor, gDebug.CursorWidth)
+		textInputId(id, &dbg.editText, rect, fieldStyle(), TextInputConfig{}, gDebug.Cursor, gDebug.CursorWidth)
 
 		if global.win.JustPressed(glitch.KeyEscape) {
 			dbg.editId = invalidId
@@ -417,9 +417,7 @@ func numberField(id eid, display string, value, speed float64, rect glitch.Rect)
 		dbg.editId = id
 		dbg.editText = display
 		dbg.editOrig = display
-		global.focusId = id
-		global.focusSeen = true
-		global.cursorPos = len(display)
+		global.beginEdit(id, len(display))
 	}
 
 	doWidget(id, display, wmDrawPanel|wmDrawText, fieldStyle(), rect)
@@ -622,7 +620,7 @@ func drawPopup(id eid, idx *int, items []string, button glitch.Rect) bool {
 		dbg.searchId = getId("##search")
 		global.focusId = dbg.searchId // Note: The search box keeps the keyboard while the list is open
 		global.focusSeen = true
-		textInputId(dbg.searchId, &dbg.popupSearch, list.CutTop(gDebug.RowHeight), fieldStyle(), gDebug.Cursor, gDebug.CursorWidth)
+		textInputId(dbg.searchId, &dbg.popupSearch, list.CutTop(gDebug.RowHeight), fieldStyle(), TextInputConfig{}, gDebug.Cursor, gDebug.CursorWidth)
 
 		enter := global.win.JustPressed(glitch.KeyEnter) || global.win.JustPressed(glitch.KeyKPEnter)
 		if enter && len(dbg.filter) > 0 {
