@@ -22,9 +22,8 @@ type PlacedText struct {
 	rowHeight float64 // On the screen
 }
 
-// Places the text like drawText does in the rect with the style. Like MultiText, the text stops at a "##"
+// Places the text like TextExt and MultiText draw it in the rect with the style
 func (p *PlacedText) Place(str string, rect glitch.Rect, style TextStyle) {
-	str = removeDedup(str)
 	wrapWidth := rect.W() / style.scale // Note: Matches getText
 
 	var bounds glitch.Rect

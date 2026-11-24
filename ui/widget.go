@@ -458,14 +458,15 @@ func HoveredNoBlock(rect glitch.Rect) bool {
 // 	return TextExt(label, rect, gStyle.textStyle)
 // }
 
-func TextExt(label string, rect glitch.Rect, textStyle TextStyle) glitch.Rect {
+// Draws the text on one line. Returns the rect that the text is drawn in
+// Note: The text is drawn as it is, so a "##" is shown rather than starting an id like it does in a button's label. Text can come from players (ie a name like "Bob##x"), and cutting it there would let them pass for someone else
+func TextExt(text string, rect glitch.Rect, textStyle TextStyle) glitch.Rect {
 	style := Style{
 		Text: textStyle,
 	}
 
 	mask := wmDrawText
-	id := getId(label)
-	text := removeDedup(label)
+	id := getId(text)
 	resp := doWidget(id, text, mask, style, rect)
 	return resp.textRect
 }
@@ -870,14 +871,15 @@ func TooltipExt(label string, rect glitch.Rect, style Style) {
 	// g.draw(tip, cursorRect, style.Normal, style.Text)
 }
 
-func MultiText(label string, rect glitch.Rect, textStyle TextStyle) glitch.Rect {
+// Draws the text, which can have newlines and wrap (see TextStyle.WordWrap). Returns the rect that the text is drawn in
+// Note: Like TextExt, the text is drawn as it is, "##" and all
+func MultiText(text string, rect glitch.Rect, textStyle TextStyle) glitch.Rect {
 	// style := Style{
 	// 	Text: NewTextStyle().Padding(glitch.R(5, 5, 5, 5)).WordWrap(true).Anchor(glitch.Vec2{0, 1.0}),
 	// 	// Text: textStyle.WordWrap(true),
 	// }
 	// mask := wmDrawText
 	// id := getId(label)
-	text := removeDedup(label)
 	// doWidget(id, text, mask, style, rect)
 	return drawText(text, rect, textStyle)
 }
